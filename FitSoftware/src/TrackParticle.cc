@@ -1,0 +1,17 @@
+#include "SimpleFits/FitSoftware/interface/TrackParticle.h"
+
+TrackParticle::TrackParticle(TMatrixT<double> par_, TMatrixTSym<double> cov_, int pdgid_,double mass_, double charge_, double b_):
+  Particle(par_,cov_,pdgid_,charge_,b_),
+  mass(mass_)
+{
+
+}
+
+TString TrackParticle::Name(int i){
+  if(i==kappa)  return "kappa";
+  if(i==lambda) return "lambda";
+  if(i==phi)    return "phi";
+  if(i==dz)     return "dxy";
+  if(i==dxy)    return "dz";
+  return "invalid";
+}

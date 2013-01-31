@@ -1,0 +1,7 @@
+<use   name="FWCore/Framework"/>
+<use   name="FWCore/PluginManager"/>
+<use   name="CommonTools/RecoAlgos"/>
+<use   name="rootcore"/>
+<use   name="rootMinuit2"/>
+<use   name="zlib"/> 
+<flags   EDM_PLUGIN="1"/>
