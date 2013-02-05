@@ -1,5 +1,6 @@
 #include "SimpleFits/FitSoftware/interface/TauA1NuConstrainedFitter.h"
 #include "Validation/EventGenerator/interface/PdtPdgMini.h"
+#include <iostream>
 
 TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::vector<LorentzVectorParticle> particles,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau):
   LagrangeMultipliersFitter(),
@@ -8,10 +9,11 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
   mtau_c(mtau),
   particles_(particles)
 {
+  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter" << std::endl;
   isconfigured=false;
   // setup 13 by 13 matrix
   int size=LorentzVectorParticle::NVertex+particles.size()*LorentzVectorParticle::NLorentzandVertexPar;
-  TMatrixT<double>    inpar(size,size);
+  TMatrixT<double>    inpar(size,1);
   TMatrixTSym<double> incov(size);
 
   if(VertexCov.GetNrows()!=LorentzVectorParticle::NVertex)return;
@@ -22,26 +24,22 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
   for(int i=0; i<LorentzVectorParticle::NVertex;i++){
     for(int j=0; j<LorentzVectorParticle::NVertex;j++)incov(i,j)=VertexCov(i,j);
   }
-
   bool hasa1(false),hasnu(false);
   for(unsigned int p=0;p<particles.size();p++){
     int offset=LorentzVectorParticle::NVertex;
     if(particles.at(p).Charge()<0.1){hasnu=true; offset+=LorentzVectorParticle::NLorentzandVertexPar;}
     else{hasa1=true;}
-    for(int i=0; i<LorentzVectorParticle::NVertex;i++){
+    for(int i=0; i<LorentzVectorParticle::NLorentzandVertexPar;i++){
       inpar(i+offset,0)=particles.at(p).Parameter(i);
-      for(int j=0; j<LorentzVectorParticle::NVertex;j++)incov(i+offset,j+offset)=particles.at(p).Covariance(i,j);
+      for(int j=0; j<LorentzVectorParticle::NLorentzandVertexPar;j++)incov(i+offset,j+offset)=particles.at(p).Covariance(i,j);
     }
   }
-
   if(!(hasa1 && hasnu)) return;
   // store expanded par for computation of final par (assumes fit has neglegible impact on a1 correlations with vertex errors)
   exppar.ResizeTo(nexpandedpar,1);
   exppar=ComputeInitalPar(inpar);
-
   expcov.ResizeTo(nexpandedpar,nexpandedpar);
   expcov=ErrorMatrixPropagator::PropogateError(&TauA1NuConstrainedFitter::ComputeInitalPar,inpar,incov);
-
   // store linearization point
   par_0.ResizeTo(npar);
   cov_0.ResizeTo(npar,npar);
@@ -49,11 +47,10 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
     par_0(i)=exppar(i,0);
     for(int j=0;j<npar;j++){cov_0(i,j)=expcov(i,j);}
   }
-
   // set up inital point for fit (cov handled in Fit() function)
   par.ResizeTo(npar);
-  par=par;
-  
+  par=par_0;
+  for(int i=0; i<npar;i++) std::cout << i << " " << par_0(i) << std::endl;
   // Check if Tau Direction is unphysical and if nessicary set the starting point to Theta_{GJ-Max} 
   /*
     TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
@@ -80,6 +77,7 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
       }
       }*/
   isconfigured=true;  
+  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter done M_{a1} " << par(a1_m) << std::endl;
 }
 
 TMatrixT<double> TauA1NuConstrainedFitter::ComputeInitalPar(TMatrixT<double> &inpar){

@@ -1,33 +1,44 @@
 #include "SimpleFits/FitSoftware/interface/Chi2VertexFitter.h"
 #include "SimpleFits/FitSoftware/interface/ChiSquareFunctionUpdator.h"
-#include "TFitterMinuit.h"
+#include "Minuit2/FunctionMinimum.h"
+#include "Minuit2/MnUserParameters.h"
+#include "Minuit2/MnPrint.h"
+#include "Minuit2/MnMigrad.h"
+#include "Minuit2/MnMinos.h"
+#include "Minuit2/MnContours.h"
+#include "Minuit2/MnPlot.h"
+#include "Minuit2/MinosError.h"
+#include "Minuit2/ContoursError.h"
+#include <iostream>
 
 bool Chi2VertexFitter::Fit(){
   if(isFit==true) return true;// do not refit
-  TFitterMinuit minuit;
   ChiSquareFunctionUpdator updator(this);
-  minuit.SetMinuitFCN(&updator);
-  int j(0),p(0);
+  ROOT::Minuit2::MnUserParameters upar;
   for(int i=0;i<par.GetNrows();i++){
-    TString name=TrackParticle::Name(j); name+=p;
+    TString name=FreeParName(i);
     // if not limited (vhigh <= vlow)
-    minuit.SetParameter(i,name,par(i,0),0.5*parcov(i,i),0,0);
-    j++;
-    if(j==TrackParticle::NHelixPar){j=0;p++;}
+    std::cout << "Adding Parameter " << i << " name " << name << std::endl; 
+    upar.Add(name.Data(),par(i,0),parcov(i,i),par(i,0)-10*parcov(i,i),par(i,0)+10*parcov(i,i));
   }
-  //minuit.SetPrintLevel(3);
-  // create Minimizer (default is Migrad)
-  minuit.CreateMinimizer();
-  int iret = minuit.Minimize();
-  if (iret != 0) { 
-    return isFit; 
-  }
+  // Setup function 
+
+  // create MIGRAD minimizer
+  ROOT::Minuit2::MnMigrad migrad(updator,upar);
+  
+  // Minimize
+  ROOT::Minuit2::FunctionMinimum min = migrad();
+
+  // give return flag based on status
+  if(min.IsValid())             return 1;
+  if(min.HasValidParameters())  return 2;
+  if(min.HasValidCovariance())  return 3;
+  if(min.HesseFailed())         return 4;
+  if(min.HasReachedCallLimit()) return 5;
   for(int i=0;i<par.GetNrows();i++){
-    par(i,0)=minuit.GetParameter(i);
-    for(int j=0;j<par.GetNrows();j++){parcov(i,j)=minuit.GetCovarianceMatrixElement(i,j);}
+    par(i,0)=min.UserParameters().Value(i);
+    for(int j=0;j<par.GetNrows();j++){std::cout << i << " " << j << std::endl; parcov(i,j)=min.UserCovariance()(i,j);}
   }
   isFit=true;
   return isFit;
 }
-
-

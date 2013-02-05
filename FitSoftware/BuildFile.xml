@@ -2,8 +2,7 @@
 <use   name="FWCore/PluginManager"/>
 <use   name="CommonTools/RecoAlgos"/>
 <use   name="rootcore"/>
-<use   name="rootMinuit2"/>
-<use   name="zlib"/> 
+<use   name="rootminuit2"/>
 <export>
   <lib   name="1"/>
 </export>

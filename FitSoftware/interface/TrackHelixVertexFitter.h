@@ -18,7 +18,7 @@ class TrackHelixVertexFitter : private ErrorMatrixPropagator {
   enum FreeTrackPar{kappa0=3,lambda0,phi0,NFreeTrackPar};
   enum ExtraPar{BField0=0,MassOffSet=1,NExtraPar=1};
 
-  TrackHelixVertexFitter(std::vector<TrackParticle> &particles_);
+  TrackHelixVertexFitter(std::vector<TrackParticle> &particles_,TVector3 vguess);
   virtual ~TrackHelixVertexFitter();
 
    virtual bool Fit()=0;
@@ -35,6 +35,7 @@ class TrackHelixVertexFitter : private ErrorMatrixPropagator {
    bool isFit;
    TMatrixT<double> par;
    TMatrixTSym<double> parcov;
+   virtual TString FreeParName(int Par);
 
  private:
    static TMatrixT<double> ComputePar(TMatrixT<double> &inpar);
@@ -48,8 +49,9 @@ class TrackHelixVertexFitter : private ErrorMatrixPropagator {
    }
    static int FreeParIndex(int Par,int Particle){
      if(Par==x0 || Par==y0 || Par==z0) return Par;
-     return Par+Particle*NFreeTrackPar;
+     return Par+Particle*(NFreeTrackPar-NFreeVertexPar);
    }
+   static void ParSizeInfo(TMatrixT<double> &inpar, int &np, int &parsize,bool hasextras=0);
 
    std::vector<TrackParticle> particles;
    double chi2, ndf;

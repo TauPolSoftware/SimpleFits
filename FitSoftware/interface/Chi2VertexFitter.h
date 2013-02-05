@@ -6,7 +6,7 @@
 
 class  Chi2VertexFitter : public TrackHelixVertexFitter {
  public:
-  Chi2VertexFitter(std::vector<TrackParticle> &particles):TrackHelixVertexFitter(particles){};
+  Chi2VertexFitter(std::vector<TrackParticle> &particles,TVector3 vguess):TrackHelixVertexFitter(particles,vguess){};
   virtual ~Chi2VertexFitter(){};
 
   virtual bool Fit();
