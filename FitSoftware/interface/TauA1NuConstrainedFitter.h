@@ -8,7 +8,7 @@
 #include "SimpleFits/FitSoftware/interface/ErrorMatrixPropagator.h"
 #include <vector>
 
-class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiProngTauSolver, private ErrorMatrixPropagator {
+class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiProngTauSolver{
  public:
   TauA1NuConstrainedFitter(unsigned int ambiguity_,std::vector<LorentzVectorParticle> particles,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau);
   virtual ~TauA1NuConstrainedFitter(){};

@@ -5,7 +5,6 @@
 TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::vector<LorentzVectorParticle> particles,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau):
   LagrangeMultipliersFitter(),
   MultiProngTauSolver(mtau),
-  ErrorMatrixPropagator(),
   mtau_c(mtau),
   particles_(particles)
 {

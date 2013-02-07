@@ -14,17 +14,16 @@
 bool Chi2VertexFitter::Fit(){
   if(isFit==true) return true;// do not refit
   ChiSquareFunctionUpdator updator(this);
-  ROOT::Minuit2::MnUserParameters upar;
+  ROOT::Minuit2::MnUserParameters MnPar;
   for(int i=0;i<par.GetNrows();i++){
     TString name=FreeParName(i);
     // if not limited (vhigh <= vlow)
-    std::cout << "Adding Parameter " << i << " name " << name << std::endl; 
-    upar.Add(name.Data(),par(i,0),parcov(i,i),par(i,0)-10*parcov(i,i),par(i,0)+10*parcov(i,i));
+    double nsigma=10;
+    std::cout << "Adding Parameter " << i << " name " << name << " " << par(i,0) << std::endl; 
+    MnPar.Add(name.Data(),par(i,0),parcov(i,i),par(i,0)-nsigma*sqrt(fabs(parcov(i,i))),par(i,0)+nsigma*sqrt(fabs(parcov(i,i))));
   }
-  // Setup function 
-
   // create MIGRAD minimizer
-  ROOT::Minuit2::MnMigrad migrad(updator,upar);
+  ROOT::Minuit2::MnMigrad migrad(updator,MnPar);
   
   // Minimize
   ROOT::Minuit2::FunctionMinimum min = migrad();

@@ -12,7 +12,7 @@
 #include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
 #include "SimpleFits/FitSoftware/interface/ErrorMatrixPropagator.h"
 
-class TrackHelixVertexFitter : private ErrorMatrixPropagator {
+class TrackHelixVertexFitter{
  public:
   enum FreeVertexPar{x0=0,y0,z0,NFreeVertexPar};
   enum FreeTrackPar{kappa0=3,lambda0,phi0,NFreeTrackPar};
@@ -42,7 +42,7 @@ class TrackHelixVertexFitter : private ErrorMatrixPropagator {
    static TMatrixT<double> ComputeTrackPar(TMatrixT<double> &inpar,int p=0);
    static TMatrixT<double> ComputeLorentzVectorPar(TMatrixT<double> &inpar);
    static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
-   static void Computedxydz(TMatrixT<double> &inpar,int particle,double &c,double &lam,double &phi,double &x,double &y,double &z,double &s,double &dxy,double &dz);
+   static void Computedxydz(TMatrixT<double> &inpar,int particle,double &kappa,double &lam,double &phi,double &x,double &y,double &z,double &s,double &dxy,double &dz);
 
    static int MeasuredValueIndex(int TrackPar,int Particle){
      return TrackPar+Particle*TrackParticle::NHelixPar;
