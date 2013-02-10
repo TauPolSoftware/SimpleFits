@@ -23,7 +23,6 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
   for(int i=0; i<LorentzVectorParticle::NVertex;i++){
     for(int j=0; j<LorentzVectorParticle::NVertex;j++)incov(i,j)=VertexCov(i,j);
   }
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter A" << std::endl;
   bool hasa1(false),hasnu(false);
   for(unsigned int p=0;p<particles.size();p++){
     int offset=LorentzVectorParticle::NVertex;
@@ -34,22 +33,15 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
       for(int j=0; j<LorentzVectorParticle::NLorentzandVertexPar;j++)incov(i+offset,j+offset)=particles.at(p).Covariance(i,j);
     }
   }
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter B" << std::endl;
   if(!hasa1 || !hasnu) return;
   // store expanded par for computation of final par (assumes fit has neglegible impact on a1 correlations with vertex errors)
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter C1" << std::endl;
   exppar.ResizeTo(nexpandedpar,1);
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter C2" << std::endl;
   exppar=ComputeInitalPar(inpar);
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter C3" << std::endl;
   expcov.ResizeTo(nexpandedpar,nexpandedpar);
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter C4" << std::endl;
   expcov=ErrorMatrixPropagator::PropogateError(&TauA1NuConstrainedFitter::ComputeInitalPar,inpar,incov);
   // store linearization point
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter C5" << std::endl;
   par_0.ResizeTo(npar);
   cov_0.ResizeTo(npar,npar);
-  std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter c" << std::endl;
   for(int i=0; i<npar;i++){
     par_0(i)=exppar(i,0);
     for(int j=0;j<npar;j++){cov_0(i,j)=expcov(i,j);}
@@ -57,7 +49,6 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
   // set up inital point for fit (cov handled in Fit() function)
   par.ResizeTo(npar);
   par=par_0;
-  for(int i=0; i<npar;i++) std::cout << i << " " << par_0(i) << std::endl;
   // Check if Tau Direction is unphysical and if nessicary set the starting point to Theta_{GJ-Max} 
   /*
     TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
