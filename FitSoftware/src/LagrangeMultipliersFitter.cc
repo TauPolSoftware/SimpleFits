@@ -4,6 +4,9 @@
 
 LagrangeMultipliersFitter::LagrangeMultipliersFitter():
   epsilon_(0.00001),
+  weight_(1.0),
+  MaxDelta_(0.1),
+  nitermax_(100),
   isFit(false),
   chi2(1e10),
   D(1,1),
@@ -24,6 +27,7 @@ bool LagrangeMultipliersFitter::Fit(){
   for(niter=0;niter<=nitermax_;niter++){
     bool passed=ApplyLagrangianConstraints();
     if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
+      std::cout << "Reached Maximum number of iterations..." << niter << std::endl; 
       return false;
     }
     if(isConverged()) break;

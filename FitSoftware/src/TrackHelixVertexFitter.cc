@@ -40,7 +40,7 @@ TrackHelixVertexFitter::TrackHelixVertexFitter(std::vector<TrackParticle> &parti
   }
 
   // debug statements
-  for(int i=0;i<val.GetNrows();i++) std::cout << "input Val " << val(i,0) << " " << TrackParticle::Name(i%TrackParticle::NHelixPar) << std::endl;
+  /*  for(int i=0;i<val.GetNrows();i++) std::cout << "input Val " << val(i,0) << " " << TrackParticle::Name(i%TrackParticle::NHelixPar) << std::endl;
   for(int i=0;i<cov.GetNrows();i++){
     for(int j=0;j<cov.GetNrows();j++)  std::cout << cov(i,j) << " ";
     std::cout << std::endl;
@@ -49,7 +49,7 @@ TrackHelixVertexFitter::TrackHelixVertexFitter(std::vector<TrackParticle> &parti
   for(int i=0;i<parcov.GetNrows();i++){
     for(int j=0;j<parcov.GetNrows();j++)  std::cout << parcov(i,j) << " ";
     std::cout << std::endl;
-  }
+    }*/
   //
 }
 
@@ -146,7 +146,7 @@ void TrackHelixVertexFitter::Computedxydz(TMatrixT<double> &inpar,int p,double &
   dz=z-s*tan(lam);
   ///////////////////////////////
   // debug
-  std::cout << "kappa0 "   << inpar(FreeParIndex(kappa0,p),0)
+  /* std::cout << "kappa0 "   << inpar(FreeParIndex(kappa0,p),0)
             << " lambda0 " << inpar(FreeParIndex(lambda0,p),0)
             << " phi0 "    << inpar(FreeParIndex(phi0,p),0)
             << "  x0 "     << inpar(FreeParIndex(x0,p),0)
@@ -154,7 +154,7 @@ void TrackHelixVertexFitter::Computedxydz(TMatrixT<double> &inpar,int p,double &
             << "  z0 "     << inpar(FreeParIndex(z0,p),0) << std::endl;
   std::cout << "arcsin " << asin(2*kappa*(x*cos(phi)+y*sin(phi))) << " c " << kappa << " cosphi " << cos(phi) << " sinphi " << sin(phi) << " F " << x*cos(phi)+y*sin(phi) << " s " << s << std::endl; 
   std::cout << "kappa " << kappa << " lam " << lam << " phi " << phi << " x " << x << " y " << y << " z " << z << " s " << s << " dxy " << dxy << " dz " << dz << std::endl;   
-  std::cout << "TrackHelixVertexFitter::Computedxydz done" << std::endl;
+  std::cout << "TrackHelixVertexFitter::Computedxydz done" << std::endl;*/
 }
 
 TMatrixT<double> TrackHelixVertexFitter::ComputePar(TMatrixT<double> &inpar){
@@ -218,14 +218,11 @@ TMatrixT<double> TrackHelixVertexFitter::ComputeMotherLorentzVectorPar(TMatrixT<
 	     daughter(LorentzVectorParticle::py,0)*daughter(LorentzVectorParticle::py,0)+
 	     daughter(LorentzVectorParticle::pz,0)*daughter(LorentzVectorParticle::pz,0)+
 	     daughter(LorentzVectorParticle::m,0)*daughter(LorentzVectorParticle::m,0)));
-    std::cout << p << "Px " << daughter(LorentzVectorParticle::px,0) << " Py " << daughter(LorentzVectorParticle::py,0)  << " Py " << daughter(LorentzVectorParticle::py,0)  << " Pz " << daughter(LorentzVectorParticle::m,0) << std::endl;
-    std::cout << p << "Px " << mother(LorentzVectorParticle::px,0) << " Py " << mother(LorentzVectorParticle::py,0)  << " Py " << mother(LorentzVectorParticle::py,0)  << " Pz " << mother(LorentzVectorParticle::m,0) << std::endl;
   }
   double P2=(mother(LorentzVectorParticle::px,0)*mother(LorentzVectorParticle::px,0)+
 	     mother(LorentzVectorParticle::py,0)*mother(LorentzVectorParticle::py,0)+
 	     mother(LorentzVectorParticle::pz,0)*mother(LorentzVectorParticle::pz,0));
   mother(LorentzVectorParticle::m,0)=(E*E-P2)/sqrt(fabs(E*E-P2));
-  std::cout << "E " << E << " P " << sqrt(fabs(P2)) <<  " M " << mother(LorentzVectorParticle::m,0) << std::endl;
   return mother;
 }
 
@@ -239,7 +236,6 @@ TString TrackHelixVertexFitter::FreeParName(int Par){
   }
   TString n;
   int index=Par-p*(NFreeTrackPar-NFreeVertexPar);
-  std::cout << "particle " << p << " index " << index << std::endl; 
   if(index==kappa0)  n="kappa0";
   if(index==lambda0) n="lambda0";
   if(index==phi0)    n="phi0";
