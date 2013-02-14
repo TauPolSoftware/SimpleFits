@@ -11,7 +11,7 @@ TString TrackParticle::Name(int i){
   if(i==kappa)  return "kappa";
   if(i==lambda) return "lambda";
   if(i==phi)    return "phi";
-  if(i==dz)     return "dxy";
-  if(i==dxy)    return "dz";
+  if(i==dz)     return "dz";
+  if(i==dxy)    return "dxy";
   return "invalid";
 }

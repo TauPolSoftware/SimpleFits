@@ -32,7 +32,7 @@ class TrackHelixVertexFitter{
    virtual TMatrixTSym<double> GetVertexError();
 
  protected:
-   bool isFit;
+   bool isFit,isConfigure;
    TMatrixT<double> par;
    TMatrixTSym<double> parcov;
    virtual TString FreeParName(int Par);

@@ -42,9 +42,14 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
   // store linearization point
   par_0.ResizeTo(npar);
   cov_0.ResizeTo(npar,npar);
+  for(int i=0; i<size;i++) std::cout << "par " << inpar(i,0) << std::endl;
+  for(int i=0; i<npar;i++) std::cout << "par " << exppar(i,0) << std::endl;
   for(int i=0; i<npar;i++){
     par_0(i)=exppar(i,0);
-    for(int j=0;j<npar;j++){cov_0(i,j)=expcov(i,j);}
+    for(int j=0;j<npar;j++){cov_0(i,j)=expcov(i,j);
+      std::cout << cov_0(i,j) << " " ; 
+    }
+    std::cout << std::endl;
   }
   // set up inital point for fit (cov handled in Fit() function)
   par.ResizeTo(npar);

@@ -4,6 +4,7 @@
 
 TrackHelixVertexFitter::TrackHelixVertexFitter(std::vector<TrackParticle> &particles_,TVector3 vguess):
   isFit(false),
+  isConfigure(false),
   nParticles(particles_.size()),
   nPar((NFreeTrackPar-NFreeVertexPar)*particles_.size()+NFreeVertexPar),
   nVal(TrackParticle::NHelixPar*particles_.size())
@@ -22,13 +23,20 @@ TrackHelixVertexFitter::TrackHelixVertexFitter(std::vector<TrackParticle> &parti
     }
   }
   TDecompBK Inverter(cov);
+  double det = cov.Determinant();
+  if(!Inverter.Decompose()){
+    std::cout << "TrackHelixVertexFitter::TrackHelixVertexFitter Fit failed: unable to invert SYM gain matrix " << det << " \n" << std::endl;
+    return;
+  }
+
+
   cov_inv.ResizeTo(nVal,nVal);
   cov_inv=Inverter.Invert();
   ndf=nVal-nPar;
   // Set Initial conditions within reason
-  par(x0,0)  = vguess.X(); parcov(x0,x0)=pow(5.0,0);
-  par(y0,0)  = vguess.Y(); parcov(y0,y0)=pow(5.0,0);
-  par(z0,0)  = vguess.Z(); parcov(z0,z0)=pow(50.0,0);
+  par(x0,0)  = vguess.X(); parcov(x0,x0)=pow(1.0,2.0);
+  par(y0,0)  = vguess.Y(); parcov(y0,y0)=pow(1.0,2.0);
+  par(z0,0)  = vguess.Z(); parcov(z0,z0)=pow(1.0,2.0);
   for(unsigned int p=0; p<particles.size();p++){
     par(FreeParIndex(kappa0,p),0)  = val(MeasuredValueIndex(TrackParticle::kappa,p),0);
     par(FreeParIndex(lambda0,p),0) = val(MeasuredValueIndex(TrackParticle::lambda,p),0);
@@ -38,13 +46,14 @@ TrackHelixVertexFitter::TrackHelixVertexFitter(std::vector<TrackParticle> &parti
     parcov(FreeParIndex(lambda0,p),FreeParIndex(lambda0,p)) = cov(MeasuredValueIndex(TrackParticle::lambda,p),MeasuredValueIndex(TrackParticle::lambda,p));
     parcov(FreeParIndex(phi0,p),FreeParIndex(phi0,p))       = cov(MeasuredValueIndex(TrackParticle::phi,p),MeasuredValueIndex(TrackParticle::phi,p));
   }
-
+  isConfigure=true;
   // debug statements
-  /*  for(int i=0;i<val.GetNrows();i++) std::cout << "input Val " << val(i,0) << " " << TrackParticle::Name(i%TrackParticle::NHelixPar) << std::endl;
+  for(int i=0;i<val.GetNrows();i++) std::cout << "input Val " << val(i,0) << " " << TrackParticle::Name(i%TrackParticle::NHelixPar) << std::endl;
   for(int i=0;i<cov.GetNrows();i++){
     for(int j=0;j<cov.GetNrows();j++)  std::cout << cov(i,j) << " ";
     std::cout << std::endl;
   }
+  /*
   for(int i=0;i<par.GetNrows();i++) std::cout << "input Par " << par(i,0) << " " <<  FreeParName(i) << std::endl;
   for(int i=0;i<parcov.GetNrows();i++){
     for(int j=0;j<parcov.GetNrows();j++)  std::cout << parcov(i,j) << " ";
@@ -60,6 +69,8 @@ double TrackHelixVertexFitter::UpdateChisquare(TMatrixT<double> inpar){
   TMatrixT<double> dalpha=vprime-val;
   TMatrixT<double> dalphaT=dalpha;  dalphaT.T();
   TMatrixT<double> chisquare=dalphaT*(cov_inv*dalpha);
+  //std::cout << "Chi2: " << chisquare(0,0) << std::endl;
+  //for(int i=0;i<val.GetNrows();i++){ std::cout << TrackParticle::Name(i%TrackParticle::NHelixPar) << "vprime " << vprime(i,0) << " v " << val(i,0) << " delta " << dalpha(i,0) << " cov " << cov(i,i) << " chi2 " << pow(dalpha(i,0),2.0)/cov(i,i) << std::endl; }
   return chisquare(0,0);
 }
 
@@ -141,20 +152,28 @@ void TrackHelixVertexFitter::Computedxydz(TMatrixT<double> &inpar,int p,double &
   x=inpar(FreeParIndex(x0,p),0);
   y=inpar(FreeParIndex(y0,p),0);
   z=inpar(FreeParIndex(z0,p),0);
-  s=1.0/(2.0*kappa)*asin(2.0*kappa*(x*cos(phi)+y*sin(phi)));
+  double v=(2.0*kappa*(x*cos(phi)+y*sin(phi)));
+  double arcsinv=0;
+  if(v>=1.0){arcsinv=TMath::Pi()/2+fabs(pow(v,10)-1.0);}
+  else if(v<=-1.0){arcsinv=-TMath::Pi()/2-fabs(pow(v,20)-1.0);}
+  else{arcsinv=asin(v);}
+  s=1.0/(2.0*kappa)*arcsinv;//asin(2.0*kappa*(x*cos(phi)+y*sin(phi)));
   dxy=y*cos(phi)-x*sin(phi)-(1/kappa)*sin(kappa*s)*sin(kappa*s);
   dz=z-s*tan(lam);
   ///////////////////////////////
   // debug
-  /* std::cout << "kappa0 "   << inpar(FreeParIndex(kappa0,p),0)
+  /*
+  std::cout << "kappa0 "   << inpar(FreeParIndex(kappa0,p),0)
             << " lambda0 " << inpar(FreeParIndex(lambda0,p),0)
             << " phi0 "    << inpar(FreeParIndex(phi0,p),0)
             << "  x0 "     << inpar(FreeParIndex(x0,p),0)
             << "  y0 "     << inpar(FreeParIndex(y0,p),0)
             << "  z0 "     << inpar(FreeParIndex(z0,p),0) << std::endl;
   std::cout << "arcsin " << asin(2*kappa*(x*cos(phi)+y*sin(phi))) << " c " << kappa << " cosphi " << cos(phi) << " sinphi " << sin(phi) << " F " << x*cos(phi)+y*sin(phi) << " s " << s << std::endl; 
-  std::cout << "kappa " << kappa << " lam " << lam << " phi " << phi << " x " << x << " y " << y << " z " << z << " s " << s << " dxy " << dxy << " dz " << dz << std::endl;   
-  std::cout << "TrackHelixVertexFitter::Computedxydz done" << std::endl;*/
+  std::cout << "kappa " << kappa << " lam " << lam << " phi " << phi << " x " << x << " y " << y << " z " << z << " s " << s << " dxy " << dxy << " dz " << dz << std::endl;
+  std::cout << "dxy " << y*cos(phi)-x*sin(phi)-(1/kappa)*sin(kappa*s)*sin(kappa*s) << " " << y*cos(phi)-x*sin(phi) << " " << (1/kappa)*sin(kappa*s)*sin(kappa*s) <<std::endl;
+  std::cout << "TrackHelixVertexFitter::Computedxydz done" << std::endl;
+  */
 }
 
 TMatrixT<double> TrackHelixVertexFitter::ComputePar(TMatrixT<double> &inpar){
@@ -164,6 +183,7 @@ TMatrixT<double> TrackHelixVertexFitter::ComputePar(TMatrixT<double> &inpar){
     TMatrixT<double> TrackPar=ComputeTrackPar(inpar,p);
     for(int i=0;i<TrackParticle::NHelixPar;i++){helices(MeasuredValueIndex(i,p),0)=TrackPar(i,0);}
   }
+  //for(int i=0;i<helices.GetNrows();i++){std::cout << "helices " << helices(i,0) << std::endl;}
   return helices;
 }
 
@@ -177,6 +197,7 @@ TMatrixT<double> TrackHelixVertexFitter::ComputeTrackPar(TMatrixT<double> &inpar
   helix(TrackParticle::phi,0)=phi;
   helix(TrackParticle::dxy,0)=dxy;
   helix(TrackParticle::dz,0)=dz;
+  //for(int i=0;i<helix.GetNrows();i++){std::cout << "helix " << helix(i,0) << std::endl;}
   return helix;
 }
 

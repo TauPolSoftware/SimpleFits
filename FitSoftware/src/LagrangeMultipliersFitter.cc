@@ -50,11 +50,17 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixTSym<double> V_D_inv=V_alpha0;
   V_D_inv.Similarity(D);
   double det = V_D_inv.Determinant();
+  std::cout << "LagrangeMultipliersFitter::ApplyLagrangianConstraints " << det << std::endl;
   TDecompBK Inverter(V_D_inv);
+  if(fabs(det)>1e40){
+    std::cout << "Fit failed: unable to invert SYM gain matrix LARGE Determinant" << det << " \n" << std::endl;
+    return false;
+  }
   if(!Inverter.Decompose()){
     std::cout << "Fit failed: unable to invert SYM gain matrix " << det << " \n" << std::endl;
     return false;
   }
+  std::cout << "LagrangeMultipliersFitter::ApplyLagrangianConstraints" << std::endl;
   V_D=Inverter.Invert();
 
   // solve equations
@@ -96,6 +102,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   chi2=Curentchi2;  
   //set delta
   delta=Currentdelta;
+  std::cout << "LagrangeMultipliersFitter Chi^2 " << chi2 << " delta " << Currentdelta << std::endl; 
   //correct finPar to new stepsize
   par=convertToVector(alpha_s);
   return true;
