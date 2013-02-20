@@ -2,11 +2,12 @@
 #include "Validation/EventGenerator/interface/PdtPdgMini.h"
 #include <iostream>
 
-TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::vector<LorentzVectorParticle> particles,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau):
+TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,std::vector<LorentzVectorParticle> particles,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau):
   LagrangeMultipliersFitter(),
   MultiProngTauSolver(mtau),
   mtau_c(mtau),
-  particles_(particles)
+  particles_(particles),
+  ambiguity_(ambiguity)
 {
   std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter" << std::endl;
   isconfigured=false;
@@ -55,33 +56,34 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity_,std::
   par.ResizeTo(npar);
   par=par_0;
   // Check if Tau Direction is unphysical and if nessicary set the starting point to Theta_{GJ-Max} 
-  /*
+  
     TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
     double phi(par(tau_phi)),theta(par(tau_theta));
     if(SetTauDirectionatThetaGJMax(a1,theta,phi)){
       std::cout <<  "resetting phi and theta" << std::endl;
-      TLorentzVector Tau1,Tau2,nu1,nu2;
+      TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
       TVector3 TauDir; TauDir.SetMagThetaPhi(1.0,theta,phi);
-      SolvebyRotation(TauDir,a1,Tau1,Tau2,nu1,nu2);
+      SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_plus,nu_minus);
       par(tau_phi)=phi;
       par(tau_theta)=theta;
       std::cout << "ambiguity: " << ambiguity << std::endl;
-      if(ambiguity==SelectedKinematicDecay::PlusSolution){
-	nu1.Print();
-	par(nu_px)=nu1.Px();
-	par(nu_py)=nu1.Py();
-	par(nu_pz)=nu1.Pz();
+      if(ambiguity==plus){
+	nu_plus.Print();
+	par(nu_px)=nu_plus.Px();
+	par(nu_py)=nu_plus.Py();
+	par(nu_pz)=nu_plus.Pz();
       }
-      if(ambiguity==SelectedKinematicDecay::MinusSolution){
-	nu2.Print();
-	par(nu_px)=nu2.Px();
-        par(nu_py)=nu2.Py();
-        par(nu_pz)=nu2.Pz();
+      if(ambiguity==minus){
+	nu_minus.Print();
+	par(nu_px)=nu_minus.Px();
+        par(nu_py)=nu_minus.Py();
+        par(nu_pz)=nu_minus.Pz();
       }
-      }*/
+    }
   isconfigured=true;  
   std::cout << "TauA1NuConstrainedFitter::TauA1NuConstrainedFitter done M_{a1} " << par(a1_m) << std::endl;
 }
+
 
 TMatrixT<double> TauA1NuConstrainedFitter::ComputeInitalPar(TMatrixT<double> &inpar){
   TMatrixT<double> outpar(nexpandedpar,1);
@@ -183,9 +185,9 @@ TVectorD TauA1NuConstrainedFitter::Value(TVectorD &v){
   TLorentzVector a1_d=a1;
   TLorentzVector nu_d=nu;
   double phi(v(tau_phi)),theta(v(tau_theta));
-  //TLorentzVector Tau1,Tau2,nu1,nu2;
-  //TVector3 TauDir; TauDir.SetMagThetaPhi(1.0,theta,phi);
-  //  SolvebyRotation(TauDir,a1,Tau1,Tau2,nu1,nu2,false);
+  TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
+  TVector3 TauDir; TauDir.SetMagThetaPhi(1.0,theta,phi);
+  SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_plus,nu_minus,false);
   a1.RotateZ(-phi);
   a1.RotateY(-theta);
   nu.RotateZ(-phi);
@@ -193,11 +195,18 @@ TVectorD TauA1NuConstrainedFitter::Value(TVectorD &v){
   TLorentzVector nufixed(-a1.Px(),-a1.Py(),nu.Pz(),sqrt(a1.Pt()*a1.Pt()+nu.Pz()*nu.Pz()));
   TLorentzVector tau=a1+nufixed;
   TVectorD res(3);
-  res(0) = tau.M2()-mtau_c*mtau_c;
+  if(ConstraintMode==PzConstraint && ambiguity_==minus){ res(0) = nu_d.Pz()-nu_minus.Pz();}
+  if(ConstraintMode==PzConstraint && ambiguity_==plus){  res(0) = nu_d.Pz()-nu_plus.Pz();}
+  else{res(0) = tau.M2()-mtau_c*mtau_c;}
   res(1) = a1.Px()+nu.Px();
   res(2) = a1.Py()+nu.Py();
   return res;
 }
 
-
-
+bool TauA1NuConstrainedFitter::Fit(){
+  TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
+  double phi(par(tau_phi)),theta(par(tau_theta));
+  if(MultiProngTauSolver::SetTauDirectionatThetaGJMax(a1,theta,phi)) ConstraintMode=MassConstraint;
+  else ConstraintMode=PzConstraint;
+  return LagrangeMultipliersFitter::Fit();
+}

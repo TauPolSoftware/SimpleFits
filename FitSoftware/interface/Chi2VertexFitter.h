@@ -13,7 +13,6 @@ class  Chi2VertexFitter : public TrackHelixVertexFitter {
   virtual bool Fit();
 
  private:   
-  ROOT::Minuit2::FunctionMinimum FindMinimum(ROOT::Minuit2::FCNBase &updator,ROOT::Minuit2::FunctionMinimum min);
   double nsigma;
 };
 #endif
