@@ -50,7 +50,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixTSym<double> V_D_inv=V_alpha0;
   V_D_inv.Similarity(D);
   double det = V_D_inv.Determinant();
-  std::cout << "LagrangeMultipliersFitter::ApplyLagrangianConstraints " << det << std::endl;
+  //std::cout << "LagrangeMultipliersFitter::ApplyLagrangianConstraints " << det << std::endl;
   TDecompBK Inverter(V_D_inv);
   if(fabs(det)>1e40){
     std::cout << "Fit failed: unable to invert SYM gain matrix LARGE Determinant" << det << " \n" << std::endl;
@@ -60,7 +60,6 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
     std::cout << "Fit failed: unable to invert SYM gain matrix " << det << " \n" << std::endl;
     return false;
   }
-  std::cout << "LagrangeMultipliersFitter::ApplyLagrangianConstraints" << std::endl;
   V_D=Inverter.Invert();
 
   // solve equations
@@ -102,7 +101,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   chi2=Curentchi2;  
   //set delta
   delta=Currentdelta;
-  std::cout << "LagrangeMultipliersFitter Chi^2 " << chi2 << " delta " << Currentdelta << std::endl; 
+  //std::cout << "LagrangeMultipliersFitter Chi^2 " << chi2 << " delta " << Currentdelta << std::endl; 
   //correct finPar to new stepsize
   par=convertToVector(alpha_s);
   return true;
@@ -130,7 +129,10 @@ TMatrixD LagrangeMultipliersFitter::Derivative(){ // alway evaluated at current 
 
 
 bool LagrangeMultipliersFitter::isConverged(){
-  if(delta<1.0 && chi2prev-chi2<1.0 && chi2prev>chi2){ std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev << std::endl; return true;}
+  if(delta<1.0 && chi2prev-chi2<1.0 && chi2prev>chi2){
+    //std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev << std::endl; 
+    return true;
+  }
   return false;
 }
 

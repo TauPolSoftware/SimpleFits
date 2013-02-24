@@ -27,7 +27,6 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
   for(int i=0; i<LorentzVectorParticle::NVertex;i++){
     for(int j=0; j<LorentzVectorParticle::NVertex;j++)incov(i,j)=VertexCov(i,j);
   }
-
   int A1offset=LorentzVectorParticle::NVertex;
   int Nuoffset=LorentzVectorParticle::NLorentzandVertexPar+LorentzVectorParticle::NVertex;
   for(int i=0; i<LorentzVectorParticle::NLorentzandVertexPar;i++){
@@ -196,10 +195,8 @@ TVectorD TauA1NuConstrainedFitter::Value(TVectorD &v){
   TLorentzVector nu_d=nu;
   double phi(v(tau_phi)),theta(v(tau_theta));
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
-  theta=2.45608; phi=-0.938764; //Fix Me (MC Test)
   TVector3 TauDir; TauDir.SetMagThetaPhi(1.0,theta,phi);
   SolvebyRotation(TauDir,a1_d,Tau_plus,Tau_minus,nu_plus,nu_minus,false);
-
   a1.RotateZ(-phi);
   a1.RotateY(-theta);
   nu.RotateZ(-phi);

@@ -108,10 +108,10 @@ LorentzVectorParticle MultiProngTauSolver::EstimateNu(LorentzVectorParticle &a1,
   par(LorentzVectorParticle::vx,0)=a1.Parameter(LorentzVectorParticle::vx);
   par(LorentzVectorParticle::vy,0)=a1.Parameter(LorentzVectorParticle::vy);
   par(LorentzVectorParticle::vz,0)=a1.Parameter(LorentzVectorParticle::vz);
-  par(LorentzVectorParticle::px,0)=0;//nuGuess.Px(); // fix me (MC TEST)
-  par(LorentzVectorParticle::py,0)=0;//nuGuess.Py();
-  par(LorentzVectorParticle::pz,0)=0;//nuGuess.Pz();
-  par(LorentzVectorParticle::m,0) =0;//nuGuess.M();
+  par(LorentzVectorParticle::px,0)=nuGuess.Px(); 
+  par(LorentzVectorParticle::py,0)=nuGuess.Py();
+  par(LorentzVectorParticle::pz,0)=nuGuess.Pz();
+  par(LorentzVectorParticle::m,0) =nuGuess.M();
   TMatrixTSym<double> Cov(LorentzVectorParticle::NLorentzandVertexPar);
   TMatrixTSym<double> pvCov=a1.VertexCov();
   for(int i=0; i<LorentzVectorParticle::NLorentzandVertexPar; i++){
