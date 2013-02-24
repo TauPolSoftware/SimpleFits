@@ -129,7 +129,7 @@ TMatrixD LagrangeMultipliersFitter::Derivative(){ // alway evaluated at current 
 
 
 bool LagrangeMultipliersFitter::isConverged(){
-  if(delta<1.0 && chi2prev-chi2<1.0 && chi2prev>chi2){
+  if(delta<MaxDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
     //std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev << std::endl; 
     return true;
   }
