@@ -18,13 +18,11 @@
 bool Chi2VertexFitter::Fit(){
   if(isFit==true) return true;// do not refit
   if(!isConfigure) return false; // do not fit if configuration failed
-  std::cout << "Chi2VertexFitter::Fit ready to start" << std::endl;
   ChiSquareFunctionUpdator updator(this);
   ROOT::Minuit2::MnUserParameters MnPar;
   for(int i=0;i<par.GetNrows();i++){
     TString name=FreeParName(i);
     // if not limited (vhigh <= vlow)
-    std::cout << "Adding Parameter " << i << " name " << name << " " << par(i,0) << std::endl; 
     MnPar.Add(name.Data(),par(i,0),sqrt(fabs(parcov(i,i))),par(i,0)-nsigma*sqrt(fabs(parcov(i,i))),par(i,0)+nsigma*sqrt(fabs(parcov(i,i))));
   }
 
@@ -39,9 +37,8 @@ bool Chi2VertexFitter::Fit(){
     if(i==max) return false;
     min = minimize(i*numberofcalls,tolerance);
   }
-  std::cout <<  "EDM " << min.Edm() << " - required EDM " << edmMin << std::endl;
-  if(min.IsAboveMaxEdm()){std::cout << "Found Vertex that is above EDM " << std::endl; return false;}
   // give return flag based on status
+  if(min.IsAboveMaxEdm()){std::cout << "Found Vertex that is above EDM " << std::endl; return false;}
   if(!min.IsValid()){
     std::cout << "Chi2VertexFitter::Fit(): Failed min.IsValid()" << std::endl; 
     if(!min.HasValidParameters()){std::cout << "Chi2VertexFitter::Fit(): Failed min.HasValidParameters()" << std::endl; }
@@ -52,12 +49,10 @@ bool Chi2VertexFitter::Fit(){
   }
 
   // Get output parameters
-  for(int i=0;i<par.GetNrows();i++){ par(i,0)=min.UserParameters().Value(i); std::cout << "par " << par(i,0) << std::endl;}
+  for(int i=0;i<par.GetNrows();i++){ par(i,0)=min.UserParameters().Value(i);}
   // Get output covariance
   for(int i=0;i<par.GetNrows();i++){
-    std::cout << "cov" << std::endl;
-    for(int j=0;j<par.GetNrows();j++){parcov(i,j)=min.UserCovariance()(i,j); std::cout << parcov(i,j) << " ";}
-    std::cout << std::endl;
+    for(int j=0;j<par.GetNrows();j++){parcov(i,j)=min.UserCovariance()(i,j);}
   }
 
   isFit=true;

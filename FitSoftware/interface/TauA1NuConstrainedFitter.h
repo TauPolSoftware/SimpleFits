@@ -10,15 +10,14 @@
 
 class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiProngTauSolver{
  public:
-  TauA1NuConstrainedFitter(unsigned int ambiguity,std::vector<LorentzVectorParticle> particles,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau);
+  TauA1NuConstrainedFitter(unsigned int ambiguity,LorentzVectorParticle A1,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau);
   virtual ~TauA1NuConstrainedFitter(){};
 
-  enum Pars{tau_phi=0,tau_theta,a1_px,a1_py,a1_pz,a1_m,nu_px,nu_py,nu_pz,npar,norigpar=13};
+  enum Pars{tau_phi=0,tau_theta,a1_px,a1_py,a1_pz,a1_m,nu_px,nu_py,nu_pz,npar};
   enum ExpandedPars{a1_vx=9,a1_vy,a1_vz,nexpandedpar};
+  enum OrignialPars{norigpar=13};
   enum Constraints{MassConstraint,PzConstraint};
-  enum Ambiguity{zero,minus,plus};
 
-  virtual bool Fit();
   virtual double NConstraints(){return 3;}
   virtual double NDF(){return 0;}
   virtual int    NDaughters(){return 2;}
@@ -30,7 +29,8 @@ class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiP
   virtual TVectorD Value(TVectorD &v);
     
  private:
-  static TMatrixT<double> ComputeInitalPar(TMatrixT<double> &inpar);
+  static TMatrixT<double> ComputeInitalExpPar(TMatrixT<double> &inpar);
+  static TMatrixT<double> ComputeExpParToPar(TMatrixT<double> &inpar);
   static TMatrixT<double> ComputeNuLorentzVectorPar(TMatrixT<double> &inpar);
   static TMatrixT<double> ComputeA1LorentzVectorPar(TMatrixT<double> &inpar);
   static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);

@@ -47,19 +47,20 @@ TrackHelixVertexFitter::TrackHelixVertexFitter(std::vector<TrackParticle> &parti
     parcov(FreeParIndex(phi0,p),FreeParIndex(phi0,p))       = cov(MeasuredValueIndex(TrackParticle::phi,p),MeasuredValueIndex(TrackParticle::phi,p));
   }
   isConfigure=true;
+  ////////////////////////////////////////////////////////////////
   // debug statements
+  /*
   for(int i=0;i<val.GetNrows();i++) std::cout << "input Val " << val(i,0) << " " << TrackParticle::Name(i%TrackParticle::NHelixPar) << std::endl;
   for(int i=0;i<cov.GetNrows();i++){
     for(int j=0;j<cov.GetNrows();j++)  std::cout << cov(i,j) << " ";
     std::cout << std::endl;
   }
-  /*
   for(int i=0;i<par.GetNrows();i++) std::cout << "input Par " << par(i,0) << " " <<  FreeParName(i) << std::endl;
   for(int i=0;i<parcov.GetNrows();i++){
     for(int j=0;j<parcov.GetNrows();j++)  std::cout << parcov(i,j) << " ";
     std::cout << std::endl;
     }*/
-  //
+  ////////////////////////////////////////////////////////////////
 }
 
 TrackHelixVertexFitter::~TrackHelixVertexFitter(){}
@@ -69,8 +70,6 @@ double TrackHelixVertexFitter::UpdateChisquare(TMatrixT<double> inpar){
   TMatrixT<double> dalpha=vprime-val;
   TMatrixT<double> dalphaT=dalpha;  dalphaT.T();
   TMatrixT<double> chisquare=dalphaT*(cov_inv*dalpha);
-  //std::cout << "Chi2: " << chisquare(0,0) << std::endl;
-  //for(int i=0;i<val.GetNrows();i++){ std::cout << TrackParticle::Name(i%TrackParticle::NHelixPar) << "vprime " << vprime(i,0) << " v " << val(i,0) << " delta " << dalpha(i,0) << " cov " << cov(i,i) << " chi2 " << pow(dalpha(i,0),2.0)/cov(i,i) << std::endl; }
   return chisquare(0,0);
 }
 
@@ -183,7 +182,6 @@ TMatrixT<double> TrackHelixVertexFitter::ComputePar(TMatrixT<double> &inpar){
     TMatrixT<double> TrackPar=ComputeTrackPar(inpar,p);
     for(int i=0;i<TrackParticle::NHelixPar;i++){helices(MeasuredValueIndex(i,p),0)=TrackPar(i,0);}
   }
-  //for(int i=0;i<helices.GetNrows();i++){std::cout << "helices " << helices(i,0) << std::endl;}
   return helices;
 }
 
@@ -197,7 +195,6 @@ TMatrixT<double> TrackHelixVertexFitter::ComputeTrackPar(TMatrixT<double> &inpar
   helix(TrackParticle::phi,0)=phi;
   helix(TrackParticle::dxy,0)=dxy;
   helix(TrackParticle::dz,0)=dz;
-  //for(int i=0;i<helix.GetNrows();i++){std::cout << "helix " << helix(i,0) << std::endl;}
   return helix;
 }
 
