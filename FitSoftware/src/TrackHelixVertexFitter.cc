@@ -170,7 +170,6 @@ void TrackHelixVertexFitter::Computedxydz(TMatrixT<double> &inpar,int p,double &
             << "  z0 "     << inpar(FreeParIndex(z0,p),0) << std::endl;
   std::cout << "arcsin " << asin(2*kappa*(x*cos(phi)+y*sin(phi))) << " c " << kappa << " cosphi " << cos(phi) << " sinphi " << sin(phi) << " F " << x*cos(phi)+y*sin(phi) << " s " << s << std::endl; 
   std::cout << "kappa " << kappa << " lam " << lam << " phi " << phi << " x " << x << " y " << y << " z " << z << " s " << s << " dxy " << dxy << " dz " << dz << std::endl;
-  std::cout << "dxy " << y*cos(phi)-x*sin(phi)-(1/kappa)*sin(kappa*s)*sin(kappa*s) << " " << y*cos(phi)-x*sin(phi) << " " << (1/kappa)*sin(kappa*s)*sin(kappa*s) <<std::endl;
   std::cout << "TrackHelixVertexFitter::Computedxydz done" << std::endl;
   */
 }

@@ -16,8 +16,8 @@ class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiP
   enum Pars{tau_phi=0,tau_theta,a1_px,a1_py,a1_pz,a1_m,nu_px,nu_py,nu_pz,npar};
   enum ExpandedPars{a1_vx=9,a1_vy,a1_vz,nexpandedpar};
   enum OrignialPars{norigpar=13};
-  enum Constraints{MassConstraint,PzConstraint};
 
+  virtual bool Fit();
   virtual double NConstraints(){return 3;}
   virtual double NDF(){return 0;}
   virtual int    NDaughters(){return 2;}
@@ -35,7 +35,7 @@ class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiP
   static TMatrixT<double> ComputeA1LorentzVectorPar(TMatrixT<double> &inpar);
   static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
   void UpdateExpandedPar();
-  void SetFitPar();
+  void CovertParToObjects(TVectorD &v,TLorentzVector &a1,TLorentzVector &nu,double &phi,double &theta,TVector3 &TauDir);
 
   double mtau_c;
   TMatrixT<double> exppar;

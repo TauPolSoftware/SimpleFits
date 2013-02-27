@@ -56,18 +56,19 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
   // set up inital point for fit (cov handled in Fit() function)
   par.ResizeTo(npar);
   par=par_0;
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Check if Tau Direction is unphysical and if nessicary set the starting point to Theta_{GJ-Max} 
   /*
   TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
   double phi(par(tau_phi)),theta(par(tau_theta));
-  if(SetTauDirectionatThetaGJMax(a1,theta,phi,0.95)){
+  if(SetTauDirectionatThetaGJMax(a1,theta,phi,1/sqrt(2.0))){
     std::cout <<  "resetting phi and theta" << std::endl;
     TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
     TVector3 TauDir; TauDir.SetMagThetaPhi(1.0,theta,phi);
     SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_plus,nu_minus);
     par(tau_phi)=phi;
     par(tau_theta)=theta;
-    std::cout << "ambiguity: " << ambiguity << std::endl;
     if(ambiguity==plus){
       nu_plus.Print();
       par(nu_px)=nu_plus.Px();
@@ -79,8 +80,8 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
       par(nu_px)=nu_minus.Px();
       par(nu_py)=nu_minus.Py();
       par(nu_pz)=nu_minus.Pz();
-      }
-      }
+    }
+  }
   */
   isconfigured=true;  
 }
@@ -189,13 +190,13 @@ LorentzVectorParticle TauA1NuConstrainedFitter::GetMother(){
 }
 
 TVectorD TauA1NuConstrainedFitter::Value(TVectorD &v){
-  TLorentzVector a1(v(a1_px),v(a1_py),v(a1_pz),sqrt(v(a1_m)*v(a1_m)+v(a1_px)*v(a1_px)+v(a1_py)*v(a1_py)+v(a1_pz)*v(a1_pz)));
-  TLorentzVector nu(v(nu_px),v(nu_py),v(nu_pz),sqrt(v(nu_px)*v(nu_px)+v(nu_py)*v(nu_py)+v(nu_pz)*v(nu_pz)));
+  TLorentzVector a1,nu;
+  double phi(0),theta(0);
+  TVector3 TauDir;
+  CovertParToObjects(v,a1,nu,phi,theta,TauDir);
   TLorentzVector a1_d=a1;
   TLorentzVector nu_d=nu;
-  double phi(v(tau_phi)),theta(v(tau_theta));
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
-  TVector3 TauDir; TauDir.SetMagThetaPhi(1.0,theta,phi);
   SolvebyRotation(TauDir,a1_d,Tau_plus,Tau_minus,nu_plus,nu_minus,false);
   a1.RotateZ(-phi);
   a1.RotateY(-theta);
@@ -210,5 +211,41 @@ TVectorD TauA1NuConstrainedFitter::Value(TVectorD &v){
   d(1) = a1.Px()+nu.Px();
   d(2) = a1.Py()+nu.Py();
   return d;
+}
+
+
+void TauA1NuConstrainedFitter::CovertParToObjects(TVectorD &v,TLorentzVector &a1,TLorentzVector &nu,double &phi,double &theta,TVector3 &TauDir){
+  a1=TLorentzVector(v(a1_px),v(a1_py),v(a1_pz),sqrt(v(a1_m)*v(a1_m)+v(a1_px)*v(a1_px)+v(a1_py)*v(a1_py)+v(a1_pz)*v(a1_pz)));
+  nu=TLorentzVector(v(nu_px),v(nu_py),v(nu_pz),sqrt(v(nu_px)*v(nu_px)+v(nu_py)*v(nu_py)+v(nu_pz)*v(nu_pz)));
+  phi=par(tau_phi);
+  theta=par(tau_theta);
+  TauDir.SetMagThetaPhi(1.0,theta,phi);
+}
+
+
+bool TauA1NuConstrainedFitter::Fit(){
+  ////////////////////////////////////////////
+  // Run Kicker to force +/- solution to avoid solution being stuck in the local minimum
+  if(ambiguity_==minus || ambiguity_==plus){ 
+    TLorentzVector a1,nu;
+    double phi(0),theta(0);
+    TVector3 TauDir;
+    CovertParToObjects(par,a1,nu,phi,theta,TauDir);
+    TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus,nu_correct,nu_incorrect;
+    if(ambiguity_==minus)SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_incorrect,nu_correct,false);
+    if(ambiguity_==plus)SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_correct,nu_incorrect,false);
+    nu.RotateZ(-phi);
+    nu.RotateY(-theta);
+    if(fabs(nu_incorrect.Pz()-nu.Pz())<fabs(nu_correct.Pz()-nu.Pz())){
+      double pzkicked=nu_correct.Pz()-(nu_incorrect.Pz()-nu.Pz()); // minus sign is to make the kick a reflex about the ambiguity point 
+      TLorentzVector nuKicked(nu.Px(),nu.Py(),pzkicked,sqrt(nu.Px()*nu.Px()+nu.Py()*nu.Py()+pzkicked*pzkicked));
+      nuKicked.RotateY(-theta);
+      nuKicked.RotateZ(-phi);
+      par(nu_px)=nuKicked.Px();
+      par(nu_py)=nuKicked.Py();
+      par(nu_pz)=nuKicked.Pz();
+    }
+  }
+  return LagrangeMultipliersFitter::Fit();
 }
 

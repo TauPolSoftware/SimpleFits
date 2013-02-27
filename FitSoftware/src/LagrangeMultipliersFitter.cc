@@ -210,7 +210,7 @@ TMatrixT<double>  LagrangeMultipliersFitter::ComputeVariance(){
   TMatrixT<double> DTV_DDV=DTV_DD*V_alpha0;
   TMatrixT<double> VDTV_DDV=V_alpha0*DTV_DDV;
   TMatrixT<double> CovCor=VDTV_DDV;
-  CovCor*=ScaleFactor;
+  //CovCor*=ScaleFactor;
   if(V_corr_prev.GetNrows()!=V_alpha0.GetNrows()){
     V_corr_prev.ResizeTo(V_alpha0.GetNrows(),V_alpha0.GetNrows());
     V_corr_prev=CovCor;
