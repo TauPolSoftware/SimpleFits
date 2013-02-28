@@ -47,7 +47,7 @@ bool Chi2VertexFitter::Fit(){
     if(!min.HasReachedCallLimit()){std::cout << "Chi2VertexFitter::Fit(): Failed min.HasReachedCallLimit()" << std::endl; }
     return false;
   }
-
+  chi2=min.Fval();
   // Get output parameters
   for(int i=0;i<par.GetNrows();i++){ par(i,0)=min.UserParameters().Value(i);}
   // Get output covariance

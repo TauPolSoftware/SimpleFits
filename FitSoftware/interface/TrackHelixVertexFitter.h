@@ -38,7 +38,7 @@ class TrackHelixVertexFitter{
    TMatrixT<double> par;
    TMatrixTSym<double> parcov;
    virtual TString FreeParName(int Par);
-
+   double chi2, ndf;
  private:
    static TMatrixT<double> ComputePar(TMatrixT<double> &inpar);
    static TMatrixT<double> ComputeTrackPar(TMatrixT<double> &inpar,int p=0);
@@ -55,7 +55,6 @@ class TrackHelixVertexFitter{
    static void ParSizeInfo(TMatrixT<double> &inpar, int &np, int &parsize,bool hasextras=0);
 
    std::vector<TrackParticle> particles;
-   double chi2, ndf;
    TMatrixT<double> val;
    TMatrixTSym<double> cov;
    TMatrixTSym<double> cov_inv;

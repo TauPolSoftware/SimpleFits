@@ -59,10 +59,10 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Check if Tau Direction is unphysical and if nessicary set the starting point to Theta_{GJ-Max} 
-  /*
+  
   TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
   double phi(par(tau_phi)),theta(par(tau_theta));
-  if(SetTauDirectionatThetaGJMax(a1,theta,phi,1/sqrt(2.0))){
+  if(SetTauDirectionatThetaGJMax(a1,theta,phi,0.95)){
     std::cout <<  "resetting phi and theta" << std::endl;
     TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
     TVector3 TauDir; TauDir.SetMagThetaPhi(1.0,theta,phi);
@@ -82,7 +82,7 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
       par(nu_pz)=nu_minus.Pz();
     }
   }
-  */
+  
   isconfigured=true;  
 }
 
