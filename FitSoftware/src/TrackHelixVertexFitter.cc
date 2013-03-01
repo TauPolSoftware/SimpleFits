@@ -153,15 +153,16 @@ void TrackHelixVertexFitter::Computedxydz(TMatrixT<double> &inpar,int p,double &
   z=inpar(FreeParIndex(z0,p),0);
   double v=(2.0*kappa*(x*cos(phi)+y*sin(phi)));
   double arcsinv=0;
-  if(v>=1.0){arcsinv=TMath::Pi()/2+fabs(pow(v,10)-1.0);}
-  else if(v<=-1.0){arcsinv=-TMath::Pi()/2-fabs(pow(v,20)-1.0);}
+  std::cout << "v " << v << std::endl;
+  if(v>=1.0){arcsinv=TMath::Pi()/2;}
+  else if(v<=-1.0){arcsinv=-TMath::Pi()/2;}
   else{arcsinv=asin(v);}
   s=1.0/(2.0*kappa)*arcsinv;//asin(2.0*kappa*(x*cos(phi)+y*sin(phi)));
   dxy=y*cos(phi)-x*sin(phi)-(1/kappa)*sin(kappa*s)*sin(kappa*s);
   dz=z-s*tan(lam);
   ///////////////////////////////
   // debug
-  /*
+  /*  
   std::cout << "kappa0 "   << inpar(FreeParIndex(kappa0,p),0)
             << " lambda0 " << inpar(FreeParIndex(lambda0,p),0)
             << " phi0 "    << inpar(FreeParIndex(phi0,p),0)
@@ -169,7 +170,7 @@ void TrackHelixVertexFitter::Computedxydz(TMatrixT<double> &inpar,int p,double &
             << "  y0 "     << inpar(FreeParIndex(y0,p),0)
             << "  z0 "     << inpar(FreeParIndex(z0,p),0) << std::endl;
   std::cout << "arcsin " << asin(2*kappa*(x*cos(phi)+y*sin(phi))) << " c " << kappa << " cosphi " << cos(phi) << " sinphi " << sin(phi) << " F " << x*cos(phi)+y*sin(phi) << " s " << s << std::endl; 
-  std::cout << "kappa " << kappa << " lam " << lam << " phi " << phi << " x " << x << " y " << y << " z " << z << " s " << s << " dxy " << dxy << " dz " << dz << std::endl;
+  std::cout << "kappa " << kappa << " lam " << lam << " phi " << phi << " x " << x << " y " << y << " z " << z << " s " << s <<  " v " << v << " dxy " << dxy << " dz " << dz << std::endl;
   std::cout << "TrackHelixVertexFitter::Computedxydz done" << std::endl;
   */
 }
