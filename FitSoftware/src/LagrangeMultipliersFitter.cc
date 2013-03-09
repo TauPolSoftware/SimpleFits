@@ -32,6 +32,7 @@ bool LagrangeMultipliersFitter::Fit(){
     }
     if(isConverged()) break;
   }
+  ComputeVariance();
   return true;
 }
 

@@ -121,7 +121,7 @@ LorentzVectorParticle MultiProngTauSolver::EstimateNu(LorentzVectorParticle &a1,
     }
     double v=0;
     if(i==LorentzVectorParticle::px || i==LorentzVectorParticle::py || i==LorentzVectorParticle::pz) v=10*par(i,0)*par(i,0);
-    if(v<10000.0) v=10000.0;
+    if(v<1000.0) v=1000.0; // try lowing to test impact
     Cov(i,i)+=v;
   }
   return LorentzVectorParticle(par,Cov,PDGInfo::nu_tau,0,a1.BField());
