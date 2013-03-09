@@ -8,7 +8,7 @@
 
 class  MultiProngTauSolver {
  public:
-  enum Ambiguity{zero,minus,plus};
+  enum Ambiguity{zero,minus,plus,NAmbiguity};
 
   // constructor and Destructor
   MultiProngTauSolver(double mtau_):mtau(mtau_){};

@@ -153,7 +153,7 @@ void TrackHelixVertexFitter::Computedxydz(TMatrixT<double> &inpar,int p,double &
   z=inpar(FreeParIndex(z0,p),0);
   double v=(2.0*kappa*(x*cos(phi)+y*sin(phi)));
   double arcsinv=0;
-  std::cout << "v " << v << std::endl;
+  //std::cout << "v " << v << std::endl;
   if(v>=1.0){arcsinv=TMath::Pi()/2;}
   else if(v<=-1.0){arcsinv=-TMath::Pi()/2;}
   else{arcsinv=asin(v);}
