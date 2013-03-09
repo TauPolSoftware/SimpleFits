@@ -10,6 +10,8 @@ class  TrackTools {
  public:
   TrackTools(){};
   virtual ~TrackTools(){};
+  static TVector3 PropogateToXPosition(TrackParticle &p,double &x);
+  static TVector3 PropogateToYPosition(TrackParticle &p,double &y);
   static TVector3 PropogateToZPosition(TrackParticle &p,double &z);
 };
 #endif
