@@ -1,4 +1,5 @@
 #include "SimpleFits/FitSoftware/interface/TrackTools.h"
+#include "SimpleFits/FitSoftware/interface/TrackHelixVertexFitter.h"
 #include "math.h"
 #include <iostream>
 
@@ -39,4 +40,21 @@ TVector3 TrackTools::PropogateToZPosition(TrackParticle &p,double &z){
   double x=r*sin(2.0*s*kappa+phi)-(r+dxy)*sin(phi);
   double y=-r*cos(2.0*s*kappa+phi)+(r+dxy)*cos(phi);
   return TVector3(x,y,z);
+}
+
+
+LorentzVectorParticle TrackTools::LorentzParticleAtPosition(TrackParticle &p,TVector3 &v){
+  TMatrixT<double>    FreePar(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::NExtraPar+TrackHelixVertexFitter::MassOffSet,1);
+  TMatrixTSym<double> FreeParCov(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::NExtraPar+TrackHelixVertexFitter::MassOffSet);
+  FreePar(TrackHelixVertexFitter::x0,0)=v.X();
+  FreePar(TrackHelixVertexFitter::y0,0)=v.Y();
+  FreePar(TrackHelixVertexFitter::z0,0)=v.Z();
+  FreePar(TrackHelixVertexFitter::kappa0,0)=p.Parameter(TrackParticle::kappa);
+  FreePar(TrackHelixVertexFitter::lambda0,0)=p.Parameter(TrackParticle::lambda);
+  FreePar(TrackHelixVertexFitter::phi0,0)=p.Parameter(TrackParticle::phi);
+  FreePar(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::MassOffSet,0)=p.Mass();
+  FreePar(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::BField0,0)=p.BField();
+  TMatrixT<double>    LVPar=TrackHelixVertexFitter::ComputeLorentzVectorPar(FreePar);
+  TMatrixTSym<double> LVCov=ErrorMatrixPropagator::PropogateError(&TrackHelixVertexFitter::ComputeLorentzVectorPar,FreePar,FreeParCov);
+  return LorentzVectorParticle(LVPar,LVCov,p.PDGID(),p.Charge(),p.BField());
 }

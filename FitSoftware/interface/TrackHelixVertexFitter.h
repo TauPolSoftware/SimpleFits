@@ -32,7 +32,7 @@ class TrackHelixVertexFitter{
    virtual TMatrixTSym<double> GetVertexError();
 
    static void Computedxydz(TMatrixT<double> &inpar,int particle,double &kappa,double &lam,double &phi,double &x,double &y,double &z,double &s,double &dxy,double &dz);
-
+   static TMatrixT<double> ComputeLorentzVectorPar(TMatrixT<double> &inpar);
  protected:
    bool isFit,isConfigure;
    TMatrixT<double> par;
@@ -42,7 +42,6 @@ class TrackHelixVertexFitter{
  private:
    static TMatrixT<double> ComputePar(TMatrixT<double> &inpar);
    static TMatrixT<double> ComputeTrackPar(TMatrixT<double> &inpar,int p=0);
-   static TMatrixT<double> ComputeLorentzVectorPar(TMatrixT<double> &inpar);
    static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
 
    static int MeasuredValueIndex(int TrackPar,int Particle){
