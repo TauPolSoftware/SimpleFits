@@ -22,6 +22,8 @@ class  MultiProngTauSolver {
   bool SetTauDirectionatThetaGJMax(TLorentzVector a1, double &theta,double &phi,double scale=1.0);  
   static double ThetaGJMax(TLorentzVector a1, double Mtau);
   LorentzVectorParticle EstimateNu(LorentzVectorParticle &a1,TVector3 pv,int ambiguity,TLorentzVector &tau);
+
+  static TMatrixT<double> RotateToTauFrame(TMatrixT<double> &inpar);
  private: 
   double mtau;
 };

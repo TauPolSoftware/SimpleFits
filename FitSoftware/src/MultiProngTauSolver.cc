@@ -126,3 +126,16 @@ LorentzVectorParticle MultiProngTauSolver::EstimateNu(LorentzVectorParticle &a1,
   }
   return LorentzVectorParticle(par,Cov,PDGInfo::nu_tau,0,a1.BField());
 } 
+
+TMatrixT<double> MultiProngTauSolver::RotateToTauFrame(TMatrixT<double> &inpar){
+  TMatrixT<double> outpar(3,1);
+  TVector3 res(inpar(0,0),inpar(1,0),inpar(2,0));
+  double phi=inpar(3,0);
+  double theta=inpar(4,0);
+  res.RotateZ(-phi);
+  res.RotateY(-theta);
+  outpar(0,0)=res.X();
+  outpar(1,0)=res.Y();
+  outpar(2,0)=res.Z();
+  return outpar;
+}
