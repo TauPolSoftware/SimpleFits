@@ -3,11 +3,12 @@
 #include <iostream>
 
 LagrangeMultipliersFitter::LagrangeMultipliersFitter():
+  isconfigured(false),
+  isFit(false),
   epsilon_(0.00001),
   weight_(1.0),
   MaxDelta_(0.1),
   nitermax_(100),
-  isFit(false),
   chi2(1e10),
   D(1,1),
   V_D(1,1)
@@ -16,13 +17,14 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
 }
 
 bool LagrangeMultipliersFitter::Fit(){
+  if(cov.GetNrows()!=par_0.GetNrows()){
+    // set cov to cov_0 until value is computed
+    cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
+    cov=cov_0;
+  }
   if(!isconfigured) return false;
   if(isFit)return isConverged();
   isFit=true;
-  // set cov to cov_0 until value is computed
-  cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
-  cov=cov_0;
-
   niter=0;
   for(niter=0;niter<=nitermax_;niter++){
     bool passed=ApplyLagrangianConstraints();

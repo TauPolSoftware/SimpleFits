@@ -33,6 +33,9 @@ class LagrangeMultipliersFitter{
   virtual std::vector<LorentzVectorParticle> GetReFitDaughters()=0;
   virtual LorentzVectorParticle GetMother()=0;
 
+  static TVectorT<double> convertToVector(TMatrixT<double> M);
+  static TMatrixT<double> convertToMatrix(TVectorT<double> V);
+
  protected:
   virtual TVectorD Value(TVectorD &v)=0;
 
@@ -41,12 +44,11 @@ class LagrangeMultipliersFitter{
   TMatrixTSym<double> cov_0; //covariance matrix for linearization point (corresponding to par_0) 
   TMatrixTSym<double> cov; // current covariance matrix (corresponding to par) 
   bool isconfigured;
+  bool isFit;
 
  private:
   bool  ApplyLagrangianConstraints();
   TMatrixT<double> Derivative();
-  TVectorT<double> convertToVector(TMatrixT<double> M);
-  TMatrixT<double> convertToMatrix(TVectorT<double> V);
   double ChiSquare(TMatrixT<double> delta_alpha,TMatrixT<double> lambda,TMatrixT<double> D,TMatrixT<double> d);
   double ChiSquareUsingInitalPoint(TMatrixT<double> alpha,TMatrixT<double> lambda);
   double ConstraintDelta(TVectorT<double> par);
@@ -56,7 +58,6 @@ class LagrangeMultipliersFitter{
   double epsilon_,weight_,MaxDelta_,nitermax_;
 
   // Fit variables
-  bool isFit;
   double chi2,chi2prev,delta,niter;
 
   // covariances and derivatives info

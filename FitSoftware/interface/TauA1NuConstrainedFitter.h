@@ -10,7 +10,7 @@
 
 class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiProngTauSolver{
  public:
-  TauA1NuConstrainedFitter(unsigned int ambiguity,LorentzVectorParticle A1,TVector3 PVertex, TMatrixTSym<double> VertexCov,double mtau);
+  TauA1NuConstrainedFitter(unsigned int ambiguity,LorentzVectorParticle A1,TVector3 PVertex, TMatrixTSym<double> VertexCov);
   virtual ~TauA1NuConstrainedFitter(){};
 
   enum Pars{tau_phi=0,tau_theta,a1_px,a1_py,a1_pz,a1_m,nu_px,nu_py,nu_pz,npar};
@@ -35,13 +35,17 @@ class TauA1NuConstrainedFitter : public LagrangeMultipliersFitter, public MultiP
   static TMatrixT<double> ComputeA1LorentzVectorPar(TMatrixT<double> &inpar);
   static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
   void UpdateExpandedPar();
-  void CovertParToObjects(TVectorD &v,TLorentzVector &a1,TLorentzVector &nu,double &phi,double &theta,TVector3 &TauDir);
+  static void CovertParToObjects(TVectorD &v,TLorentzVector &a1,TLorentzVector &nu,double &phi,double &theta,TVector3 &TauDir);
 
-  double mtau_c;
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;
   std::vector<LorentzVectorParticle> particles_;
   int ConstraintMode;
   unsigned int ambiguity_;
+
+  void SolveAmbiguityAnalytically();
+  static TMatrixT<double> FindThetaGJMax(TMatrixT<double> &inpar);
+  static TMatrixT<double> SetThetaGJMax(TMatrixT<double> &inpar);
+
 };
 #endif

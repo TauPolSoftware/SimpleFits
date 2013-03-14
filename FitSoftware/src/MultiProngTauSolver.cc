@@ -1,6 +1,7 @@
 #include "SimpleFits/FitSoftware/interface/MultiProngTauSolver.h"
 #include <iostream>
 #include "TMatrixTSym.h"
+
 void MultiProngTauSolver::quadratic(double &x_plus,double &x_minus,double a, double b, double c){
   double R=b*b-4*a*c;
   if(R<0){R=0;}
@@ -10,7 +11,7 @@ void MultiProngTauSolver::quadratic(double &x_plus,double &x_minus,double a, dou
 
 void MultiProngTauSolver::AnalyticESolver(TLorentzVector &nu_plus,TLorentzVector &nu_minus,TLorentzVector A1){
   double a=(A1.Pz()*A1.Pz())/(A1.E()*A1.E())-1.0;
-  double K=(mtau*mtau-A1.M2()-2.0*A1.Pt()*A1.Pt())/(2.0*A1.E());
+  double K=(PDGInfo::tau_mass()*PDGInfo::tau_mass()-A1.M2()-2.0*A1.Pt()*A1.Pt())/(2.0*A1.E());
   double b=2.0*K*A1.Pz()/A1.E();
   double c=K*K-A1.Pt()*A1.Pt();
   double z_plus(0),z_minus(0);
@@ -20,7 +21,7 @@ void MultiProngTauSolver::AnalyticESolver(TLorentzVector &nu_plus,TLorentzVector
 }
 
 void MultiProngTauSolver::NumericalESolver(TLorentzVector &nu_plus,TLorentzVector &nu_minus,TLorentzVector A1){
-  double rmin(-100), rmax(100), step(0.01), mtau2(pow(mtau,2.0)), z1(-999), z2(-999), zmin(-999), min(9999), prev(9999);
+  double rmin(-100), rmax(100), step(0.01), mtau2(pow(PDGInfo::tau_mass(),2.0)), z1(-999), z2(-999), zmin(-999), min(9999), prev(9999);
   double z=rmin;
   TLorentzVector nu,tau;
   for(int i=0;i<=(int)(rmax-rmin)/step;i++){
@@ -70,20 +71,20 @@ void MultiProngTauSolver::SolvebyRotation(TVector3 TauDir,TLorentzVector A1, TLo
 }
 
 bool MultiProngTauSolver::SetTauDirectionatThetaGJMax(TLorentzVector a1, double &theta,double &phi,double scale){
-  double thetaGJMax =ThetaGJMax(a1,mtau);
+  double thetaGJMax =ThetaGJMax(a1);
   double dtheta=(theta-a1.Theta());
   double dphi=fmod(fabs(phi-a1.Phi()),2*TMath::Pi());if(phi<a1.Phi())dphi*=-1.0;
   double dphitheta=sqrt(dtheta*dtheta+dphi*dphi);
-  if(thetaGJMax<dphitheta){
-    theta=a1.Theta()+dtheta*(thetaGJMax/dphitheta)*scale;
-    phi=a1.Phi()+dphi*(thetaGJMax/dphitheta)*scale;
+  if(thetaGJMax<dphitheta || scale<0){
+    theta=a1.Theta()+dtheta*(thetaGJMax/dphitheta)*fabs(scale);
+    phi=a1.Phi()+dphi*(thetaGJMax/dphitheta)*fabs(scale);
     return true;
   }
   return false;
 }
 
-double MultiProngTauSolver::ThetaGJMax(TLorentzVector a1, double Mtau){
-  return asin(( Mtau*Mtau-a1.M2())/(2.0*Mtau*fabs(a1.P())));
+double MultiProngTauSolver::ThetaGJMax(TLorentzVector a1){
+  return asin(( PDGInfo::tau_mass()*PDGInfo::tau_mass()-a1.M2())/(2.0*PDGInfo::tau_mass()*fabs(a1.P())));
 }
 
 LorentzVectorParticle MultiProngTauSolver::EstimateNu(LorentzVectorParticle &a1,TVector3 pv,int ambiguity,TLorentzVector &tau){
