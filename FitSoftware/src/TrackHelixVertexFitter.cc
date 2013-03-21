@@ -139,7 +139,7 @@ TVector3 TrackHelixVertexFitter::GetVertex(){
 TMatrixTSym<double> TrackHelixVertexFitter::GetVertexError(){
   TMatrixTSym<double> c(NFreeVertexPar);
   for(unsigned int i=0;i<NFreeVertexPar;i++){
-    for(unsigned int j=0;j<NFreeVertexPar;j++){c(FreeParIndex(i,0),FreeParIndex(j,0));}
+    for(unsigned int j=0;j<NFreeVertexPar;j++){c(FreeParIndex(i,0),FreeParIndex(j,0))=parcov(FreeParIndex(i,0),FreeParIndex(j,0));}
   }
   return c;
 }
