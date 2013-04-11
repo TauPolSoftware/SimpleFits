@@ -67,7 +67,7 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
   
   TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
   double phi(par(tau_phi)),theta(par(tau_theta));
-  double scale=0.98;
+  double scale=0.999;
   if(ambiguity==zero)scale=-1.0;
   if(SetTauDirectionatThetaGJMax(a1,theta,phi,scale)){
     std::cout <<  "resetting phi and theta" << std::endl;
