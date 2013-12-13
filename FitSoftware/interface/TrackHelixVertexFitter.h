@@ -39,7 +39,8 @@ class TrackHelixVertexFitter{
    TMatrixTSym<double> parcov;
    virtual TString FreeParName(int Par);
    double chi2, ndf;
- private:
+
+   // private:
    static TMatrixT<double> ComputePar(TMatrixT<double> &inpar);
    static TMatrixT<double> ComputeTrackPar(TMatrixT<double> &inpar,int p=0);
    static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
