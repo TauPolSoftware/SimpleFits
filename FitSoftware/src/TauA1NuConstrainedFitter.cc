@@ -213,7 +213,7 @@ TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalytically(TMatrixT<d
   if(static_amb==plus)nu=nu_plus;
   else nu=nu_minus;
 
-  for(unsigned int i=0; i<outpar.GetNrows();i++){ outpar(i,0)=v(i);}
+  for(int i=0; i<outpar.GetNrows();i++){ outpar(i,0)=v(i);}
   outpar(nu_px,0)=nu.Px();                                                                                                                                                                           
   outpar(nu_py,0)=nu.Py();                                                                                                                                                                           
   outpar(nu_pz,0)=nu.Pz();      
@@ -248,7 +248,7 @@ TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalyticallywithRot(TMa
   TauDir=TVector3(sin(theta_GJMax)*cos(phiprime),sin(theta_GJMax)*sin(phiprime),cos(theta_GJMax));
   TauDir.RotateY(theta_a1);
   TauDir.RotateZ(phi_a1);
-  for(unsigned int i=0; i<outpar.GetNrows();i++) outpar(i,0)=v(i);
+  for(int i=0; i<outpar.GetNrows();i++) outpar(i,0)=v(i);
   outpar(tau_phi,0)=TauDir.Phi();
   outpar(tau_theta,0)=TauDir.Theta();
   return SolveAmbiguityAnalytically(outpar);
