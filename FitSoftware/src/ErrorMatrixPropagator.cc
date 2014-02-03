@@ -9,7 +9,7 @@ TMatrixTSym<double> ErrorMatrixPropagator::PropogateError(TMatrixT<double> (*f)(
     TMatrixT<double> ParPlusEpsilon=inPar;
     double error=sqrt(fabs(inCov(i,i)));
     double delta=epsilon;
-    if(delta*errorEpsilonRatio<error) delta=error/errorEpsilonRatio;
+    if(delta*errorEpsilonRatio>error) delta=error/errorEpsilonRatio;
     ParPlusEpsilon(i,0)+=delta;
     TMatrixT<double> vp=f(ParPlusEpsilon);
     for(int j=0;j<v.GetNrows();j++){Jacobian(i,j)=(vp(j,0)-v(j,0))/delta;}// Newtons approx.
