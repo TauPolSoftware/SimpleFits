@@ -9,7 +9,7 @@ TMatrixTSym<double> ErrorMatrixPropagator::PropogateError(TMatrixT<double> (*f)(
     TMatrixT<double> ParPlusEpsilon=inPar;
     double error=sqrt(fabs(inCov(i,i)));
     double delta=epsilon;
-    if(delta*errorEpsilonRatio>error) delta=error/errorEpsilonRatio;
+    if(fabs(delta*errorEpsilonRatio)>error && error>0) delta=fabs(error/errorEpsilonRatio);
     ParPlusEpsilon(i,0)+=delta;
     TMatrixT<double> vp=f(ParPlusEpsilon);
     for(int j=0;j<v.GetNrows();j++){Jacobian(i,j)=(vp(j,0)-v(j,0))/delta;}// Newtons approx.
@@ -27,11 +27,11 @@ TMatrixTSym<double> ErrorMatrixPropagator::PropogateError(TMatrixT<double> (*f)(
     for(int j=0;j<Jacobian.GetNcols();j++){std::cout << Jacobian(i,j) << " ";}
     std::cout << std::endl;
   }
-  TMatrixTSym<double> newCov=inCov.SimilarityT(Jacobian);
   std::cout << "ErrorMatrixPropagator::PropogateError newCov:" << std::endl;
   for(int i=0;i<newCov.GetNrows();i++){
     for(int j=0;j<newCov.GetNrows();j++){std::cout << newCov(i,j) << " ";}
     std::cout << std::endl;
-    }*/
+    }
+  */
   return newCov;
 }

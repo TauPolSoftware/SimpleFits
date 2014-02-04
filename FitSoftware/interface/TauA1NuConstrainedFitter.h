@@ -21,6 +21,7 @@ class TauA1NuConstrainedFitter : public MultiProngTauSolver{
 
   std::vector<LorentzVectorParticle> GetReFitDaughters();
   LorentzVectorParticle GetMother();
+  double GetTauRotationSignificance();
 
   bool Fit();
     
@@ -32,6 +33,7 @@ class TauA1NuConstrainedFitter : public MultiProngTauSolver{
   static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
   static TMatrixT<double> SolveAmbiguityAnalytically(TMatrixT<double> &inpar);
   static TMatrixT<double> SolveAmbiguityAnalyticallywithRot(TMatrixT<double> &inpar);
+  static TMatrixT<double> TauRot(TMatrixT<double> &inpar);
 
   void UpdateExpandedPar();
   static void CovertParToObjects(TVectorD &v,TLorentzVector &a1,TLorentzVector &nu,double &phi,double &theta,TVector3 &TauDir);
@@ -47,5 +49,6 @@ class TauA1NuConstrainedFitter : public MultiProngTauSolver{
   unsigned int ambiguity_;
 
   static  unsigned int static_amb;
+
 };
 #endif

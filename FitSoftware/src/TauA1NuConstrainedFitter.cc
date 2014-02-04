@@ -38,10 +38,12 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
       incov(i+Nuoffset,j+Nuoffset)=Nu.Covariance(i,j);
     }
   }
+
   exppar.ResizeTo(nexpandedpar,1);
   exppar=ComputeInitalExpPar(inpar);
   expcov.ResizeTo(nexpandedpar,nexpandedpar);
   expcov=ErrorMatrixPropagator::PropogateError(&TauA1NuConstrainedFitter::ComputeInitalExpPar,inpar,incov);
+
   TMatrixT<double> PAR_0(npar,1);
   par_0.ResizeTo(npar);
   cov_0.ResizeTo(npar,npar);
@@ -52,6 +54,7 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
   for(int i=0; i<npar;i++){
     for(int j=0;j<npar;j++){cov_0(i,j)=expcov(i,j);}
   }
+
   par.ResizeTo(npar);
   par=par_0;
   cov.ResizeTo(npar,npar);
@@ -188,7 +191,7 @@ bool TauA1NuConstrainedFitter::Fit(){
     return true;
   }
   // case 2 is in unphsyical region - rotate and substitue \theta_{GJ} with \theta_{GJ}^{Max} and then solve analytically
-  else if(ambiguity_==zero){
+  else if(ambiguity_==zero && !isReal){
     TMatrixT<double> par_tmp=TauA1NuConstrainedFitter::SolveAmbiguityAnalyticallywithRot(thepar);
     cov=ErrorMatrixPropagator::PropogateError(&TauA1NuConstrainedFitter::SolveAmbiguityAnalyticallywithRot,thepar,cov_0);
     for(int i=0; i<npar;i++) par(i)=par_tmp(i,0);
@@ -254,3 +257,27 @@ TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalyticallywithRot(TMa
   return SolveAmbiguityAnalytically(outpar);
 }
 
+// Return the significance of the rotation when the tau direction is in the unphysical region
+double TauA1NuConstrainedFitter::GetTauRotationSignificance(){
+  TMatrixT<double>    thepar=LagrangeMultipliersFitter::convertToMatrix(par_0);
+  TMatrixT<double> par_tmp=TauA1NuConstrainedFitter::TauRot(thepar);
+  TMatrixTSym<double> cov_tmp=ErrorMatrixPropagator::PropogateError(&TauA1NuConstrainedFitter::TauRot,thepar,cov_0);
+  if(!(cov_tmp(0,0)>0)) return -999; // return invalid value if the covariance is unphysical
+  if(par_tmp(0,0)>0)    return par_tmp(0,0)/sqrt(cov_tmp(0,0)); // return the significance if the value is in the unphysical region
+  return 0; // reutrn 0 for the rotation significance if the tau is in the physical region
+}
+
+
+TMatrixT<double> TauA1NuConstrainedFitter::TauRot(TMatrixT<double> &inpar){
+  TMatrixT<double> outpar(1,1);
+  TVectorT<double> v=LagrangeMultipliersFitter::convertToVector(inpar);
+  TLorentzVector a1,nu;
+  double phi(0),theta(0);
+  TVector3 TauDir;
+  CovertParToObjects(v,a1,nu,phi,theta,TauDir);
+  double theta_a1(a1.Theta()),phi_a1(a1.Phi()),theta_GJMax(ThetaGJMax(a1));
+  TauDir.RotateZ(-phi_a1);
+  TauDir.RotateY(-theta_a1);
+  outpar(0,0)=(TauDir.Theta()-theta_GJMax);
+  return outpar;
+}

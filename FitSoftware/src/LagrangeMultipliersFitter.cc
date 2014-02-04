@@ -229,10 +229,8 @@ double LagrangeMultipliersFitter::ConstraintDelta(TVectorT<double> par){
 
 TMatrixT<double>  LagrangeMultipliersFitter::ComputeVariance(){
   TMatrixTSym<double> V_alpha0=cov_0;
-  //  std::cout << "A " << V_D.GetNrows() << " " << V_D.GetNcols() << " " << D.GetNrows() << " " << D.GetNcols() << std::endl; V_D.Print();
   TMatrixTSym<double> VD=V_D; // use tmep variable so V_D is not over-written
   TMatrixTSym<double> DTV_DD=VD.SimilarityT(D);
-  //std::cout << "B" << std::endl;
   TMatrixT<double> DTV_DDV=DTV_DD*V_alpha0;
   TMatrixT<double> VDTV_DDV=V_alpha0*DTV_DDV;
   TMatrixT<double> CovCor=VDTV_DDV;
