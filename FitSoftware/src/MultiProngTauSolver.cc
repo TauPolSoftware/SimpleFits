@@ -2,21 +2,22 @@
 #include <iostream>
 #include "TMatrixTSym.h"
 
-void MultiProngTauSolver::quadratic(double &x_plus,double &x_minus,double a, double b, double c, bool &isReal){
+void MultiProngTauSolver::quadratic(double &x_plus,double &x_minus,double a, double b, double c, bool &isReal,const double &padding){
   double R=b*b-4*a*c;
   isReal=true;
-  if(R<0){isReal=false;}// flag cases when R<0 but compute quadratic equation with |R|    
+  if(R<fabs(padding)){isReal=false;}// flag cases when R<0 but compute quadratic equation with |R| 
+                                    // padding is added to prevent numerical problems when R is near 0 for the numerical derivatives    
   x_minus=(-b+sqrt(fabs(R)))/(2.0*a); // opposite sign is smaller
   x_plus=(-b-sqrt(fabs(R)))/(2.0*a);
 }
 
-void MultiProngTauSolver::AnalyticESolver(TLorentzVector &nu_plus,TLorentzVector &nu_minus,TLorentzVector A1,bool &isReal){
+void MultiProngTauSolver::AnalyticESolver(TLorentzVector &nu_plus,TLorentzVector &nu_minus,TLorentzVector A1,bool &isReal,const double &padding){
   double a=(A1.Pz()*A1.Pz())/(A1.E()*A1.E())-1.0;
   double K=(PDGInfo::tau_mass()*PDGInfo::tau_mass()-A1.M2()-2.0*A1.Pt()*A1.Pt())/(2.0*A1.E());
   double b=2.0*K*A1.Pz()/A1.E();
   double c=K*K-A1.Pt()*A1.Pt();
   double z_plus(0),z_minus(0);
-  quadratic(z_plus,z_minus,a,b,c,isReal);
+  quadratic(z_plus,z_minus,a,b,c,isReal,padding);
   nu_plus=TLorentzVector(-A1.Px(),-A1.Py(),z_plus,sqrt(z_plus*z_plus+A1.Pt()*A1.Pt()));
   nu_minus=TLorentzVector(-A1.Px(),-A1.Py(),z_minus,sqrt(z_minus*z_minus+A1.Pt()*A1.Pt()));
 }
@@ -46,14 +47,15 @@ void MultiProngTauSolver::NumericalESolver(TLorentzVector &nu_plus,TLorentzVecto
 }
 
 void MultiProngTauSolver::SolvebyRotation(TVector3 TauDir,TLorentzVector A1, TLorentzVector &Tau_plus,TLorentzVector &Tau_minus,
-					  TLorentzVector &nu_plus,TLorentzVector &nu_minus, bool &isReal,bool rotateback){
+					  TLorentzVector &nu_plus,TLorentzVector &nu_minus, bool &isReal,const double &padding,
+					  bool rotateback){
   TLorentzVector A1rot=A1;
   double phi(TauDir.Phi()),theta(TauDir.Theta());
   A1rot.RotateZ(-phi);
   A1rot.RotateY(-theta);
   /////////////////////////////////////////////////////
   //  NumericalESolver(nu_plus,nu_minus,A1rot); // for debugging AnalyticESolver (slow)
-  AnalyticESolver(nu_plus,nu_minus,A1rot,isReal);
+  AnalyticESolver(nu_plus,nu_minus,A1rot,isReal,padding);
   /////////////////////////////////////////////////////
   if(rotateback){
     nu_plus.RotateY(theta);
@@ -97,7 +99,7 @@ double MultiProngTauSolver::ThetaGJMax(TLorentzVector a1){
 }
 
 
-
+/*
 LorentzVectorParticle MultiProngTauSolver::EstimateNu(LorentzVectorParticle &a1,TVector3 pv,int ambiguity,TLorentzVector &tau){
   TLorentzVector lorentzA1=a1.LV();
   TVector3 sv=a1.Vertex();
@@ -139,6 +141,7 @@ LorentzVectorParticle MultiProngTauSolver::EstimateNu(LorentzVectorParticle &a1,
   }
   return LorentzVectorParticle(par,Cov,PDGInfo::nu_tau,0,a1.BField());
 } 
+*/
 
 TMatrixT<double> MultiProngTauSolver::RotateToTauFrame(TMatrixT<double> &inpar){
   TMatrixT<double> outpar(3,1);
