@@ -219,7 +219,7 @@ TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalytically(TMatrixT<d
   TLorentzVector nu_d=nu;
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
   bool isReal;
-  double padding=0.0;
+  double padding=0.125;
   SolvebyRotation(TauDir,a1_d,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal,padding,true);
   if(static_amb==plus)nu=nu_plus;
   else nu=nu_minus;
