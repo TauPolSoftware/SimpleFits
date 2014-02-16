@@ -184,6 +184,11 @@ bool TauA1NuConstrainedFitter::Fit(){
   TMatrixT<double>    thepar=LagrangeMultipliersFitter::convertToMatrix(par);
   static_amb=ambiguity_;
 
+  //check that the do product of the a1 and tau is positive, otherwise there is no information for tau direction -> use zero solution
+  if(TauDir.Dot(a1.Vect())<0){
+    isReal=false;
+  }
+
   //case 1: is real then solve analytically
   if(isReal && (ambiguity_==plus || ambiguity_==minus)){
     // popogate errors
