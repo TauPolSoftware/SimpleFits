@@ -178,7 +178,9 @@ bool TauA1NuConstrainedFitter::Fit(){
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
   TVector3 TauDir(cos(phi)*sin(theta),sin(phi)*sin(theta),cos(theta));
   bool isReal;
-  SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal);
+  double padding=0.25; // non-zero padding is added to prevent problems near R=0 or numberical derivatives... 
+                       // should be small compared to numerical resolutions 
+  SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal,padding);
   TMatrixT<double>    thepar=LagrangeMultipliersFitter::convertToMatrix(par);
   static_amb=ambiguity_;
 
@@ -217,14 +219,12 @@ TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalytically(TMatrixT<d
   TLorentzVector nu_d=nu;
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
   bool isReal;
-  SolvebyRotation(TauDir,a1_d,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal,true);
+  double padding=0.125;
+  SolvebyRotation(TauDir,a1_d,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal,padding,true);
   if(static_amb==plus)nu=nu_plus;
   else nu=nu_minus;
-
   for(int i=0; i<outpar.GetNrows();i++){ outpar(i,0)=v(i);}
-  outpar(nu_px,0)=nu.Px();                                                                                                                                                                           
-  outpar(nu_py,0)=nu.Py();                                                                                                                                                                           
-  outpar(nu_pz,0)=nu.Pz();      
+  outpar(nu_px,0)=nu.Px();                                                                                                                      outpar(nu_py,0)=nu.Py();                                                                                                                      outpar(nu_pz,0)=nu.Pz();      
 
   /*
   double ctheta_GJ=TauDir.Dot(a1.Vect())/fabs(a1.P()*TauDir.Mag());
