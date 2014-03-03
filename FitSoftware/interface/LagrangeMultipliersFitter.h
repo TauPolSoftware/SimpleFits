@@ -19,14 +19,15 @@ class LagrangeMultipliersFitter{
   virtual void   SetWeight(double weight){weight_=weight;}
   virtual void   SetMaxDelta(double MaxDelta){MaxDelta_=MaxDelta;}
   virtual void   SetNIterMax(int Nitermax){nitermax_=Nitermax;}
+  virtual void   SetEpsilon(double epsilon){epsilon_=epsilon;}
 
-  virtual bool Fit();
+  virtual bool Fit(); 
   virtual bool isConverged();
   virtual bool isConfigured(){return isconfigured;}
   virtual double ChiSquare(){return chi2;}
   virtual double CSum(){return delta;};
   virtual double NIter(){return niter;};
-  virtual double NConstraints()=0;
+  virtual int     NConstraints()=0;
   virtual double NDF()=0;
   virtual int    NDaughters()=0;
 
