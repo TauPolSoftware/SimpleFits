@@ -1,4 +1,4 @@
-// Code written originall written by Ian M. Nugent
+// Code written by Ian M. Nugent
 
 #ifndef LagrangeMultipliersFitter_H
 #define LagrangeMultipliersFitter_H
