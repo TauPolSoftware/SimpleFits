@@ -1,5 +1,6 @@
-// Code written by Vladimir Cherepanov
-// RWTH Aachen March 4 2014
+// Code written by Vladimir Cherepanov 
+// RWTH Aachen March 4 2014 (update 2) 
+
 #ifndef DiTauConstrainedFitter_H
 #define DiTauConstrainedFitter_H
 
@@ -22,7 +23,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
 
   virtual bool Fit();
-  virtual int    NConstraints(){return 3;}
+  virtual double NConstraints(){return 2;}
   virtual double NDF(){return 1;}
   virtual int    NDaughters(){return 2;}
   void DebugFit();

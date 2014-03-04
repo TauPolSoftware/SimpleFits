@@ -1,4 +1,4 @@
-// Code written originall written by Ian M. Nugent
+// Code written by Ian M. Nugent
 
 #ifndef LagrangeMultipliersFitter_H
 #define LagrangeMultipliersFitter_H
@@ -29,7 +29,7 @@ class LagrangeMultipliersFitter{
   virtual double ChiSquare(){return chi2;}
   virtual double CSum(){return delta;};
   virtual double NIter(){return niter;};
-  virtual int     NConstraints()=0;
+  virtual double NConstraints()=0;
   virtual double NDF()=0;
   virtual int    NDaughters()=0;
 

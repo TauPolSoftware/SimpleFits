@@ -1,5 +1,5 @@
-// Code written by Ian M. Nugent 
-// minor modified by Vladimir Cherepanov on RWTH Aachen March 4 2014
+// Code written by Ian M. Nugent
+// minor modified by Vladimir Cherepanov on RWTH Aachen March 4 2014 (update 2)
 
 #include "SimpleFits/FitSoftware/interface/LagrangeMultipliersFitter.h"
 #include "TDecompBK.h"
@@ -61,28 +61,28 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   TMatrixT<double> delta_alpha_A=alpha_A-alpha_0;
 
-//     //----
-//      std::cout<<"alpha_A  "<<std::endl;
-//      for(int str =0; str < alpha_A.GetNrows(); str++){
-//        for(int kol =0; kol < alpha_A.GetNcols(); kol++){
-//          std::cout<<"  "<< alpha_A(str,kol)<<"  ";
+     //----
+//       std::cout<<"alpha_A  "<<std::endl;
+//       for(int str =0; str < alpha_A.GetNrows(); str++){
+//         for(int kol =0; kol < alpha_A.GetNcols(); kol++){
+//           std::cout<<"  "<< alpha_A(str,kol)<<"  ";
 
-//        }    
-//        std::cout<<std::endl;
-//     }
-
-//      std::cout<<" Derivative matrix "<<std::endl;
-//      for(int str =0; str < D.GetNrows(); str++){
-//        for(int kol =0; kol < D.GetNcols(); kol++){
-//          std::cout<<"  "<< D(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
+//         }    
+//         std::cout<<std::endl;
 //      }
 
+//       std::cout<<" Derivative matrix "<<std::endl;
+//       for(int str =0; str < D.GetNrows(); str++){
+//         for(int kol =0; kol < D.GetNcols(); kol++){
+//           std::cout<<"  "<< D(str,kol)<<"  ";
+
+//         }    
+//         std::cout<<std::endl;
+//       }
 
 
-//     std::cout<<"  "<<epsilon_<<std::endl;
+
+//      std::cout<<"  "<<epsilon_<<std::endl;
 
 
   D=Derivative();
@@ -179,13 +179,13 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
 
  
-   for(int str =0; str < lambda.GetNrows(); str++){
-     for(int kol =0; kol < lambda.GetNcols(); kol++){
-       std::cout<<"  "<< lambda(str,kol)<<"  ";
+//    for(int str =0; str < lambda.GetNrows(); str++){
+//      for(int kol =0; kol < lambda.GetNcols(); kol++){
+//        std::cout<<"  "<< lambda(str,kol)<<"  ";
 
-     }    
-     std::cout<<std::endl;
-   }
+//      }    
+//      std::cout<<std::endl;
+//    }
 
 
 
@@ -207,14 +207,14 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 //   }
 //   //----
 //   //----
-//   std::cout<<" DT "<<std::endl;
-//   for(int str =0; str < DT.GetNrows(); str++){
-//     for(int kol =0; kol < DT.GetNcols(); kol++){
-//       std::cout<<"  "<< DT(str,kol)<<"  ";
-// //
-//     }    
-//     std::cout<<std::endl;
-//   }
+//    std::cout<<" DT "<<std::endl;
+//    for(int str =0; str < DT.GetNrows(); str++){
+//      for(int kol =0; kol < DT.GetNcols(); kol++){
+//        std::cout<<"  "<< DT(str,kol)<<"  ";
+// // //
+//      }    
+//      std::cout<<std::endl;
+//    }
 //   //----
 //   //----
 //   std::cout<<" lambda "<<std::endl;
@@ -297,7 +297,7 @@ TMatrixD LagrangeMultipliersFitter::Derivative(){ // alway evaluated at current 
 
 bool LagrangeMultipliersFitter::isConverged(){
   if(delta<MaxDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
-    std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl; 
+    //    std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl; 
     return true;
   }
   return false;
