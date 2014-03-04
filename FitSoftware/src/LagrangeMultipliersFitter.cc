@@ -1,3 +1,6 @@
+// Code written by Ian M. Nugent 
+// minor modified by Vladimir Cherepanov on RWTH Aachen March 4 2014
+
 #include "SimpleFits/FitSoftware/interface/LagrangeMultipliersFitter.h"
 #include "TDecompBK.h"
 #include <iostream>

@@ -1,3 +1,6 @@
+// Code written by Vladimir Cherepanov
+// RWTH Aachen March 4 2014 
+
 #include "SimpleFits/FitSoftware/interface/DiTauConstrainedFitter.h"
 #include "SimpleFits/FitSoftware/interface/PDGInfo.h"
 #include <iostream>

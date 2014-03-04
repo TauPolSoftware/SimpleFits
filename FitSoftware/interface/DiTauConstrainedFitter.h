@@ -1,3 +1,5 @@
+// Code written by Vladimir Cherepanov
+// RWTH Aachen March 4 2014
 #ifndef DiTauConstrainedFitter_H
 #define DiTauConstrainedFitter_H
 

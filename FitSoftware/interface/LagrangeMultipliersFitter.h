@@ -1,3 +1,5 @@
+// Code written originall written by Ian M. Nugent
+
 #ifndef LagrangeMultipliersFitter_H
 #define LagrangeMultipliersFitter_H
 
@@ -19,7 +21,7 @@ class LagrangeMultipliersFitter{
   virtual void   SetWeight(double weight){weight_=weight;}
   virtual void   SetMaxDelta(double MaxDelta){MaxDelta_=MaxDelta;}
   virtual void   SetNIterMax(int Nitermax){nitermax_=Nitermax;}
-  virtual void   SetEpsilon(double epsilon){epsilon_=epsilon;}
+  virtual void   SetEpsilon(double epsilon){epsilon_=epsilon;} // added by Vladimir Cherepanov
 
   virtual bool Fit(); 
   virtual bool isConverged();
