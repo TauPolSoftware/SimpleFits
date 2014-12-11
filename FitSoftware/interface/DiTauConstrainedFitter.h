@@ -15,14 +15,14 @@
 
 class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
  public:
-  DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack,  TVector3 PVertex, TMatrixTSym<double> VertexCov);
+  DiTauConstrainedFitter(LorentzVectorParticle TauA1, TrackParticle MuTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov);
   virtual ~DiTauConstrainedFitter(){};
- 
+
   enum Pars{taua1_px=0,taua1_py,taua1_pz,taumu_px,taumu_py,taumu_pz,npar};
   enum ExpandedPars{z_vx=6,z_vy,z_vz,nexpandedpar};
 
 
-  virtual bool Fit();
+  bool Fit();
   virtual double NConstraints(){return 2;}
   virtual double NDF(){return 1;}
   virtual int    NDaughters(){return 2;}
@@ -54,8 +54,8 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
   void UpdateExpandedPar();
   void CovertParToObjects(TVectorD &v,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass);
- 
- 
+
+
 
   LorentzVectorParticle  TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorParticle TauA1, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov );
   static TMatrixT<double> EstimateTauDirectionAdvanced(TMatrixT<double> &inpar);
@@ -70,7 +70,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
 
- 
+
 
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;
