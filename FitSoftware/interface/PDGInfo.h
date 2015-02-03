@@ -1,6 +1,8 @@
 #ifndef PDGInfo_h
 #define PDGInfo_h
 
+#include <sstream>
+
 class PDGInfo {
  public:
   static double pi_mass(){return  0.13957018;}
@@ -129,6 +131,130 @@ class PDGInfo {
     anti_K_prime_10 = -20313 ,
     K_prime_1_plus = 20323 ,
     K_prime_1_minus = -20323 
+   };
+
+  static std::string pdgIdToName(int pdgId) {
+	   if(pdgId == 1)        return "d";
+	   if(pdgId == -1)       return "anti_d";
+	   if(pdgId == 2)        return "u";
+	   if(pdgId == -2)       return "anti_u";
+	   if(pdgId == 3)        return "s";
+	   if(pdgId == -3)       return "anti_s";
+	   if(pdgId == 4)        return "c";
+	   if(pdgId == -4)       return "anti_c";
+	   if(pdgId == 5)        return "b";
+	   if(pdgId == -5)       return "anti_b";
+	   if(pdgId == 6)        return "t";
+	   if(pdgId == -6)       return "anti_t";
+	   if(pdgId == 7)        return "l";
+	   if(pdgId == -7)       return "anti_l";
+	   if(pdgId == 8)        return "h";
+	   if(pdgId == -8)       return "anti_h";
+	   if(pdgId == 21)       return "g";
+	   if(pdgId == 11)       return "e-";
+	   if(pdgId == -11)      return "e+";
+	   if(pdgId == 12)       return "nu_e";
+	   if(pdgId == -12)      return "anti_nu_e";
+	   if(pdgId == 13)       return "mu-";
+	   if(pdgId == -13)      return "mu+";
+	   if(pdgId == 14)       return "nu_mu";
+	   if(pdgId == -14)      return "anti_nu_mu";
+	   if(pdgId == 15)       return "tau-";
+	   if(pdgId == -15)      return "tau+";
+	   if(pdgId == 16)       return "nu_tau";
+	   if(pdgId == -16)      return "anti_nu_tau";
+	   if(pdgId == 17)       return "L-";
+	   if(pdgId == -17)      return "L+";
+	   if(pdgId == 18)       return "nu_L";
+	   if(pdgId == -18)      return "anti_nu_L";
+	   if(pdgId == 22)       return "gamma";
+	   if(pdgId == 23)       return "Z0";
+	   if(pdgId == 24)       return "W+";
+	   if(pdgId == -24)      return "W-";
+	   if(pdgId == 25)       return "Higgs0";
+	   if(pdgId == 28)       return "reggeon";
+	   if(pdgId == 29)       return "pomeron";
+	   if(pdgId == 32)       return "Z_prime0";
+	   if(pdgId == 33)       return "Z_prime_prime0";
+	   if(pdgId == 34)       return "W_prime+";
+	   if(pdgId == -34)      return "W_prime-";
+	   if(pdgId == 35)       return "Higgs_prime0";
+	   if(pdgId == 36)       return "A0";
+	   if(pdgId == 37)       return "Higgs+";
+	   if(pdgId == -37)      return "Higgs-";
+	   if(pdgId == 111)      return "pi0";
+	   if(pdgId == 211)      return "pi+";
+	   if(pdgId == -211)     return "pi-";
+	   if(pdgId == 210)      return "pi_diffr+";
+	   if(pdgId == -210)     return "pi_diffr-";
+	   if(pdgId == 20111)    return "pi_2S0";
+	   if(pdgId == 20211)    return "pi_2S+";
+	   if(pdgId == -20211)   return "pi_2S-";
+	   if(pdgId == 221)      return "eta";
+	   if(pdgId == 20221)    return "eta_2S";
+	   if(pdgId == 331)      return "eta_prime";
+	   if(pdgId == 113)      return "rho0";
+	   if(pdgId == 213)      return "rho+";
+	   if(pdgId == -213)     return "rho-";
+	   if(pdgId == 30113)    return "rho_2S0";
+	   if(pdgId == 30213)    return "rho_2S+";
+	   if(pdgId == -30213)   return "rho_2S-";
+	   if(pdgId == 40113)    return "rho_3S0";
+	   if(pdgId == 40213)    return "rho_3S+";
+	   if(pdgId == -40213)   return "rho_3S-";
+	   if(pdgId == 223)      return "omega";
+	   if(pdgId == 30223)    return "omega_2S";
+	   if(pdgId == 333)      return "phi";
+	   if(pdgId == 10111)    return "a_00";
+	   if(pdgId == 10211)    return "a_0+";
+	   if(pdgId == -10211)   return "a_0-";
+	   if(pdgId == 10221)    return "f_0";
+	   if(pdgId == 10331)    return "f_prime_0";
+	   if(pdgId == 10113)    return "b_10";
+	   if(pdgId == 10213)    return "b_1+";
+	   if(pdgId == -10213)   return "b_1-";
+	   if(pdgId == 10223)    return "h_1";
+	   if(pdgId == 10333)    return "h_prime_1";
+	   if(pdgId == 20113)    return "a_10";
+	   if(pdgId == 20213)    return "a_1+";
+	   if(pdgId == -20213)   return "a_1-";
+	   if(pdgId == 20223)    return "f_1";
+	   if(pdgId == 20333)    return "f_prime_1";
+	   if(pdgId == 115)      return "a_20";
+	   if(pdgId == 215)      return "a_2+";
+	   if(pdgId == -215)     return "a_2-";
+	   if(pdgId == 225)      return "f_2";
+	   if(pdgId == 335)      return "f_prime_2";
+	   if(pdgId == 311)      return "K0";
+	   if(pdgId == -311)     return "anti_K0";
+	   if(pdgId == 310)      return "K_S0";
+	   if(pdgId == 130)      return "K_L0";
+	   if(pdgId == 321)      return "K+";
+	   if(pdgId == -321)     return "K-";
+	   if(pdgId == 313)      return "K_star0";
+	   if(pdgId == -313)     return "anti_K_star0";
+	   if(pdgId == 323)      return "K_star+";
+	   if(pdgId == -323)     return "K_star-";
+	   if(pdgId == 10311)    return "K_0_star0";
+	   if(pdgId == -10311)   return "anti_K_0_star0";
+	   if(pdgId == 10321)    return "K_0_star+";
+	   if(pdgId == -10321)   return "K_0_star-";
+	   if(pdgId == 10313)    return "K_10";
+	   if(pdgId == -10313)   return "anti_K_10";
+	   if(pdgId == 10323)    return "K_1+";
+	   if(pdgId == -10323)   return "K_1-";
+	   if(pdgId == 315)      return "K_2_star0";
+	   if(pdgId == -315)     return "anti_K_2_star0";
+	   if(pdgId == 325)      return "K_2_star+";
+	   if(pdgId == -325)     return "K_2_star-";
+	   if(pdgId == 20313)    return "K_prime_10";
+	   if(pdgId == -20313)   return "anti_K_prime_10";
+	   if(pdgId == 20323)    return "K_prime_1+";
+	   if(pdgId == -20323)   return "K_prime_1-";
+
+	   std::stringstream out;
+	   out << "unknown ID = " << pdgId;
+	   return out.str();
    };
 };
 #endif
