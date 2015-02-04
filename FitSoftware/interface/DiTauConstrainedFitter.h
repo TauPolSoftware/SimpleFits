@@ -21,7 +21,6 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   enum Pars{taua1_px=0,taua1_py,taua1_pz,taumu_px,taumu_py,taumu_pz,npar};
   enum ExpandedPars{z_vx=6,z_vy,z_vz,nexpandedpar};
 
-
   bool Fit();
   virtual double NConstraints(){return 2;}
   virtual double NDF(){return 1;}
@@ -39,8 +38,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
     
  private:
 
-    LorentzVectorParticle EstimateTauMu(TVector3 PV,  TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov, TrackParticle MuTrack,LorentzVectorParticle TauA1, double ZMassR);
-
+  LorentzVectorParticle EstimateTauMu(TVector3 PV,  TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov, TrackParticle MuTrack,LorentzVectorParticle TauA1, double ZMassR);
 
   static TMatrixT<double> ComputeInitalExpPar(TMatrixT<double> &inpar);
   static TMatrixT<double> ComputeExpParToPar(TMatrixT<double> &inpar);
@@ -51,13 +49,10 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   std::vector<double>  ReturnDecayPoint(TrackParticle MuTrack, TLorentzVector MuonLV, TVector3 PV,TVector3 SV,TVector3 TauDir,TVector3 TauDirError);
   TVector3 IntersectionPoint(TVector3 PV,TVector3 SV,double xc, double yc, double r);
   LorentzVectorParticle IntersectionPointLinearApproximation(TVector3 PV,TVector3 SV, TVector3 MuonPoca, TLorentzVector MuonLV,TrackParticle MuTrack,TVector3 TauDirError,LorentzVectorParticle TauA1);
-
   LorentzVectorParticle ConvertTrackParticleToLorentzVectorParticle(TrackParticle MuTrack);
 
   void UpdateExpandedPar();
-  void CovertParToObjects(TVectorD &v,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass);
-
-
+  void ConvertParToObjects(TVectorD &v,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass);
 
   LorentzVectorParticle  TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorParticle TauA1, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov );
   static TMatrixT<double> EstimateTauDirectionAdvanced(TMatrixT<double> &inpar);
@@ -71,8 +66,6 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   TMatrixT<double> ComputeAngleCovarianceAnalytically(TrackParticle MuTrack, std::pair<double, double> phiAngle,  TVector3 PV, TVector3 SV, LorentzVectorParticle  TauA1);
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
-
-
   static double MassConstraint_;
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;
@@ -81,8 +74,6 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   bool debug;
   bool AnalyticalCovariance;
   int ConstraintMode;
-
-
 
 };
 #endif
