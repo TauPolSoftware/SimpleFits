@@ -86,7 +86,7 @@ std::vector<TrackParticle> TrackHelixVertexFitter::GetReFitTracks(){
       }
     }
     TMatrixT<double>    TrackPar=ComputePar(FreePar);
-    TMatrixTSym<double> TrackCov=ErrorMatrixPropagator::PropogateError(&TrackHelixVertexFitter::ComputePar,FreePar,FreeParCov);
+    TMatrixTSym<double> TrackCov=ErrorMatrixPropagator::PropagateError(&TrackHelixVertexFitter::ComputePar,FreePar,FreeParCov);
     refitParticles.push_back(TrackParticle(TrackPar,TrackCov,particles.at(p).PDGID(),particles.at(p).Mass(),particles.at(p).Charge(),particles.at(p).BField()));
   }
   return particles;
@@ -108,7 +108,7 @@ std::vector<LorentzVectorParticle> TrackHelixVertexFitter::GetReFitLorentzVector
     FreePar(NFreeTrackPar+MassOffSet,0)=particles.at(p).Mass();
     FreePar(NFreeTrackPar+BField0,0)=particles.at(p).BField();
     TMatrixT<double>    LVPar=ComputeLorentzVectorPar(FreePar);
-    TMatrixTSym<double> LVCov=ErrorMatrixPropagator::PropogateError(&TrackHelixVertexFitter::ComputeLorentzVectorPar,FreePar,FreeParCov);
+    TMatrixTSym<double> LVCov=ErrorMatrixPropagator::PropagateError(&TrackHelixVertexFitter::ComputeLorentzVectorPar,FreePar,FreeParCov);
     refitParticles.push_back(LorentzVectorParticle(LVPar,LVCov,particles.at(p).PDGID(),particles.at(p).Charge(),particles.at(p).BField()));
   }
   return refitParticles;
@@ -129,7 +129,7 @@ LorentzVectorParticle TrackHelixVertexFitter::GetMother(int pdgid){
   }
   FreePar(par.GetNrows()+BField0,0)=b;
   TMatrixT<double>    mpar=ComputeMotherLorentzVectorPar(FreePar);
-  TMatrixTSym<double> mcov=ErrorMatrixPropagator::PropogateError(&TrackHelixVertexFitter::ComputeMotherLorentzVectorPar,FreePar,FreeParCov);
+  TMatrixTSym<double> mcov=ErrorMatrixPropagator::PropagateError(&TrackHelixVertexFitter::ComputeMotherLorentzVectorPar,FreePar,FreeParCov);
   return LorentzVectorParticle(mpar,mcov,pdgid,c,b);
 }
 

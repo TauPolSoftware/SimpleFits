@@ -2,7 +2,7 @@
 #include "math.h"
 #include <iostream>
 
-TMatrixTSym<double> ErrorMatrixPropagator::PropogateError(TMatrixT<double> (*f)(TMatrixT<double> &par),TMatrixT<double> inPar,TMatrixTSym<double> inCov, double epsilon, double errorEpsilonRatio){
+TMatrixTSym<double> ErrorMatrixPropagator::PropagateError(TMatrixT<double> (*f)(TMatrixT<double> &par),TMatrixT<double> inPar,TMatrixTSym<double> inCov, double epsilon, double errorEpsilonRatio){
   TMatrixT<double> v=f(inPar);
   TMatrixT<double> Jacobian(inPar.GetNrows(),v.GetNrows());
   for(int i=0;i<inPar.GetNrows();i++){

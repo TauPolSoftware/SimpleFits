@@ -11,7 +11,7 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
   epsilon_(0.001),
   weight_(1.0),
   MaxDelta_(0.01),
-  nitermax_(100),
+  nitermax_(500),
   chi2(1e10),
   D(1,1), 
   V_D(1,1)
@@ -36,7 +36,8 @@ bool LagrangeMultipliersFitter::Fit(){
     bool passed=ApplyLagrangianConstraints();
     //    std::cout<<"fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl; 
     if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
-      //      std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
+      std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
+
       return false;
       //return true;
     }
@@ -58,99 +59,34 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   // Setup intial values
   TMatrixT<double> alpha_A=convertToMatrix(par);
   TMatrixT<double> alpha_0=convertToMatrix(par_0);
-
   TMatrixT<double> delta_alpha_A=alpha_A-alpha_0;
 
-     //----
-//       std::cout<<"alpha_A  "<<std::endl;
-//       for(int str =0; str < alpha_A.GetNrows(); str++){
-//         for(int kol =0; kol < alpha_A.GetNcols(); kol++){
-//           std::cout<<"  "<< alpha_A(str,kol)<<"  ";
-
-//         }    
-//         std::cout<<std::endl;
-//      }
-
-//       std::cout<<" Derivative matrix "<<std::endl;
-//       for(int str =0; str < D.GetNrows(); str++){
-//         for(int kol =0; kol < D.GetNcols(); kol++){
-//           std::cout<<"  "<< D(str,kol)<<"  ";
-
-//         }    
-//         std::cout<<std::endl;
-//       }
-
-
-
-//      std::cout<<"  "<<epsilon_<<std::endl;
-
-
   D=Derivative();
+
   // std::cout<<"call value to compute Value   "<<std::endl;
   TMatrixT<double> d=convertToMatrix(Value(par));
   TMatrixT<double> C=D*delta_alpha_A-d;
   TMatrixTSym<double> V_alpha0=cov_0;
   TMatrixTSym<double> V_D_inv=V_alpha0;
 
+  //if(niter==0){
+  //	std::cout << "VD matrix with initial cov" << std::endl;
+  //	V_D_inv.Print();
+  //}
 
-
-
-//     //----
-//     std::cout<<"d  "<<std::endl;
-//     for(int str =0; str < d.GetNrows(); str++){
-//       for(int kol =0; kol < d.GetNcols(); kol++){
-//         std::cout<<"  "<< d(str,kol)<<"  ";
-
-//       }    
-//       std::cout<<std::endl;
-//     }
-
-//    //----
-//    std::cout<<"V_alpha0  "<<std::endl;
-//    for(int str =0; str < V_alpha0.GetNrows(); str++){
-//      for(int kol =0; kol < V_alpha0.GetNcols(); kol++){
-//        std::cout<<"  "<< V_alpha0(str,kol)<<"  ";
-
-//      }    
-//      std::cout<<std::endl;
-//    }
-
-
-
-//    //----
-//    std::cout<<"C  "<<std::endl;
-//    for(int str =0; str < C.GetNrows(); str++){
-//      for(int kol =0; kol < C.GetNcols(); kol++){
-//        std::cout<<"  "<< C(str,kol)<<"  ";
-
-//      }    
-//      std::cout<<std::endl;
-//    }
-
-//    //----
-//    std::cout<<"D  "<<std::endl;
-//    for(int str =0; str < D.GetNrows(); str++){
-//      for(int kol =0; kol < D.GetNcols(); kol++){
-//        std::cout<<"  "<< D(str,kol)<<"  ";
-
-//      }    
-//      std::cout<<std::endl;
-//    }
-//    std::cout<<" End D"<<std::endl;
   V_D_inv.Similarity(D);
 
-  //----
-//  std::cout<<"V_D_inv  "<<std::endl;
-//   for(int str =0; str < V_D_inv.GetNrows(); str++){
-//     for(int kol =0; kol < V_D_inv.GetNcols(); kol++){
-//       std::cout<<"  "<< V_D_inv(str,kol)<<"  ";
+  //if(niter==0){
+  //	std::cout << "VD matrix after similarity" << std::endl;
+  //	V_D_inv.Print();
+  //}
 
-//     }    
-//     std::cout<<std::endl;
-//   }
-  //----
   double det = V_D_inv.Determinant();
-  // std::cout << "LagrangeMultipliersFitter::ApplyLagrangianConstraints " << det << std::endl;
+
+  //if(niter==0){
+  //	std::cout << "VD matrix det: " << det <<std::endl;
+  //}
+
   TDecompBK Inverter(V_D_inv);
   if(fabs(det)>1e40){
        std::cout << "Fit failed: unable to invert SYM gain matrix LARGE Determinant" << det << " \n" << std::endl;
@@ -158,81 +94,38 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   }
   if(!Inverter.Decompose()){
         std::cout << "Fit failed: unable to invert SYM gain matrix " << det << " \n" << std::endl;
+        cov_0.Print();
     return false;
   }
   V_D=Inverter.Invert();
   
+  //if(niter==0){
+  //	std::cout << "VD matrix after inversion" << std::endl;
+  //	V_D.Print();
+  //}
 
-//   //----
-//   std::cout<<"V_D  "<<std::endl;
-//   for(int str =0; str < V_D.GetNrows(); str++){
-//     for(int kol =0; kol < V_D.GetNcols(); kol++){
-//       std::cout<<"  "<< V_D(str,kol)<<"  ";
-
-//     }    
-//     std::cout<<std::endl;
-//   }
   // solve equations
   TMatrixT<double> lambda=-1.0*V_D*C;
   TMatrixT<double> DT=D; DT.T();
   TMatrixT<double> alpha=alpha_0-V_alpha0*DT*lambda;
 
 
- 
-//    for(int str =0; str < lambda.GetNrows(); str++){
-//      for(int kol =0; kol < lambda.GetNcols(); kol++){
-//        std::cout<<"  "<< lambda(str,kol)<<"  ";
-
-//      }    
-//      std::cout<<std::endl;
-//    }
-
-
-
   TVectorD finPar=convertToVector(alpha);
 
-  // do while loop to see if the convergance criteria are satisfied
+  // do while loop to see if the convergence criteria are satisfied
   double s(1), stepscale(0.01);
   chi2prev=chi2;
   double Curentchi2(ChiSquareUsingInitalPoint(alpha_A,lambda)), Currentdelta(ConstraintDelta(par));
   TMatrixT<double> alpha_s=alpha;
-//   //----
-//   std::cout<<" alpha_s "<<std::endl;
-//   for(int str =0; str < alpha_s.GetNrows(); str++){
-//     for(int kol =0; kol < alpha_s.GetNcols(); kol++){
-//       std::cout<<"  "<< alpha_s(str,kol)<<"  ";
 
-//     }    
-//     std::cout<<std::endl;
-//   }
-//   //----
-//   //----
-//    std::cout<<" DT "<<std::endl;
-//    for(int str =0; str < DT.GetNrows(); str++){
-//      for(int kol =0; kol < DT.GetNcols(); kol++){
-//        std::cout<<"  "<< DT(str,kol)<<"  ";
-// // //
-//      }    
-//      std::cout<<std::endl;
-//    }
-//   //----
-//   //----
-//   std::cout<<" lambda "<<std::endl;
-//   for(int str =0; str < lambda.GetNrows(); str++){
-//     for(int kol =0; kol < lambda.GetNcols(); kol++){
-//       std::cout<<"  "<< lambda(str,kol)<<"  ";
-
-//     }    
-//     std::cout<<std::endl;
-//   }
-  // convergence in 2 step procedure to minimize chi2 within MaxDelta_ of the constriants
+  // convergence in 2 step procedure to minimize chi2 within MaxDelta_ of the constraints
   // 1) Get within 5x MaxDelta_
-  // 2) converge based on improving chi2 and constrianed delta
+  // 2) converge based on improving chi2 and constrained delta
   unsigned int Proc=ConstraintMin;
   if(ConstraintDelta(par)<5*MaxDelta_)Proc=Chi2AndConstaintMin;
   int  NIter=(int)(1.0/stepscale);
   for(int iter=0;iter<NIter;iter++){
-    // compute safty cutoff for numberical constraint
+    // compute safety cutoff for numerical constraint
     double diff=0;
     for(int l=0;l<alpha_s.GetNrows();l++){
       if(diff<alpha_s(l,0)-alpha_A(l,0))diff=alpha_s(l,0)-alpha_A(l,0);
@@ -243,7 +136,17 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
     }
     else if(Proc==Chi2AndConstaintMin){
       double chi2_s=ChiSquareUsingInitalPoint(alpha_s,lambda);
-      if((delta_alpha_s<Currentdelta/*+MaxDelta_*/ && chi2_s<Curentchi2) || iter==NIter || diff<100*epsilon_){Curentchi2=chi2_s; Currentdelta=delta_alpha_s; ScaleFactor=s; break;}
+      if((delta_alpha_s<Currentdelta/*+MaxDelta_*/ && chi2_s<Curentchi2) || iter==NIter || diff<100*epsilon_){
+    	Curentchi2=chi2_s;
+    	Currentdelta=delta_alpha_s;
+    	ScaleFactor=s;
+    	if(iter==NIter){
+    	  std::cout << "Proc==Chi2AndConstraintMin broke, because: iter==NIter, iter: " << iter << std::endl;
+    	}
+    	if(diff<1*epsilon_){
+    	  std::cout << "Proc==Chi2AndConstraintMin broke, because: diff<1*epsilon_, diff: " << diff << std::endl;
+    	}
+    	break;}
     }
     s-=stepscale;
     alpha_s=alpha_A+s*(alpha-alpha_A);

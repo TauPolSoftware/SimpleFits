@@ -30,6 +30,8 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   std::vector<LorentzVectorParticle> GetReFitDaughters();
   LorentzVectorParticle GetMother();
   LorentzVectorParticle GetTauMuEstimate();
+  void SetMassConstraint(double MassConstraint){MassConstraint_ = MassConstraint;};
+  double GetMassConstraint(){return MassConstraint_;};
 
 
  protected:
@@ -71,10 +73,11 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
 
 
-
+  static double MassConstraint_;
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;
   std::vector<LorentzVectorParticle> particles_;
+  static TrackParticle MuTrack_;
   bool debug;
   bool AnalyticalCovariance;
   int ConstraintMode;
