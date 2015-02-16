@@ -163,6 +163,10 @@ void DiTauConstrainedFitter::UpdateExpandedPar(){
   }
 }
 
+bool DiTauConstrainedFitter::Fit(){
+   return LagrangeMultipliersFitter::Fit();
+}
+
 std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
   std::vector<LorentzVectorParticle> refitParticles;
 
@@ -226,10 +230,6 @@ void DiTauConstrainedFitter::ConvertParToObjects(TVectorD &v,TLorentzVector &Tau
   Taua1=particles_.at(0).LV();//TLorentzVector(v(taua1_px),v(taua1_py),v(taua1_pz),sqrt(1.777*1.777+v(taua1_px)*v(taua1_px)+v(taua1_py)*v(taua1_py)+v(taua1_pz)*v(taua1_pz)));
   Taumu=TLorentzVector(v(taua1_px),v(taua1_py),v(taua1_pz),sqrt(1.777*1.777+v(taua1_px)*v(taua1_px)+v(taua1_py)*v(taua1_py)+v(taua1_pz)*v(taua1_pz)));
   Zmass = 91.5;
-}
-   
-bool DiTauConstrainedFitter::Fit(){
-   return LagrangeMultipliersFitter::Fit();
 }
   
 LorentzVectorParticle DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorParticle TauA1, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov ){
@@ -397,6 +397,7 @@ TMatrixT<double> DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<d
   TVector3 PointGuess(xPoint, yPoint, zPoint);
   TVector3 TauMuDir = PointGuess - PV;
   
+  /*
   //new approach:
   
   double x0 = dxy*sin(phi0);
@@ -407,7 +408,7 @@ TMatrixT<double> DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<d
   double radius = alpha/MuTrack_.Parameter(0);
 
   double x = x0 + radius*sin(phi0) - radius*sin(TauA1OppositePhi + phi0);
-  double y = y0 - radius*cos(phi0) - radius*cos(TauA1OppositePhi + phi0);
+  double y = y0 - radius*cos(phi0) + radius*cos(TauA1OppositePhi + phi0);
   double z = z0 - radius*tan(lam)*TauA1OppositePhi;
 
   TVector3 PointGuessNew(x,y,z);
@@ -417,10 +418,14 @@ TMatrixT<double> DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<d
   outpar(0,0) = acos(cosTheta2);
   outpar(1,0) = TauDir.Phi();
    
-  std::cout<<"radius: " << radius << ", BField: "<< MuTrack_.BField() <<std::endl;
+
+  std::cout<<" TauA1OppositePhi: " << TauA1OppositePhi <<std::endl;
+  std::cout<<" radius: " << radius << ", BField: "<< MuTrack_.BField() << ", kappa and charge: " << MuTrack_.Parameter(0) << " ," << MuTrack_.Charge() <<std::endl;
+  std::cout<<" x = " << x0 << " + " << radius*sin(phi0) << " - " <<  radius*sin(TauA1OppositePhi + phi0) << std::endl;
   std::cout<<" x0, y0, z0  "<< x0 << ", " << y0 << ", "<< z0 <<std::endl;
   std::cout<<" xPoint, yPoint, zPoint  "<< xPoint << ", " << yPoint << ", "<< zPoint <<std::endl;
   std::cout<<" x, y, z  "<< x << ", " << y << ", "<< z <<std::endl;
+  */
 //    std::cout<<" TauDir.Phi()   "<< TauDir.Phi() <<"  PointGuess.Phi() "<< TauMuDir.Phi()<<std::endl;
 //    std::cout<<" TauMuDir.Theta()   "<< TauMuDir.Theta() <<std::endl;
 //    std::cout<<" cosTheta2   "<< cosTheta2 <<std::endl;
