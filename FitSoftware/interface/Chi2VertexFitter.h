@@ -3,14 +3,16 @@
 
 #include "Minuit2/FunctionMinimum.h"
 #include "Minuit2/FCNBase.h"
-#include "SimpleFits/FitSoftware/interface/TrackHelixVertexFitter.h"
+#include "SimpleFits/FitSoftware/interface/TrackHelixVertexTools.h"
+#include "SimpleFits/FitSoftware/interface/FitterBase.h"
 
-class  Chi2VertexFitter : public TrackHelixVertexFitter {
+class  Chi2VertexFitter : public FitterBase, public TrackHelixVertexTools {
  public:
-  Chi2VertexFitter(std::vector<TrackParticle> &particles,TVector3 vguess,double nsigma_=4.0):TrackHelixVertexFitter(particles,vguess),nsigma(nsigma_){};
+  Chi2VertexFitter(std::vector<TrackParticle> &particles,TVector3 vguess,double nsigma_=4.0);
   virtual ~Chi2VertexFitter(){};
 
   virtual bool Fit();
+  virtual bool UpdateChisquare();
 
  private:   
   double nsigma;

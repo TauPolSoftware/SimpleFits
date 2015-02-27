@@ -13,7 +13,8 @@ Constraint::Constraint(std::string _name, unsigned int _idx,TMatrixT<double> *_v
   maxIterations_(_maxIterations),
   scalefactor_(_scalefactor)
 {
-
+  val_(idx_,0)=value;
+  cov_(idx_,idx_)=initalSigma_;
 }
 
 Constraint::~Constraint(){}

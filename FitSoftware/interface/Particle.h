@@ -1,5 +1,5 @@
-#ifndef Particle_h
-#define Particle_h
+#ifndef SimpleFits_Particle_h
+#define SimpleFits_Particle_h
 
 #include "TMatrixT.h"
 #include "TMatrixTSym.h"

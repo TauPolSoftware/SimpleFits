@@ -1,5 +1,5 @@
-#ifndef ChiSquareFunctionUpdator_h
-#define ChiSquareFunctionUpdator_h
+#ifndef SimpleFits_ChiSquareFunctionUpdator_h
+#define SimpleFits_ChiSquareFunctionUpdator_h
 
 #include "Minuit2/FCNBase.h"
 #include "TMatrixT.h"

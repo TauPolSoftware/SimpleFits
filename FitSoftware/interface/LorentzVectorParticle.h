@@ -1,5 +1,5 @@
-#ifndef LorentzVectorParticle_h
-#define LorentzVectorParticle_h
+#ifndef SimpleFits_LorentzVectorParticle_h
+#define SimpleFits_LorentzVectorParticle_h
 
 #include "SimpleFits/FitSoftware/interface/Particle.h"
 #include "TString.h"

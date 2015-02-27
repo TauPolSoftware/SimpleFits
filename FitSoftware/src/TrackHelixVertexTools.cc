@@ -26,7 +26,6 @@ TrackHelixVertexTools::TrackHelixVertexTools(std::vector<TrackParticle> &particl
 								      << "(Tesla) Particle " << p << std::endl; 
   }
   
-  
   for(unsigned int p=0; p<particles.size();p++){
     for(unsigned int j=0; j<TrackParticle::NHelixPar;j++){
       helicesPar(MeasuredHelixIndex(j,p),0)=particles.at(p).Parameter(j);
@@ -63,7 +62,6 @@ TrackHelixVertexTools::TrackHelixVertexTools(std::vector<TrackParticle> &particl
     for(int j=0;j<constHelicesCov.GetNrows();j++)  Log(Log::Debug) << constHelicesCov(i,j) << " ";   
     Log(Log::Debug) << std::endl;
   }
-  
 }
 
 TrackHelixVertexTools::~TrackHelixVertexTools(){}

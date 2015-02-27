@@ -8,7 +8,7 @@
 
 class HardConstraint : public Constraint{
  public:
-  HardConstraint(std::string _name, unsigned int _idx, TMatrixT<double> *_val, TMatrixTSym<double> *_cov, TMatrixT<double> *_dalpha, double _initalSigma, double _dx, unsigned int _maxIterations=5, double _scalefactor=0.75);
+  HardConstraint(std::string _name, unsigned int _idx, TMatrixT<double> *_val, TMatrixTSym<double> *_cov, TMatrixT<double> *_dalpha,double _value, double _initalSigma, double _dx, unsigned int _maxIterations=5, double _scalefactor=0.75);
   virtual ~HardConstraint();
 
   virtual bool isSoft(){return false;}

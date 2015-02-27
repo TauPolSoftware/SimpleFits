@@ -1,5 +1,5 @@
-#ifndef SimpleFits_h
-#define SimpleFits_h
+#ifndef SimpleFits_SimpleFits_h
+#define SimpleFits_SimpleFits_h
 
 #include "TMatrixT.h"
 #include "TMatrixTSym.h"

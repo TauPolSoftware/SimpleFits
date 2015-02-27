@@ -7,21 +7,23 @@
 
 class Constraint{
  public:
-  Constraint(std::string _name, unsigned int _idx, TMatrixT<double> *_val, TMatrixTSym<double> *_cov, TMatrixT<double> *_dalpha, double _initalSigma, double _sigma_min, double _dx, unsigned int _maxIterations=5, double _scalefactor=0.75);
+  Constraint(std::string _name, unsigned int _idx, TMatrixT<double> *_val, TMatrixTSym<double> *_cov, TMatrixT<double> *_dalpha, double _value, double _initalSigma, double _sigma_min, double _dx, unsigned int _maxIterations=5, double _scalefactor=0.75);
   virtual ~Constraint();
 
+  inline unsigned int Index(){return idx_;}
   inline std::string name(){return name_;}
   inline double constraint(){return ((*val_)(idx_,0));}
   inline double sigma(){return sqrt((*cov_)(idx_,idx_));}
   inline double dalpha(){return ((*dalpha_)(idx_,0));}
-  inline double significance(){return ((*dalpha_)(idx_,0))/((*cov_)(idx_,idx_));}
+  inline double significance(){return ((*dalpha_)(idx_,0))/sqrt((*cov_)(idx_,idx_));}
+  inline double Chi2(){return ((*dalpha_)(idx_,0))*((*dalpha_)(idx_,0))/((*cov_)(idx_,idx_));}
   inline double dx(){return dx_;}
   inline double initalSigma(){return initalSigma_;}
   inline double sigma_min(){return sigma_min_;}
   inline bool   atLimit(){return (nIterations_>=maxIterations_);}
   inline unsigned int nIterations(){return nIterations_;}
   inline unsigned int maxIterations(){return maxIterations_;}
-  virtual void addCorrelation(int idx){};// to be defined in the the inheriting Constraint class if correlations can be added.
+  virtual void addCorrelation(int idx, double corr){};// to be defined in the the inheriting Constraint class if correlations can be added.
 
   // important function for modifying the cov to iteratively increase the constriants
   virtual void UpdateCovariance()=0;

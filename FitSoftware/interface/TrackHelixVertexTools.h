@@ -1,5 +1,5 @@
-#ifndef TrackHelixVertexTools_h
-#define TrackHelixVertexTools_h
+#ifndef SimpleFits_TrackHelixVertexTools_h
+#define SimpleFits_TrackHelixVertexTools_h
 
 // system include files
 #include <TMatrixT.h>
