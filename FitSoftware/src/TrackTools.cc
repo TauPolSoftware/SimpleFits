@@ -42,7 +42,7 @@ TVector3 TrackTools::PropogateToZPosition(TrackParticle &p,double &z){
   return TVector3(x,y,z);
 }
 
-
+/* obsolete
 LorentzVectorParticle TrackTools::LorentzParticleAtPosition(TrackParticle &p,TVector3 &v){
   TMatrixT<double>    FreePar(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::NExtraPar+TrackHelixVertexFitter::MassOffSet,1);
   TMatrixTSym<double> FreeParCov(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::NExtraPar+TrackHelixVertexFitter::MassOffSet);
@@ -54,9 +54,9 @@ LorentzVectorParticle TrackTools::LorentzParticleAtPosition(TrackParticle &p,TVe
   FreePar(TrackHelixVertexFitter::phi0,0)=p.Parameter(TrackParticle::phi);
   FreePar(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::MassOffSet,0)=p.Mass();
   FreePar(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::BField0,0)=p.BField();
-  TMatrixT<double>    LVPar=TrackHelixVertexFitter::ComputeLorentzVectorPar(FreePar);
-  TMatrixTSym<double> LVCov=ErrorMatrixPropagator::PropogateError(&TrackHelixVertexFitter::ComputeLorentzVectorPar,FreePar,FreeParCov);
+  TMatrixT<double>    LVPar=TrackHelixVertexFitter::ConvertToLorentzVectorNotation(FreePar);
+  TMatrixTSym<double> LVCov=ErrorMatrixPropagator::PropogateError(&TrackHelixVertexFitter::ConvertToLorentzVectorNotation,FreePar,FreeParCov);
   return LorentzVectorParticle(LVPar,LVCov,p.PDGID(),p.Charge(),p.BField());
 }
-
+*/
 

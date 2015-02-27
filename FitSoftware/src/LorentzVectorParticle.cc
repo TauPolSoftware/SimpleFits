@@ -23,3 +23,22 @@ TString LorentzVectorParticle::Name(int i){
   if(i==vz)  return "vz";
   return "invalid";
 }
+
+/*
+// addition                                                                                                                                                                                                                                
+LorentzVectorParticle LorentzVectorParticle::operator+(const LorentzVectorParticle& s) const{
+  return LorentzVectorParticle();
+}
+LorentzVectorParticle LorentzVectorParticle::operator+=(const LorentzVectorParticle& s) const{
+  return LorentzVectorParticle();
+}
+
+// subtraction                                                                                                                                                                                                                             
+LorentzVectorParticle LorentzVectorParticle::operator-(const LorentzVectorParticle& s) const{
+  return LorentzVectorParticle();
+}
+LorentzVectorParticle LorentzVectorParticle::operator-=(const LorentzVectorParticle& s) const{
+  return LorentzVectorParticle();
+}
+*/
+

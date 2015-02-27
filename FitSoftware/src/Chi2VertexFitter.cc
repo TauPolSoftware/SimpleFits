@@ -19,7 +19,7 @@
 bool Chi2VertexFitter::Fit(){
   if(isFit==true) return true;// do not refit
   if(!isConfigure) return false; // do not fit if configuration failed
-  ChiSquareFunctionUpdator updator(this);
+  ChiSquareFunctionUpdator<TrackHelixVertexFitter> updator(this);
   ROOT::Minuit2::MnUserParameters MnPar;
   for(int i=0;i<par.GetNrows();i++){
     TString name=FreeParName(i);
@@ -63,8 +63,8 @@ bool Chi2VertexFitter::Fit(){
   for(int i=0;i<par.GetNrows();i++){
     for(int j=0;j<par.GetNrows();j++){parcov(i,j)=min.UserCovariance()(i,j);}
   } 
-
-  TMatrixT<double> vprime=ComputePar(par);
+  
+  TMatrixT<double> vprime=ConvertToHelicesNotation(par);
   TMatrixT<double> dalpha=vprime-val;
 
   //for(int i=0;i<par.GetNrows();i++) std::cout << "par " << FreeParName(i) << " "  << i << " par " <<  vprime(i,0) << " val " << val(i,0) << " delta " <<  dalpha(i,0) << " error " << sqrt(parcov(i,i)) << " sig " << dalpha(i,0)/sqrt(fabs(parcov(i,i))) << " original cov " << sqrt(cov(i,i)) << " " <<  dalpha(i,0)/sqrt(cov(i,i))  <<std::endl; 

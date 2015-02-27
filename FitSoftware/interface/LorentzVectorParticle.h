@@ -32,6 +32,16 @@ class LorentzVectorParticle : public Particle {
     }
     return vcov; 
   }
+
+  /*
+  // addition
+  LorentzVectorParticle operator+(LorentzVectorParticle s) const; 
+  LorentzVectorParticle operator+=(LorentzVectorParticle s) const;
+
+  // subtraction
+  LorentzVectorParticle operator-(LorentzVectorParticle s) const; 
+  LorentzVectorParticle operator-=(LorentzVectorParticle s) const;
+  */
 };
 #endif
 
