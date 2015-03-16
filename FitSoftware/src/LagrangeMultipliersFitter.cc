@@ -11,7 +11,7 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
   epsilon_(0.001),
   weight_(1.0),
   MaxDelta_(0.01),
-  nitermax_(500),
+  nitermax_(100),
   chi2(1e10),
   D(1,1), 
   V_D(1,1)
@@ -33,17 +33,18 @@ bool LagrangeMultipliersFitter::Fit(){
   isFit=true;
   niter=0;
   for(niter=0;niter<=nitermax_;niter++){
+    //std::cout<<"before ApplyLagrangianConstraints:   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
     bool passed=ApplyLagrangianConstraints();
-    //    std::cout<<"fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl; 
+    //std::cout<<"fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
     if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
-      std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
+      //std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
 
       return false;
       //return true;
     }
     if(isConverged()) break; 
   }
-  //  std::cout<<" Lagrangian constrained fitter =====> "<< chi2 <<std::endl;
+    //std::cout<<" Lagrangian constrained fitter =====> "<< chi2 <<std::endl;
   ComputeVariance();
 //   std::cout<<"info before return true  fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
 //   std::cout<<"LagrangeMultipliersFitter::Fit  2 "<<  par(0) << "   " <<par(1) <<"   " << par(2) <<std::endl;
@@ -56,12 +57,18 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   if(V_D.GetNrows()!=NConstraints()) V_D.ResizeTo(NConstraints(),NConstraints());
   if(D.GetNrows()!=NConstraints() || D.GetNcols()!=par.GetNrows()) D.ResizeTo(NConstraints(),par.GetNrows());
 
+  //std::cout << "ApplyLagrangianConstraints debug: 1" <<std::endl;
   // Setup intial values
   TMatrixT<double> alpha_A=convertToMatrix(par);
   TMatrixT<double> alpha_0=convertToMatrix(par_0);
   TMatrixT<double> delta_alpha_A=alpha_A-alpha_0;
 
+  //std::cout << "ApplyLagrangianConstraints debug: 2" <<std::endl;
   D=Derivative();
+
+  //std::cout << "Print Derivatives matrix" <<std::endl;
+  //D.Print();
+  //std::cout << "ApplyLagrangianConstraints debug: 3" <<std::endl;
 
   // std::cout<<"call value to compute Value   "<<std::endl;
   TMatrixT<double> d=convertToMatrix(Value(par));
@@ -83,6 +90,12 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   double det = V_D_inv.Determinant();
 
+  //TMatrixTSym<double> X(V_D_inv);
+  //std::cout << "PRINT X!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+  //std::cout << "X Det" << X.Determinant() <<  std::endl;
+  //X.Print();
+  //X.Invert();
+  //X.Print();
   //if(niter==0){
   //	std::cout << "VD matrix det: " << det <<std::endl;
   //}
@@ -94,7 +107,13 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   }
   if(!Inverter.Decompose()){
         std::cout << "Fit failed: unable to invert SYM gain matrix " << det << " \n" << std::endl;
-        cov_0.Print();
+        //std::cout << "Inverter.Decompose()" << Inverter.Decompose() << std::endl;
+        //V_D_inv.Invert();
+        //cov_0.Print();
+        //d.Print();
+        //D.Print();
+        //V_D_inv.Print();
+        //std::cout << "V_D_inv.Determinant()" << V_D_inv.Determinant() << std::endl;
     return false;
   }
   V_D=Inverter.Invert();
@@ -115,7 +134,9 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   // do while loop to see if the convergence criteria are satisfied
   double s(1), stepscale(0.01);
   chi2prev=chi2;
+  //std::cout<<"chi2 "<<chi2<< std::endl;
   double Curentchi2(ChiSquareUsingInitalPoint(alpha_A,lambda)), Currentdelta(ConstraintDelta(par));
+  //std::cout<<"Curentchi2 "<<Curentchi2<< std::endl;
   TMatrixT<double> alpha_s=alpha;
 
   // convergence in 2 step procedure to minimize chi2 within MaxDelta_ of the constraints
@@ -136,16 +157,13 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
     }
     else if(Proc==Chi2AndConstaintMin){
       double chi2_s=ChiSquareUsingInitalPoint(alpha_s,lambda);
+      //std::cout<<"chi2_s "<<chi2_s<< std::endl;
       if((delta_alpha_s<Currentdelta/*+MaxDelta_*/ && chi2_s<Curentchi2) || iter==NIter || diff<100*epsilon_){
     	Curentchi2=chi2_s;
     	Currentdelta=delta_alpha_s;
     	ScaleFactor=s;
-    	if(iter==NIter){
-    	  std::cout << "Proc==Chi2AndConstraintMin broke, because: iter==NIter, iter: " << iter << std::endl;
-    	}
-    	if(diff<1*epsilon_){
-    	  std::cout << "Proc==Chi2AndConstraintMin broke, because: diff<1*epsilon_, diff: " << diff << std::endl;
-    	}
+    	//if(iter==NIter) std::cout << "Proc==Chi2AndConstraintMin broke, because: iter==NIter, iter: " << iter << std::endl;
+    	//if(diff<1*epsilon_) std::cout << "Proc==Chi2AndConstraintMin broke, because: diff<1*epsilon_, diff: " << diff << std::endl;
     	break;}
     }
     s-=stepscale;
@@ -153,9 +171,12 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   }
 
 
+  //std::cout<<"Curentchi2 "<<Curentchi2<< std::endl;
 
   // set chi2
   chi2=Curentchi2;  
+  //std::cout<<"chi2 "<<chi2<< std::endl;
+
   //set delta
   delta=Currentdelta;
   //   std::cout << "LagrangeMultipliersFitter Chi^2 " << chi2 << " delta " << Currentdelta << std::endl; 
@@ -170,27 +191,27 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   return true;
 }
 TMatrixD LagrangeMultipliersFitter::Derivative(){ // alway evaluated at current par
-  //  std::cout<<" deb 1"<<std::endl;
+  //std::cout<<" deb 1"<<std::endl;
   TMatrixD Derivatives(NConstraints(),par.GetNrows());
   TVectorD par_plus(par.GetNrows());
   TVectorD value(NConstraints());
   TVectorD value_plus(NConstraints());
-  //  std::cout<<" deb 2"<<std::endl;
+  //std::cout<<" deb 2"<<std::endl;
   for(int j=0;j<par.GetNrows();j++){
     for(int i=0;i<par.GetNrows();i++){
       par_plus(i)=par(i);
-      //      std::cout<<" deb 3 "<<epsilon_ <<std::endl;
+            //std::cout<<" deb 3 "<<epsilon_ <<std::endl;
       if(i==j) par_plus(i)=par(i)+epsilon_;
     }
-//   std::cout<<" deb 4"<<std::endl;
+   //std::cout<<" deb 4"<<std::endl;
 //   std::cout<<" paramters   "<<par(0) <<" "<<par(1) <<" "<<par(2) <<" "<<par(3) <<" "<<par(4) <<" "<<par(5) <<" "<<std::endl;
 //   std::cout<<" paramters_plus   "<<par_plus(0) <<" "<<par_plus(1) <<" "<<par_plus(2) <<" "<<par_plus(3) <<" "<<par_plus(4) <<" "<<par_plus(5) <<" "<<std::endl;
 
     value=Value(par);
-    //  std::cout<<" deb 5"<<std::endl;
+      //std::cout<<" deb 5"<<std::endl;
     value_plus=Value(par_plus);
     for(int i=0; i<NConstraints();i++){
-      //  std::cout<<" deb 6"<<std::endl;
+        //std::cout<<" deb 6"<<std::endl;
       Derivatives(i,j)=(value_plus(i)-value(i))/epsilon_;
     }
   }
@@ -239,8 +260,12 @@ double LagrangeMultipliersFitter::ChiSquare(TMatrixT<double> delta_alpha,TMatrix
 
 double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> alpha,TMatrixT<double> lambda){
   if(cov_0.GetNrows()!=V_alpha0_inv.GetNrows()){
+  	//std::cout << "cov_0 matrix" << std::endl;
+  	//cov_0.Print();
     TMatrixTSym<double> V_alpha0=cov_0;
     V_alpha0_inv.ResizeTo(cov_0.GetNrows(),cov_0.GetNrows());
+  	//std::cout << "V_alpha0_inv. matrix" << std::endl;
+  	//V_alpha0_inv.Print();
     TDecompBK Inverter(V_alpha0);
     if(!Inverter.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
       std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
@@ -255,6 +280,8 @@ double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> alp
       V_alpha0_inv=Inverter.Invert();
     }
   }
+	//std::cout << "V_alpha0_inv. matrix" << std::endl;
+	//V_alpha0_inv.Print();
 
   TMatrixT<double> lambdaT=lambda; lambdaT.T();
   TMatrixT<double> alpha_0=convertToMatrix(par_0);

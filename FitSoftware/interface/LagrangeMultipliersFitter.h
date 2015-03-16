@@ -35,10 +35,10 @@ class LagrangeMultipliersFitter{
 
   virtual std::vector<LorentzVectorParticle> GetReFitDaughters()=0;
   virtual LorentzVectorParticle GetMother()=0;
-  virtual TVectorD Getpar_0(){return par_0;}
-  virtual TMatrixTSym<double> Getcov_0(){return cov_0;}
-  virtual TVectorD Getpar(){return par;}
-  virtual TMatrixTSym<double> Getcov(){return cov;}
+  virtual TVectorD Getpar_0() const{return par_0;}
+  virtual TMatrixTSym<double> Getcov_0() const{return cov_0;}
+  virtual TVectorD Getpar() const{return par;}
+  virtual TMatrixTSym<double> Getcov() const{return cov;}
 
   static TVectorT<double> convertToVector(TMatrixT<double> M);
   static TMatrixT<double> convertToMatrix(TVectorT<double> V);

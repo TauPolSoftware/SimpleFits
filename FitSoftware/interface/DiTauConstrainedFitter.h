@@ -29,8 +29,10 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   std::vector<LorentzVectorParticle> GetReFitDaughters();
   LorentzVectorParticle GetMother();
   LorentzVectorParticle GetTauMuEstimate();
-  void SetMassConstraint(double MassConstraint){MassConstraint_ = MassConstraint;};
-  double GetMassConstraint(){return MassConstraint_;};
+  void SetMassConstraint(double MassConstraint) const{MassConstraint_ = MassConstraint;};
+  double GetMassConstraint() const{return MassConstraint_;};
+  void SetPtConstraint(double PtConstraint) const{PtConstraint_ = PtConstraint;};
+  double GetPtConstraint() const{return PtConstraint_;};
 
 
  protected:
@@ -66,11 +68,11 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   TMatrixT<double> ComputeAngleCovarianceAnalytically(TrackParticle MuTrack, std::pair<double, double> phiAngle,  TVector3 PV, TVector3 SV, LorentzVectorParticle  TauA1);
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
-  static double MassConstraint_;
+  static double MassConstraint_, PtConstraint_;
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;
   std::vector<LorentzVectorParticle> particles_;
-  static TrackParticle MuTrack_;
+  //static TrackParticle MuTrack_;
   bool debug;
   bool AnalyticalCovariance;
   int ConstraintMode;
