@@ -21,24 +21,12 @@ class Particle {
   virtual double qB(){return b*charge;}
   virtual int    NParameters()=0;
 
-  const TMatrixTSym<double>& getCov() const{
+  const TMatrixTSym<double>& getCovMatrix() const{
 	return cov;
   }
 
-  const TMatrixT<double>& getPar() const{
+  const TMatrixT<double>& getParMatrix() const{
 	return par;
-  }
-
-  double getB() const{
-	return b;
-  }
-
-  double getCharge() const{
-	return charge;
-  }
-
-  int getPdgid() const{
-	return pdgid;
   }
 
  private:
