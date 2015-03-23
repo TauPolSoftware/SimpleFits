@@ -8,7 +8,7 @@
 
 class Logger {
  public:
-  enum level{Fatal=0,Error=1,Warning=2,Verbose=3,Debug=4};
+   enum level{Fatal=0,Error=1,Warning=2,Info=3,Verbose=4,Debug=5};
   static Logger* Instance(){if(instance==NULL) instance=new Logger(); return instance;}
 
   // set output stream 
