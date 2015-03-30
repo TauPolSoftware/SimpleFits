@@ -20,31 +20,31 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
 }
 
 bool LagrangeMultipliersFitter::Fit(){
-  //  std::cout<<"LagrangeMultipliersFitter  deb 1  "<<std::endl;
+  //std::cout<<"LagrangeMultipliersFitter  deb 1  "<<std::endl;
   if(cov.GetNrows()!=par_0.GetNrows()){
-    //std::cout<<"LagrangeMultipliersFitter  deb 2  "<<std::endl;
-    // set cov to cov_0 until value is computed
-    cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
-    cov=cov_0;
- 
+	  //std::cout<<"LagrangeMultipliersFitter  deb 2  "<<std::endl;
+	  // set cov to cov_0 until value is computed
+	  cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
+	  cov=cov_0;
   }
+
   if(!isconfigured) return false;
   if(isFit)return isConverged();
   isFit=true;
   niter=0;
   for(niter=0;niter<=nitermax_;niter++){
-    //std::cout<<"before ApplyLagrangianConstraints:   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
-    bool passed=ApplyLagrangianConstraints();
-    //std::cout<<"fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
-    if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
-      //std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
+	  //std::cout<<"before ApplyLagrangianConstraints:   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
+	  bool passed=ApplyLagrangianConstraints();
+	  //std::cout<<"fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
+	  if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
+		  //std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
 
-      return false;
-      //return true;
-    }
-    if(isConverged()) break; 
+		  return false;
+		  //return true;
+	  }
+	  if(isConverged()) break;
   }
-    //std::cout<<" Lagrangian constrained fitter =====> "<< chi2 <<std::endl;
+  //std::cout<<" Lagrangian constrained fitter =====> "<< chi2 <<std::endl;
   ComputeVariance();
 //   std::cout<<"info before return true  fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,2)<<std::endl;
 //   std::cout<<"LagrangeMultipliersFitter::Fit  2 "<<  par(0) << "   " <<par(1) <<"   " << par(2) <<std::endl;
@@ -75,6 +75,8 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixT<double> C=D*delta_alpha_A-d;
   TMatrixTSym<double> V_alpha0=cov_0;
   TMatrixTSym<double> V_D_inv=V_alpha0;
+
+  //std::cout << "ApplyLagrangianConstraints debug: 4" <<std::endl;
 
   //if(niter==0){
   //	std::cout << "VD matrix with initial cov" << std::endl;

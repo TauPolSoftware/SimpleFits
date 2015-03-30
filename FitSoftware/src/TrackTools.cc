@@ -3,7 +3,9 @@
 #include "math.h"
 #include <iostream>
 
-TVector3 TrackTools::PropogateToXPosition(TrackParticle &p,double &x){
+namespace TrackTools{
+
+TVector3 PropogateToXPosition(TrackParticle &p,double &x){
   double kappa=p.Parameter(TrackParticle::kappa);
   double lam=p.Parameter(TrackParticle::lambda);
   double phi=p.Parameter(TrackParticle::phi);
@@ -16,7 +18,7 @@ TVector3 TrackTools::PropogateToXPosition(TrackParticle &p,double &x){
   return TVector3(x,y,z);
 }
 
-TVector3 TrackTools::PropogateToYPosition(TrackParticle &p,double &y){
+TVector3 PropogateToYPosition(TrackParticle &p,double &y){
   double kappa=p.Parameter(TrackParticle::kappa);
   double lam=p.Parameter(TrackParticle::lambda);
   double phi=p.Parameter(TrackParticle::phi);
@@ -29,7 +31,7 @@ TVector3 TrackTools::PropogateToYPosition(TrackParticle &p,double &y){
   return TVector3(x,y,z);
 }
 
-TVector3 TrackTools::PropogateToZPosition(TrackParticle &p,double &z){
+TVector3 PropogateToZPosition(TrackParticle &p,double &z){
   double kappa=p.Parameter(TrackParticle::kappa);
   double lam=p.Parameter(TrackParticle::lambda);
   double phi=p.Parameter(TrackParticle::phi);
@@ -42,8 +44,7 @@ TVector3 TrackTools::PropogateToZPosition(TrackParticle &p,double &z){
   return TVector3(x,y,z);
 }
 
-
-LorentzVectorParticle TrackTools::LorentzParticleAtPosition(TrackParticle &p,TVector3 &v){
+LorentzVectorParticle LorentzParticleAtPosition(TrackParticle &p,TVector3 &v){
   TMatrixT<double>    FreePar(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::NExtraPar+TrackHelixVertexFitter::MassOffSet,1);
   TMatrixTSym<double> FreeParCov(TrackHelixVertexFitter::NFreeTrackPar+TrackHelixVertexFitter::NExtraPar+TrackHelixVertexFitter::MassOffSet);
   FreePar(TrackHelixVertexFitter::x0,0)=v.X();
@@ -58,5 +59,4 @@ LorentzVectorParticle TrackTools::LorentzParticleAtPosition(TrackParticle &p,TVe
   TMatrixTSym<double> LVCov=ErrorMatrixPropagator::PropagateError(&TrackHelixVertexFitter::ComputeLorentzVectorPar,FreePar,FreeParCov);
   return LorentzVectorParticle(LVPar,LVCov,p.PDGID(),p.Charge(),p.BField());
 }
-
-
+}
