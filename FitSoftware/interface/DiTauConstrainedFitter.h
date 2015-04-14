@@ -7,6 +7,7 @@
 #include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
 #include "SimpleFits/FitSoftware/interface/ErrorMatrixPropagator.h"
 #include "SimpleFits/FitSoftware/interface/TrackParticle.h"
+#include "SimpleFits/FitSoftware/interface/Logger.h"
 #include <vector>
 
 class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
@@ -53,6 +54,8 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   TMatrixT<double> ComputeAngleCovarianceAnalytically(TrackParticle MuTrack, std::pair<double, double> phiAngle, TVector3 PV, TVector3 SV, LorentzVectorParticle TauA1);
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
+  static TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
+  static double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
 
   void UpdateExpandedPar();
   static void CovertParToObjects(TVectorD &v,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass);

@@ -319,12 +319,12 @@ DiTauConstrainedFitter::Value(TVectorD &v){
 
 
   TLorentzVector z=Taua1+Taumu;
-  TVectorD d(4);
+  TVectorD d(NConstraints());
 
   d(0) = z.M() - ZMass;
   d(1) = Taua1.Px() + Taumu.Px();
   d(2) = Taua1.Py() + Taumu.Py();
-  d(3) = Taumu.Pz()/Taumu.P() - cos(ThetaForConstrTemporaryIMplementation_);
+  d(3) = Taumu.Pz() - cos(ThetaForConstrTemporaryIMplementation_)*Taumu.P();
   //  std::cout<<"ThetaForConstrTemporaryIMplementation_ " << ThetaForConstrTemporaryIMplementation_  <<std::endl;
   return d;
 }
@@ -493,6 +493,10 @@ DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
   TVector3 PV(inpar(4,0),inpar(5,0),inpar(6,0));
   TVector3 SV(inpar(7,0),inpar(8,0),inpar(9,0));
 
+  TVector3 TauMuDirNEW = DiTauConstrainedFitter::TauMuPtBalanceEstimator(inpar, PV, SV);
+  outpar(0,0) = TauMuDirNEW.Theta();
+  outpar(1,0) = TauMuDirNEW.Phi();
+
   TVector3 TauDir = PV - SV;
   double TauA1OppositePhi = atan2(TauDir.Y(), TauDir.X());
 
@@ -535,12 +539,21 @@ DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
   // double zPoint = (r - dxy)*lam - zdoc;
 
   // double cosTheta2 = zPoint/sqrt(r*r + zPoint*zPoint) ;
-   TVector3 PointGuess(xdoc, ydoc, zdoc);
-   TVector3 TauMuDir = PV - PointGuess;
-   double cosTheta2 = TauMuDir.Z()/TauMuDir.Mag();
+  TVector3 PointGuess(xdoc, ydoc, zdoc);
+  TVector3 TauMuDir = PV - PointGuess;
+  double cosTheta2 = TauMuDir.Z()/TauMuDir.Mag();
 
-  outpar(0,0) = acos(cosTheta2);
-  outpar(1,0) = TauDir.Phi();
+  //outpar(0,0) = acos(cosTheta2);
+  //outpar(1,0) = TauDir.Phi();
+
+  /*
+  std::cout << "Alex: TauMuDir.Theta() " << TauMuDirNEW.Theta() << std::endl;
+  std::cout << "Alex: TauMuDir.Phi() " << TauMuDirNEW.Phi() << std::endl;
+
+  std::cout << "Vladimir: TauMuDir.Theta() " << acos(cosTheta2) << std::endl;
+  std::cout << "Vladimir: TauMuDir.Phi() " << TauDir.Phi() << std::endl;
+  */
+
 
 
 //    std::cout<<" xPoint, yPoint, zPoint  "<< xPoint << "  " <<yPoint <<" "<<zPoint<<std::endl;
@@ -928,4 +941,76 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
 LorentzVectorParticle
 DiTauConstrainedFitter::GetTauMuEstimate(){
   return particles_.at(1);
+}
+TVector3 DiTauConstrainedFitter::TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV){
+	double dxy 			= Muon(0,0);		//= Muon.Parameter(TrackParticle::dxy);
+	double phi0 		= Muon(1,0);		//= Muon.Parameter(TrackParticle::phi);
+	double lambda 		= Muon(2,0);		//= Muon.Parameter(TrackParticle::lambda);
+	double dz 			= Muon(3,0);		//= Muon.Parameter(TrackParticle::dz);
+	double cosphi0 		= cos(phi0); 				double sinphi0 		= sin(phi0);
+	double coslambda 	= cos(lambda); 				double sinlambda 	= sin(lambda);
+	double tanlambda	= tan(lambda);
+
+	TVector3 SVPV = SV - PV;
+	TVector3 Muon0 = TVector3(-sinphi0*dxy,cosphi0*dxy,dz);
+	TVector3 Taumu0 = TVector3(PV);
+	TVector3 Delta0 = TVector3(Muon0 - Taumu0);
+
+	double phitau = atan2(-SVPV.Y(),-SVPV.X());
+
+	double cosphitau 	= cos(phitau); 	double sinphitau 	= sin(phitau);
+	//double cosphitau 	= -SVPV.X()/SVPV.Perp(); 	double sinphitau 	= -SVPV.Y()/SVPV.Perp();
+
+	double tmu = (Delta0.Y()/sinphitau - Delta0.X()/cosphitau)/(cosphi0/cosphitau - sinphi0/sinphitau);
+	/*
+	double b = Delta0.X()/cosphi0 - Delta0.Y()/sinphi0;
+	double a = cosphitau/cosphi0 - sinphitau/sinphi0;
+	double ttauplus = - (Delta0.Z() + sqrt(pow(tmu,2.) - pow(b/a,2.)))/sinlambda;
+	double ttauminus = - (Delta0.Z() - sqrt(pow(tmu,2.) - pow(b/a,2.)))/sinlambda;
+	double costhetaplus = (Delta0.Z() + tmu*sinlambda)/ttauminus;
+	double costhetaminus = (Delta0.Z() + tmu*sinlambda)/ttauplus;
+	double sinthetaplus = sqrt(1. - pow(costhetaplus,2.));
+	double sinthetaminus = sqrt(1. - pow(costhetaminus,2.));
+	*/
+
+	TVector3 MuonDir = TVector3(tmu*cosphi0, tmu*sinphi0, tmu*tanlambda);
+	TVector3 Intersection = MuonDir + Muon0;
+	TVector3 TauMuDirFromIntersection = Intersection - Taumu0;
+
+	/*
+	TVector3 TauMuDirPlus = TVector3(ttauplus*cosphitau*sinthetaplus,ttauplus*sinphitau*sinthetaplus, ttauplus*costhetaplus);
+	TVector3 TauMuDirMinus = TVector3(ttauplus*cosphitau*sinthetaminus,ttauplus*sinphitau*sinthetaminus, ttauplus*costhetaminus);
+
+	double distplus = Distance(Muon0, Taumu0, MuonDir, TauMuDirPlus);
+	double distminus = Distance(Muon0, Taumu0, MuonDir, TauMuDirMinus);
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: distplus: " << distplus << std::endl;
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: distminus: " << distminus << std::endl;
+	*/
+	double distnew = Distance(Muon0, Taumu0, MuonDir, TauMuDirFromIntersection);
+
+	/*
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: distnew: " << distnew << std::endl;
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: TauMuDirFromIntersection.Mag(): " << TauMuDirFromIntersection.Mag() << std::endl;
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: TauMuDirFromIntersection.Phi(): " << TauMuDirFromIntersection.Phi() << std::endl;
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: phitau: " << phitau << std::endl;
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: SVPV.Phi(): " << SVPV.Phi() << std::endl;
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: dxy: " << dxy << std::endl;
+	Logger(Logger::Debug) << "TauMuPtBalanceEstimator: tmu: " << tmu << std::endl;
+	*/
+
+
+	TVector3 TauMuDir = TVector3();
+
+	//(distplus < distminus) ? TauMuDir = TauMuDirPlus : TauMuDir = TauMuDirMinus;
+	TauMuDir = TauMuDirFromIntersection;
+
+	//TauMuDir.SetMag(1.);
+	return TauMuDir;
+}
+double DiTauConstrainedFitter::Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2){
+	TVector3 vecproduct = DirectionVector1.Cross(DirectionVector2);
+	TVector3 relvec = TVector3(Location2 - Location1);
+	double Mag = abs(vecproduct.Mag());
+	double distance = (Mag == 0) ? 0. : abs(vecproduct.Dot(relvec))/Mag;
+	return distance;
 }

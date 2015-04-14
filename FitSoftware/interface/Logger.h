@@ -32,7 +32,7 @@ class Logger {
 
 #define Logger(level) \
   if(Logger::Instance()->Level()>=level) \
-    Logger::Instance()->Stream() << #level << " [File: " << __FILE__ << " Function: " <<  __func__ << " Line: " << __LINE__ << "] - "  
+    Logger::Instance()->Stream() << #level << " [" << __FILE__ << " : " <<  __func__ << " l.: " << __LINE__ << "] - "
 
 #endif
 

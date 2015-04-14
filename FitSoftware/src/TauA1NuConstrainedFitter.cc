@@ -172,7 +172,7 @@ void TauA1NuConstrainedFitter::CovertParToObjects(TVectorD &v,TLorentzVector &a1
 
 bool TauA1NuConstrainedFitter::Fit(){
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Check if Tau Direction is unphysical and if nessicary set the starting point to Theta_{GJ-Max}
+  // Check if Tau Direction is unphysical and if necessary set the starting point to Theta_{GJ-Max}
   TLorentzVector a1(par(a1_px),par(a1_py),par(a1_pz),sqrt(par(a1_m)*par(a1_m)+par(a1_px)*par(a1_px)+par(a1_py)*par(a1_py)+par(a1_pz)*par(a1_pz)));
   double phi(par(tau_phi)),theta(par(tau_theta));
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
@@ -191,13 +191,13 @@ bool TauA1NuConstrainedFitter::Fit(){
 
   //case 1: is real then solve analytically
   if(isReal && (ambiguity_==plus || ambiguity_==minus)){
-    // popogate errors
+    // propagate errors
     TMatrixT<double> par_tmp=TauA1NuConstrainedFitter::SolveAmbiguityAnalytically(thepar);
     cov=ErrorMatrixPropagator::PropagateError(&TauA1NuConstrainedFitter::SolveAmbiguityAnalytically,thepar,cov_0);
     for(int i=0; i<npar;i++) par(i)=par_tmp(i,0);
     return true;
   }
-  // case 2 is in unphsyical region - rotate and substitue \theta_{GJ} with \theta_{GJ}^{Max} and then solve analytically
+  // case 2 is in unphysical region - rotate and substitute \theta_{GJ} with \theta_{GJ}^{Max} and then solve analytically
   else if(ambiguity_==zero && !isReal){
     TMatrixT<double> par_tmp=TauA1NuConstrainedFitter::SolveAmbiguityAnalyticallywithRot(thepar);
     cov=ErrorMatrixPropagator::PropagateError(&TauA1NuConstrainedFitter::SolveAmbiguityAnalyticallywithRot,thepar,cov_0);
@@ -242,7 +242,7 @@ TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalytically(TMatrixT<d
 }
 
 TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalyticallywithRot(TMatrixT<double> &inpar){
-  // Rotate and subsitute \theta_{GJ} with \theta_{GJ}^{Max} - assumes uncertianty on thata and phi of the a1 or small compared to the tau direction. 
+  // Rotate and substitute \theta_{GJ} with \theta_{GJ}^{Max} - assumes uncertainty on theta and phi of the a1 or small compared to the tau direction.
   TMatrixT<double> outpar(inpar.GetNrows(),1);
   TVectorT<double> v=LagrangeMultipliersFitter::convertToVector(inpar);
   TLorentzVector a1,nu;
