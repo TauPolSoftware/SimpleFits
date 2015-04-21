@@ -3,20 +3,31 @@
  *
  *  Created on: Apr 16, 2015
  *      Author: zotz
+ *
+ *
+ *      This class offers an interface for the global event fit including the reconstruction of the hadronic tau and the fit of the di-tau system.
  */
 
-#include "GlobalEventFit.h"
+#include "SimpleFits/FitSoftware/interface/GlobalEventFit.h"
+#include "SimpleFits/FitSoftware/interface/TauA1NuConstrainedFitter.h"
+#include "SimpleFits/FitSoftware/interface/DiTauConstrainedFitter.h"
 
 GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov){
 	isConfigured_ = false;
 	isFit_ = false;
 	Muon_ = Muon;
-	A1_ = A1;
+	A1_= A1;
 	PV_ = PV;
-	PVCov_ = PVCov;
+	PVCov_.ResizeTo(PVCov);
+	PVCov_= PVCov;
 	SV_ = A1.Vertex();
+	SVCov_.ResizeTo(A1.VertexCov());
 	SVCov_ = A1.VertexCov();
+
 	TPTRObject_ = ThreeProngTauReco();
+}
+GlobalEventFit::~GlobalEventFit(){
+
 }
 
 TPTRObject GlobalEventFit::ThreeProngTauReco(){
@@ -24,6 +35,11 @@ TPTRObject GlobalEventFit::ThreeProngTauReco(){
 	std::vector<LorentzVectorParticle> Taus;
 	std::vector<LorentzVectorParticle> Neutrinos;
 	std::vector<bool> recostatus;
+
+	if(A1_.getParMatrix().GetNrows() != LorentzVectorParticle::NLorentzandVertexPar){
+	  Logger(Logger::Error) << "A1 is not a valid LorentzVectorParticle." << std::endl;
+	  return TPTRObject();
+	}
 
 	for(unsigned int Ambiguity = 0; Ambiguity<3; Ambiguity++){
 		TauA1NuConstrainedFitter TauA1NU(Ambiguity,A1_,PV_,PVCov_);
@@ -73,6 +89,8 @@ GEFObject GlobalEventFit::Fit(){
 			std::vector<LorentzVectorParticle> tmp;
 			InitDaughters.push_back(tmp);
 			RefitDaughters.push_back(tmp);
+			InitResonance.push_back(LorentzVectorParticle());
+			FitResonance.push_back(LorentzVectorParticle());
 			Chi2s.push_back(-1);
 			Csums.push_back(-1);
 			Niterats.push_back(-1);
@@ -104,14 +122,14 @@ GEFObject GlobalEventFit::Fit(){
 			Niterats.push_back(-1);
 		}
 	}
-	int IndexToReturn;
+	int IndexToReturn(-1);
 	if(AmbiguitySolverByChi2(recostatus, fitstatus, Chi2s, IndexToReturn)){
 		GEFObject Results = GEFObject(InitDaughters.at(IndexToReturn),
 			InitResonance.at(IndexToReturn),
 			RefitDaughters.at(IndexToReturn),
 			FitResonance.at(IndexToReturn),
 			true, Chi2s.at(IndexToReturn), Csums.at(IndexToReturn), Niterats.at(IndexToReturn), IndexToReturn);
-			isFit_ = true;
+		isFit_ = true;
 		return Results;
 	}
 	else{
@@ -122,9 +140,9 @@ GEFObject GlobalEventFit::Fit(){
 
 bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn){
 
-	if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false){IndexToReturn =0; return true;}
-	if(EventFit.at(1) == true && EventFit.at(2) == false){ IndexToReturn = 1;return true;}
-	if(EventFit.at(1) == false && EventFit.at(2) == true){ IndexToReturn = 2;return true;}
+	if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false && Chi2s.at(0) > 0){IndexToReturn =0; return true;}
+	if(EventFit.at(1) == true && EventFit.at(2) == false && Chi2s.at(1) > 0){ IndexToReturn = 1;return true;}
+	if(EventFit.at(1) == false && EventFit.at(2) == true && Chi2s.at(2) > 0){ IndexToReturn = 2;return true;}
 
 	if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == true && EventFit.at(2) == true)){
 		if(Chi2s.at(1) < Chi2s.at(2) && Chi2s.at(1) > 0){ IndexToReturn =1;return true;}

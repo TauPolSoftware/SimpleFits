@@ -11,8 +11,11 @@ class LorentzVectorParticle : public Particle {
   enum LorentzandVectorPar{vx=0,vy,vz,px,py,pz,m,NLorentzandVertexPar,E=-1,p=-2,pt=-3};// Lorentez+vertex parameters
   enum VertexInfo{NVertex=3};
   LorentzVectorParticle();
+  LorentzVectorParticle(const LorentzVectorParticle& other);
   LorentzVectorParticle(TMatrixT<double> par_, TMatrixTSym<double> cov_, int pdgid_, double charge_, double b_);
   virtual ~LorentzVectorParticle(){};
+
+  /*LorentzVectorParticle& operator=(const LorentzVectorParticle& other);*/
 
   static TString Name(int i);
   virtual int NParameters(){return NLorentzandVertexPar;}

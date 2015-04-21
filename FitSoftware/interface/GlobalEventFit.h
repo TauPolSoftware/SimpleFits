@@ -5,11 +5,14 @@
  *      Author: zotz
  */
 
-#ifndef GLOBALEVENTFIT_H_
-#define GLOBALEVENTFIT_H_
+#ifndef GlobalEventFit_h
+#define GlobalEventFit_h
 
-#include "TPTRObject.h"
-#include "GEFObject.h"
+#include "SimpleFits/FitSoftware/interface/TPTRObject.h"
+#include "SimpleFits/FitSoftware/interface/GEFObject.h"
+#include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
+#include "SimpleFits/FitSoftware/interface/Logger.h"
+#include "SimpleFits/FitSoftware/interface/TrackParticle.h"
 
 class GlobalEventFit{
   public:
@@ -47,7 +50,9 @@ class GlobalEventFit{
 	LorentzVectorParticle A1_;
 	TVector3 PV_, SV_;
 	TMatrixTSym<double> PVCov_, SVCov_;
+	bool useMassConstraint_;
+	double MassConstraint_;
 };
 
 
-#endif /* GLOBALEVENTFIT_H_ */
+#endif /* GlobalEventFit_h */

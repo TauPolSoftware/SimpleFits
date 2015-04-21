@@ -5,13 +5,13 @@
  *      Author: zotz
  */
 
-#include "TPTRObject.h"
+#include "SimpleFits/FitSoftware/interface/TPTRObject.h"
 
 TPTRObject::TPTRObject(){
   isvalid_ = false;
 }
 
-TPTRObject::TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorParticle> Taus, std::vector<LorentzVectorParticle> Neutrinos, bool isvalid, bool isambiguous){
+TPTRObject::TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorParticle> Taus, std::vector<LorentzVectorParticle> Neutrinos, bool isambiguous, bool isvalid){
   isvalid_ = isvalid;
   isambiguous_ = isambiguous;
   if(isvalid_){
@@ -21,7 +21,7 @@ TPTRObject::TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorPartic
   }
 }
 
-const LorentzVectorParticle& TPTRObject::getNeutrinoMinus() const{
+LorentzVectorParticle TPTRObject::getNeutrinoMinus() const{
   if(isvalid_){
 	if(isambiguous_){
 	  return Neutrinos_.at(1);
@@ -35,7 +35,7 @@ const LorentzVectorParticle& TPTRObject::getNeutrinoMinus() const{
   return LorentzVectorParticle();
 }
 
-const LorentzVectorParticle& TPTRObject::getNeutrinoPlus() const{
+LorentzVectorParticle TPTRObject::getNeutrinoPlus() const{
   if(isvalid_){
 	if(isambiguous_){
 	  return Neutrinos_.at(2);
@@ -49,15 +49,16 @@ const LorentzVectorParticle& TPTRObject::getNeutrinoPlus() const{
   return LorentzVectorParticle();
 }
 
-const std::vector<LorentzVectorParticle>& TPTRObject::getNeutrinos() const{
+std::vector<LorentzVectorParticle> TPTRObject::getNeutrinos() const{
   if(isvalid_){
 	return Neutrinos_;
   }
   Logger(Logger::Error) << "TPTRObject is NOT valid!" << std::endl;
-  return LorentzVectorParticle();
+  std::vector<LorentzVectorParticle> tmp;
+  return tmp;
 }
 
-const LorentzVectorParticle& TPTRObject::getNeutrinoZero() const{
+LorentzVectorParticle TPTRObject::getNeutrinoZero() const{
   if(isvalid_){
 	if(!isambiguous_){
 	  return Neutrinos_.at(0);
@@ -71,7 +72,7 @@ const LorentzVectorParticle& TPTRObject::getNeutrinoZero() const{
   return LorentzVectorParticle();
 }
 
-const LorentzVectorParticle& TPTRObject::getTauMinus() const{
+LorentzVectorParticle TPTRObject::getTauMinus() const{
   if(isvalid_){
 	if(isambiguous_){
 	  return Taus_.at(1);
@@ -85,7 +86,7 @@ const LorentzVectorParticle& TPTRObject::getTauMinus() const{
   return LorentzVectorParticle();
 }
 
-const LorentzVectorParticle& TPTRObject::getTauPlus() const{
+LorentzVectorParticle TPTRObject::getTauPlus() const{
   if(isvalid_){
 	if(isambiguous_){
 	  return Taus_.at(2);
@@ -99,15 +100,16 @@ const LorentzVectorParticle& TPTRObject::getTauPlus() const{
   return LorentzVectorParticle();
 }
 
-const std::vector<LorentzVectorParticle>& TPTRObject::getTaus() const{
+std::vector<LorentzVectorParticle> TPTRObject::getTaus() const{
   if(isvalid_){
 	return Taus_;
   }
   Logger(Logger::Error) << "TPTRObject is NOT valid!" << std::endl;
-  return LorentzVectorParticle();
+  std::vector<LorentzVectorParticle> tmp;
+  return tmp;
 }
 
-const LorentzVectorParticle& TPTRObject::getTauZero() const{
+LorentzVectorParticle TPTRObject::getTauZero() const{
   if(isvalid_){
 	if(!isambiguous_){
 	  return Taus_.at(0);
@@ -121,7 +123,7 @@ const LorentzVectorParticle& TPTRObject::getTauZero() const{
   return LorentzVectorParticle();
 }
 
-const LorentzVectorParticle& TPTRObject::getA1() const{
+LorentzVectorParticle TPTRObject::getA1() const{
   if(isvalid_){
 	return A1_;
   }

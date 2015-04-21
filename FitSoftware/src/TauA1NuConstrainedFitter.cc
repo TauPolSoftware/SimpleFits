@@ -1,6 +1,7 @@
 #include "SimpleFits/FitSoftware/interface/TauA1NuConstrainedFitter.h"
 #include "SimpleFits/FitSoftware/interface/PDGInfo.h"
 #include "SimpleFits/FitSoftware/interface/LagrangeMultipliersFitter.h"
+#include "SimpleFits/FitSoftware/interface/Logger.h"
 #include <iostream>
 
 unsigned int TauA1NuConstrainedFitter::static_amb;
@@ -188,6 +189,8 @@ bool TauA1NuConstrainedFitter::Fit(){
   if(TauDir.Dot(a1.Vect())<0){
     isReal=false;
   }
+	Logger(Logger::Debug) << "ambiguity_ " << ambiguity_ << std::endl;
+	Logger(Logger::Debug) << "isReal " << isReal << std::endl;
 
   //case 1: is real then solve analytically
   if(isReal && (ambiguity_==plus || ambiguity_==minus)){

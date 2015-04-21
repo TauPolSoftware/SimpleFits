@@ -5,8 +5,8 @@
  *      Author: zotz
  */
 
-#ifndef TPTROBJECT_H_
-#define TPTROBJECT_H_
+#ifndef TPTRObject_h
+#define TPTRObject_h
 
 #include <vector>
 #include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
@@ -20,17 +20,17 @@ class TPTRObject{
 
 	std::vector<bool> CreateVectorFromAmbiguity();
 
-	const LorentzVectorParticle& getNeutrinoZero() const;
-	const LorentzVectorParticle& getNeutrinoMinus() const;
-	const LorentzVectorParticle& getNeutrinoPlus() const;
-	const std::vector<LorentzVectorParticle>& getNeutrinos() const;
+	LorentzVectorParticle getNeutrinoZero() const;
+	LorentzVectorParticle getNeutrinoMinus() const;
+	LorentzVectorParticle getNeutrinoPlus() const;
+	std::vector<LorentzVectorParticle> getNeutrinos() const;
 
-	const LorentzVectorParticle& getTauZero() const;
-	const LorentzVectorParticle& getTauMinus() const;
-	const LorentzVectorParticle& getTauPlus() const;
-	const std::vector<LorentzVectorParticle>& getTaus() const;
+	LorentzVectorParticle getTauZero() const;
+	LorentzVectorParticle getTauMinus() const;
+	LorentzVectorParticle getTauPlus() const;
+	std::vector<LorentzVectorParticle> getTaus() const;
 
-	const LorentzVectorParticle& getA1() const;
+	LorentzVectorParticle getA1() const;
 
   private:
 	bool isvalid_;
@@ -41,4 +41,4 @@ class TPTRObject{
 };
 
 
-#endif /* TPTROBJECT_H_ */
+#endif /* TPTRObject_h */

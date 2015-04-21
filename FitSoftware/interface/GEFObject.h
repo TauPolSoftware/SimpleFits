@@ -5,15 +5,18 @@
  *      Author: zotz
  */
 
-#ifndef GEFOBJECT_H_
-#define GEFOBJECT_H_
+#ifndef GEFObject_h
+#define GEFObject_h
+
+#include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
+#include "SimpleFits/FitSoftware/interface/Logger.h"
 
 class GEFObject{
   public:
 	GEFObject();
-	GEFObject(std::vector<LorentzVectorParticle> InitDaughters,
+	GEFObject(std::vector< LorentzVectorParticle > InitDaughters,
 			  LorentzVectorParticle InitResonance,
-			  std::vector<LorentzVectorParticle> FitDaughters,
+			  std::vector< LorentzVectorParticle > FitDaughters,
 			  LorentzVectorParticle FitResonance,
 			  bool fitconverged, double chi2, double csum, double Niterations, int Index);
 	virtual ~GEFObject(){}
@@ -22,14 +25,14 @@ class GEFObject{
 	double getCsum() const{ return csum_;}
 	bool Fitconverged() const{ return fitconverged_;}
 	int getIndex() const{ return Index_;}
-	const LorentzVectorParticle& getInitResonance() const{ return InitResonance_;}
-	const LorentzVectorParticle& getInitTauH() const{ return InitTauH_;}
-	const LorentzVectorParticle& getInitTauMu() const{ return InitTauMu_;}
+	LorentzVectorParticle getInitResonance() const{ return InitResonance_;}
+	LorentzVectorParticle getInitTauH() const{ return InitTauH_;}
+	LorentzVectorParticle getInitTauMu() const{ return InitTauMu_;}
 	bool isIsvalid() const{ return isvalid_;}
 	double getNiterations() const{ return Niterations_;}
-	const LorentzVectorParticle& getResonance() const{ return Resonance_;}
-	const LorentzVectorParticle& getTauH() const{ return TauH_;}
-	const LorentzVectorParticle& getTauMu() const{ return TauMu_;}
+	LorentzVectorParticle getResonance() const{ return Resonance_;}
+	LorentzVectorParticle getTauH() const{ return TauH_;}
+	LorentzVectorParticle getTauMu() const{ return TauMu_;}
 	
   protected:
 	
@@ -46,4 +49,4 @@ class GEFObject{
 
 
 
-#endif /* GEFOBJECT_H_ */
+#endif /* GEFObject_h */

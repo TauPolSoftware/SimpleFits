@@ -5,7 +5,7 @@
  *      Author: zotz
  */
 
-#include "GEFObject.h"
+#include "SimpleFits/FitSoftware/interface/GEFObject.h"
 
 GEFObject::GEFObject(){
   isvalid_ = false;
