@@ -16,7 +16,7 @@
 
 class GlobalEventFit{
   public:
-	GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov);
+	GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov);
 	virtual ~GlobalEventFit();
 
 	void Configure();
@@ -52,6 +52,7 @@ class GlobalEventFit{
 	TMatrixTSym<double> PVCov_, SVCov_;
 	bool useMassConstraint_;
 	double MassConstraint_;
+	double Phi_Res_;
 };
 
 

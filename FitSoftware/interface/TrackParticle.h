@@ -14,13 +14,9 @@ class TrackParticle : public Particle {
   virtual ~TrackParticle(){};
 
   static TString Name(int i);
-  virtual int NParameters(){return NHelixPar;}
-  virtual double Parameter(int i){
-    return Particle::Parameter(i);
-  }
+  int NParameters(){return NHelixPar;}
 
-
-  virtual double Mass(){return mass;}
+  double Mass() const{return mass;}
   
  private:
   double mass;

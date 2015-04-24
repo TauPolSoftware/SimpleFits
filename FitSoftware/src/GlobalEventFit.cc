@@ -12,7 +12,7 @@
 #include "SimpleFits/FitSoftware/interface/TauA1NuConstrainedFitter.h"
 #include "SimpleFits/FitSoftware/interface/DiTauConstrainedFitter.h"
 
-GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov){
+GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov){
 	isConfigured_ = false;
 	isFit_ = false;
 	Muon_ = Muon;
@@ -23,6 +23,7 @@ GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, TVe
 	SV_ = A1.Vertex();
 	SVCov_.ResizeTo(A1.VertexCov());
 	SVCov_ = A1.VertexCov();
+	Phi_Res_ = Phi_Res;
 
 	TPTRObject_ = ThreeProngTauReco();
 }
@@ -96,7 +97,7 @@ GEFObject GlobalEventFit::Fit(){
 			Niterats.push_back(-1);
 			continue;
 		}
-		DiTauConstrainedFitter Z2Tau(Taus.at(Ambiguity), Muon_, PV_, PVCov_);
+		DiTauConstrainedFitter Z2Tau(Taus.at(Ambiguity), Muon_, Phi_Res_, PV_, PVCov_);
 		InitDaughters.push_back(Z2Tau.GetInitialDaughters());
 
 		Z2Tau.SetMaxDelta(1.0);
