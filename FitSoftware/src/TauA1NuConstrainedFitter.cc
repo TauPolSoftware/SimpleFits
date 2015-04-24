@@ -179,18 +179,9 @@ bool TauA1NuConstrainedFitter::Fit(){
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
   TVector3 TauDir(cos(phi)*sin(theta),sin(phi)*sin(theta),cos(theta));
   bool isReal;
-  double padding=0.0; // non-zero padding is added to prevent problems near R=0 or numberical derivatives...
-                       // should be small compared to numerical resolutions 
-  SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal,padding);
+  SolvebyRotation(TauDir,a1,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal);
   TMatrixT<double>    thepar=LagrangeMultipliersFitter::convertToMatrix(par);
   static_amb=ambiguity_;
-
-  //check that the do product of the a1 and tau is positive, otherwise there is no information for tau direction -> use zero solution
-  if(TauDir.Dot(a1.Vect())<0){
-    isReal=false;
-  }
-	Logger(Logger::Debug) << "ambiguity_ " << ambiguity_ << std::endl;
-	Logger(Logger::Debug) << "isReal " << isReal << std::endl;
 
   //case 1: is real then solve analytically
   if(isReal && (ambiguity_==plus || ambiguity_==minus)){
@@ -222,12 +213,14 @@ TMatrixT<double> TauA1NuConstrainedFitter::SolveAmbiguityAnalytically(TMatrixT<d
   TLorentzVector nu_d=nu;
   TLorentzVector Tau_plus,Tau_minus,nu_plus,nu_minus;
   bool isReal;
-  double padding=0.0;
-  SolvebyRotation(TauDir,a1_d,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal,padding,true);
+  SolvebyRotation(TauDir,a1_d,Tau_plus,Tau_minus,nu_plus,nu_minus,isReal,true);
   if(static_amb==plus)nu=nu_plus;
   else nu=nu_minus;
+
   for(int i=0; i<outpar.GetNrows();i++){ outpar(i,0)=v(i);}
-  outpar(nu_px,0)=nu.Px();                                                                                                                      outpar(nu_py,0)=nu.Py();                                                                                                                      outpar(nu_pz,0)=nu.Pz();      
+  outpar(nu_px,0)=nu.Px();                                                                                                                                                                           
+  outpar(nu_py,0)=nu.Py();                                                                                                                                                                           
+  outpar(nu_pz,0)=nu.Pz();      
 
   /*
   double ctheta_GJ=TauDir.Dot(a1.Vect())/fabs(a1.P()*TauDir.Mag());
