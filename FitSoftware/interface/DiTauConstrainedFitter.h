@@ -31,20 +31,15 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   void SetMassConstraint(double MassConstraint) const{MassConstraint_ = MassConstraint;};
   double GetMassConstraint() const{return MassConstraint_;};
 
- protected:
-  virtual TVectorD Value(TVectorD &v);
-
- private:
-
-  static TMatrixT<double> ComputeInitalExpPar(TMatrixT<double> &inpar);
-  static TMatrixT<double> ComputeExpParToPar(TMatrixT<double> &inpar);
-  static TMatrixT<double> ComputeTauMuLorentzVectorPar(TMatrixT<double> &inpar);
-  static TMatrixT<double> ComputeTauA1LorentzVectorPar(TMatrixT<double> &inpar);
-  static TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
+  TMatrixT<double> ComputeInitalExpPar(TMatrixT<double> &inpar);
+  TMatrixT<double> ComputeExpParToPar(TMatrixT<double> &inpar);
+  TMatrixT<double> ComputeTauMuLorentzVectorPar(TMatrixT<double> &inpar);
+  TMatrixT<double> ComputeTauA1LorentzVectorPar(TMatrixT<double> &inpar);
+  TMatrixT<double> ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar);
 
   LorentzVectorParticle TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorParticle TauA1, TVector3 PV,TMatrixTSym<double> PVCov, TVector3 SV, TMatrixTSym<double> SVCov );
-  static TMatrixT<double> EstimateTauDirectionAdvanced(TMatrixT<double> &inpar);
-  static TMatrixT<double> EstimateTauKinematic(TMatrixT<double> &inpar);
+  TMatrixT<double> EstimateTauDirectionAdvanced(TMatrixT<double> &inpar);
+  TMatrixT<double> EstimateTauKinematic(TMatrixT<double> &inpar);
   TMatrixT<double> ConfigureParameters(TrackParticle MuTrack, std::pair<double, double> phiAngle);
   TMatrixT<double> ConfigureParameterErrors(TrackParticle MuTrack, std::pair<double, double> phiAngle);
   TMatrixT<double> ConfigureInitialAdvancedParameters(TrackParticle MuTrack, TVector3 PV, TVector3 SV);
@@ -54,13 +49,21 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   TMatrixT<double> ComputeAngleCovarianceAnalytically(TrackParticle MuTrack, std::pair<double, double> phiAngle, TVector3 PV, TVector3 SV, LorentzVectorParticle TauA1);
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
-  static TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
-  static double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
+  TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
+  double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
 
   void UpdateExpandedPar();
-  static void CovertParToObjects(TVectorD &v,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass);
+  void CovertParToObjects(TVectorD &v,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass);
 
   LorentzVectorParticle EstimateTauMu(TVector3 PV,  TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov, TrackParticle MuTrack,LorentzVectorParticle TauA1);
+
+  static TMatrixT<double> Wrapper_To_Call_Function(TMatrixT<double> (*f)(TMatrixT<double>), TMatrixT<double> &inpar);
+  static TMatrixT<double> Wrapper_To_Call_ComputeInitalExpPar(void *ptr2Object, TMatrixT<double> &inpar);
+
+ protected:
+  virtual TVectorD Value(TVectorD &v);
+
+ private:
 
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;

@@ -1,9 +1,9 @@
 #include "SimpleFits/FitSoftware/interface/ErrorMatrixPropagator.h"
 #include "math.h"
 #include <iostream>
-
-TMatrixTSym<double> ErrorMatrixPropagator::PropagateError(TMatrixT<double> (*f)(TMatrixT<double> &par),TMatrixT<double> inPar,TMatrixTSym<double> inCov, double epsilon, double errorEpsilonRatio){
-  TMatrixT<double> v=f(inPar);
+namespace  ErrorMatrixPropagator {
+TMatrixTSym<double> PropagateError(void* ptr2Object, TMatrixT<double> (*ptr2Function)(void* ptr2Object, TMatrixT<double> &par),TMatrixT<double> inPar,TMatrixTSym<double> inCov, double epsilon, double errorEpsilonRatio){
+  TMatrixT<double> v=ptr2Function(ptr2Object, inPar);
   TMatrixT<double> Jacobian(inPar.GetNrows(),v.GetNrows());
   for(int i=0;i<inPar.GetNrows();i++){
     TMatrixT<double> ParPlusEpsilon=inPar;
@@ -11,7 +11,7 @@ TMatrixTSym<double> ErrorMatrixPropagator::PropagateError(TMatrixT<double> (*f)(
     double delta=epsilon;
     if(fabs(delta*errorEpsilonRatio)>error && error>0) delta=fabs(error/errorEpsilonRatio);
     ParPlusEpsilon(i,0)+=delta;
-    TMatrixT<double> vp=f(ParPlusEpsilon);
+    TMatrixT<double> vp=ptr2Function(ptr2Object, ParPlusEpsilon);
     for(int j=0;j<v.GetNrows();j++){Jacobian(i,j)=(vp(j,0)-v(j,0))/delta;}// Newtons approx.
   }
   TMatrixTSym<double> newCov=inCov.SimilarityT(Jacobian);
@@ -34,4 +34,5 @@ TMatrixTSym<double> ErrorMatrixPropagator::PropagateError(TMatrixT<double> (*f)(
     }
   */
   return newCov;
+}
 }
