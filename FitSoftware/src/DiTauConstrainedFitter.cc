@@ -108,10 +108,6 @@ DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,Track
   PARb_0=ComputeExpParToParb(exppar);
   for(int i=0; i<npartr;i++)parb_0(i)=PARb_0(i,0);
   covb_0=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeExpParToParb,exppar,expcov);
-  //  std::cout<<"DiTau  debug 2"<<std::endl;
-//   for(int i=0; i<3;i++){
-//     for(int j=0;j<3;j++){cov_0(i,j)=expcov(i,j);}
-//   }
   // set up inital point for fit (cov handled in Fit() function)
   parb.ResizeTo(npartr);
   parb=parb_0;
@@ -167,7 +163,6 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeTauMuLorentzVectorPar(TMatrixT<d
    outpar(LorentzVectorParticle::py,0)=inpar(4,0);
    outpar(LorentzVectorParticle::pz,0)=inpar(5,0);
    outpar(LorentzVectorParticle::m,0)=1.777;
-   //std::cout<<"DiTau  debug 6"<<std::endl;
 //    std::cout<<"--ComputeTauMuLorentzVectorPar  "<<std::endl; 
 //    std::cout<<"--ComputeTauMuLorentzVectorPar  outpar(0,0)"<< outpar(3,0)<<std::endl; 
 //    std::cout<<"--ComputeTauMuLorentzVectorPar  outpar(1,0)"<< outpar(4,0)<<std::endl; 
@@ -201,7 +196,6 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeMotherLorentzVectorPar(TMatrixT<
   outpar(LorentzVectorParticle::px,0)=Taumupar(LorentzVectorParticle::px,0)+Taua1par(LorentzVectorParticle::px,0);
   outpar(LorentzVectorParticle::py,0)=Taumupar(LorentzVectorParticle::py,0)+Taua1par(LorentzVectorParticle::py,0);
   outpar(LorentzVectorParticle::pz,0)=Taumupar(LorentzVectorParticle::pz,0)+Taua1par(LorentzVectorParticle::pz,0);
-  // std::cout<<"DiTau  debug 8"<<std::endl;
   double Etaumu2=pow(Taumupar(LorentzVectorParticle::px,0),2.0)+pow(Taumupar(LorentzVectorParticle::py,0),2.0)+pow(Taumupar(LorentzVectorParticle::pz,0),2.0)+pow(Taumupar(LorentzVectorParticle::m,0),2.0);
   double Etaua12=pow(Taua1par(LorentzVectorParticle::px,0),2.0)+pow(Taua1par(LorentzVectorParticle::py,0),2.0)+pow(Taua1par(LorentzVectorParticle::pz,0),2.0)+pow(Taua1par(LorentzVectorParticle::m,0),2.0);
   double P2=pow(outpar(LorentzVectorParticle::px,0),2.0)+pow(outpar(LorentzVectorParticle::py,0),2.0)+pow(outpar(LorentzVectorParticle::pz,0),2.0);
@@ -235,47 +229,25 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeMotherLorentzVectorPar(TMatrixT<
 void DiTauConstrainedFitter::UpdateExpandedPar(){
   // assumes changes to a1 correlation to vertex is small
   //if(par.GetNrows()==npar && cov.GetNrows() && exppar.GetNrows()==npar && expcov.GetNrows()) return;
-  std::cout<<"UEP debug 1 "<<std::endl;
   for(int i=0; i<npartr;i++){
 	  exppar(i,0)=para(i);
-	  std::cout<<"UEP debug 2para(i) "<<  para(i)<< " exppar(i,0)  " <<exppar(i,0)<<std::endl;
 	  for(int j=0; j<npartr;j++){expcov(i,j)=cova_0(i,j);}
   }
-  std::cout<<"UEP debug 3 "<<std::endl;
+ 
   int offset = npartr;
   for(int i=0; i<npartr;i++){
-    std::cout<<"UEP debug 4parb(i)  "<<parb(i)<<std::endl;
+ 
 	  exppar(i+offset,0)=parb(i);
 	  for(int j=0; j<npartr;j++){expcov(i+offset,j+offset)=covb_0(i,j);}
   }
-  std::cout<<"UEP debug 5 "<<std::endl;
-  // std::cout<<"DiTau  debug 9"<<std::endl;
 }
 
 std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
   std::vector<LorentzVectorParticle> refitParticles;
 
-//      std::cout<<"UpdateExpandedPar   exppar  1"<<std::endl;
-//      for(int str =0; str < exppar.GetNrows(); str++){
-//        for(int kol =0; kol < exppar.GetNcols(); kol++){
-//          std::cout<<"  "<< exppar(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
-
 
 
   UpdateExpandedPar();
-//      std::cout<<"UpdateExpandedPar   exppar  2"<<std::endl;
-//      for(int str =0; str < exppar.GetNrows(); str++){
-//        for(int kol =0; kol < exppar.GetNcols(); kol++){
-//          std::cout<<"  "<< exppar(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
-
 
 
 
@@ -283,18 +255,6 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
   TMatrixT<double> a1=ComputeTauA1LorentzVectorPar(exppar);
 
-//      std::cout<<"a1  "<<std::endl;
-//      for(int str =0; str < a1.GetNrows(); str++){
-//        for(int kol =0; kol < a1.GetNcols(); kol++){
-//          std::cout<<"  "<< a1(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
-
-
-
-//    std::cout<<"a1 cross ComputeTauA1LorentzVectorPar  "<<std::endl; 
 
   // TMatrixTSym<double> a1cov=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeTauA1LorentzVectorPar,exppar,expcov);
   //  refitParticles.push_back(LorentzVectorParticle(a1,a1cov,PDGInfo::tau_plus,c,b));
@@ -308,15 +268,6 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
 
   TMatrixT<double> nu=ComputeTauMuLorentzVectorPar(exppar);
 
-
-//      std::cout<<"nu  "<<std::endl;
-//      for(int str =0; str < nu.GetNrows(); str++){
-//        for(int kol =0; kol < nu.GetNcols(); kol++){
-//          std::cout<<"  "<< nu(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
 
      nu(0,0)= particles_.at(1).Parameter(LorentzVectorParticle::vx);
      nu(1,0)= particles_.at(1).Parameter(LorentzVectorParticle::vy);
@@ -381,8 +332,8 @@ DiTauConstrainedFitter::SoftValue(TVectorD &va,TVectorD &vb){
   CovertParToObjects(va,vb,Taua1,Taumu,ZMass);
   TVectorD d(3); 
 
-  d(0) = Taua1.Px() - Taumu.Px();
-  d(1) = Taua1.Py() - Taumu.Py();
+  d(0) = Taua1.Px() + Taumu.Px();
+  d(1) = Taua1.Py() + Taumu.Py();
   d(2) = atan( (Taua1.Py() + Taumu.Py())/(Taua1.Px() + Taumu.Px())) - phiz_;
   //  std::cout<<"ThetaForConstrTemporaryIMplementation_ " << ThetaForConstrTemporaryIMplementation_  <<std::endl; 
   return d;
@@ -399,7 +350,6 @@ void DiTauConstrainedFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLoren
 
    
 bool DiTauConstrainedFitter::Fit(){
-  //  std::cout<<"DiTauConstrainedFitter::Fit  1 "<< par(0) << "   " <<par(1) << "   " <<par(2) <<std::endl;
    return LagrangeMultipliersFitter::Fit();
 }
   
