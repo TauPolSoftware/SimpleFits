@@ -14,6 +14,7 @@
 class GEFObject{
   public:
 	GEFObject();
+	GEFObject(const GEFObject& other);
 	GEFObject(std::vector< LorentzVectorParticle > InitDaughters,
 			  LorentzVectorParticle InitResonance,
 			  std::vector< LorentzVectorParticle > FitDaughters,

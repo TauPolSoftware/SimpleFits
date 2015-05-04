@@ -6,6 +6,7 @@
  *
  *
  *      This class offers an interface for the global event fit including the reconstruction of the hadronic tau and the fit of the di-tau system.
+ *      After the class has been instantiated, the fit can be performed using the Fit() function, which returns a GEFObject that contains the fit results.
  */
 
 #include "SimpleFits/FitSoftware/interface/GlobalEventFit.h"
@@ -31,8 +32,8 @@ GlobalEventFit::~GlobalEventFit(){
 
 }
 
+// Is called in the constructor and determines whether the hadronic tau decay is ambiguous and calculates the possible four-momenta of the taus.
 TPTRObject GlobalEventFit::ThreeProngTauReco(){
-	// Tau Solver
 	std::vector<LorentzVectorParticle> Taus;
 	std::vector<LorentzVectorParticle> Neutrinos;
 	std::vector<bool> recostatus;
@@ -64,6 +65,7 @@ TPTRObject GlobalEventFit::ThreeProngTauReco(){
 	return Results;
 }
 
+// Translates the vector of ambiguity into a single bool
 bool GlobalEventFit::IsAmbiguous(std::vector<bool> recostatus){
 	if(recostatus.at(0) && !recostatus.at(1) && !recostatus.at(2)) return false;
 	else if (!recostatus.at(0) && recostatus.at(1) && recostatus.at(2)) return true;
@@ -72,6 +74,8 @@ bool GlobalEventFit::IsAmbiguous(std::vector<bool> recostatus){
 		return false;
 	}
 }
+
+// Performs the fit for every possible tau if ambiguous. Picks solution with lowest chi2.
 GEFObject GlobalEventFit::Fit(){
 	if(!isConfigured_) {
 		Logger(Logger::Error) << "GlobalEventFit not configured." << std::endl;
@@ -101,13 +105,13 @@ GEFObject GlobalEventFit::Fit(){
 		InitDaughters.push_back(Z2Tau.GetInitialDaughters());
 
 		Z2Tau.SetMaxDelta(1.0);
-		Z2Tau.SetNIterMax(100);
-		Z2Tau.SetEpsilon(0.01);
+		Z2Tau.SetNIterMax(50);
+		Z2Tau.SetEpsilon(0.001);
 
 		fitstatus.push_back(Z2Tau.Fit());
 		if(fitstatus.at(Ambiguity) && Z2Tau.isConverged()){
 			FitResonance.push_back(Z2Tau.GetMother());
-			InitResonance.push_back(Z2Tau.GetMother());
+			InitResonance.push_back(Z2Tau.GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
 			RefitDaughters.push_back(Z2Tau.GetReFitDaughters());
 			Chi2s.push_back(Z2Tau.ChiSquare());
 			Niterats.push_back(Z2Tau.NIter());
@@ -118,6 +122,8 @@ GEFObject GlobalEventFit::Fit(){
 			std::vector<LorentzVectorParticle> tmp;
 			InitDaughters.push_back(tmp);
 			RefitDaughters.push_back(tmp);
+			InitResonance.push_back(LorentzVectorParticle());
+			FitResonance.push_back(LorentzVectorParticle());
 			Chi2s.push_back(-1);
 			Csums.push_back(-1);
 			Niterats.push_back(-1);
@@ -139,6 +145,7 @@ GEFObject GlobalEventFit::Fit(){
 	}
 }
 
+// Solves ambiguity by chi2
 bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn){
 
 	if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false && Chi2s.at(0) > 0){IndexToReturn =0; return true;}

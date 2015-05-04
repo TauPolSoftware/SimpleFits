@@ -30,9 +30,13 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   std::vector<LorentzVectorParticle> GetReFitDaughters();
   std::vector<LorentzVectorParticle> GetInitialDaughters(){return particles0_;};
   LorentzVectorParticle GetMother();
+  LorentzVectorParticle GetInitMother(){return Init_Resonance_;};
   LorentzVectorParticle GetTauMuEstimate();
   static TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
   static double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
+  static TMatrixT<double> TauMuEstimator(TMatrixT<double> &inpar);
+  static double static_ResRecoil_;
+
  protected:
   virtual TVectorD HardValue(TVectorD &va,TVectorD &vb);
   virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb);
@@ -61,7 +65,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
  
  
 
-  LorentzVectorParticle  TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorParticle TauA1, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov );
+  LorentzVectorParticle  TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorParticle TauA1, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov);
   static TMatrixT<double> EstimateTauDirectionAdvanced(TMatrixT<double> &inpar);
   static TMatrixT<double> EstimateTauKinematic(TMatrixT<double> &inpar);
   TMatrixT<double> ConfigureParameters(TrackParticle MuTrack, std::pair<double, double> phiAngle);
@@ -73,6 +77,8 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   TMatrixT<double> ComputeAngleCovarianceAnalytically(TrackParticle MuTrack, std::pair<double, double> phiAngle,  TVector3 PV, TVector3 SV, LorentzVectorParticle  TauA1);
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
+  TMatrixT<double> ConfigureMuTrackTauA1Parameters(TrackParticle Muon, LorentzVectorParticle TauA1);
+  TMatrixTSym<double> ConfigureMuTrackTauA1Errors(TrackParticle Muon, LorentzVectorParticle TauA1);
 
   static TMatrixT<double> Wrapper_To_Call_Function(TMatrixT<double> (*f)(TMatrixT<double>), TMatrixT<double> &inpar);
   static TMatrixT<double> Wrapper_To_Call_ComputeInitalExpPar(void *ptr2Object, TMatrixT<double> &inpar);
@@ -87,6 +93,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
 
   std::vector<LorentzVectorParticle> particles_, particles0_;
+  LorentzVectorParticle Init_Resonance_;
   double ThetaForConstrTemporaryIMplementation_;
   double phiz_;
   bool debug;

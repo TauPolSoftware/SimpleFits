@@ -19,8 +19,6 @@ class GlobalEventFit{
 	GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov);
 	virtual ~GlobalEventFit();
 
-	void Configure();
-	void ReConfigure(unsigned int MuonIndex,unsigned int TauIndex);
 	GEFObject Fit();
 	bool AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn);
 
@@ -31,10 +29,10 @@ class GlobalEventFit{
 	bool isFit() const{return isFit_;}
 	
 	const TrackParticle& getMuon() const{return Muon_;}
-	const TVector3& getPv() const{return PV_;}
-	const TMatrixTSym<double>& getPvCov() const{return PVCov_;}
-	const TVector3& getSv() const{return SV_;}
-	const TMatrixTSym<double>& getSvCov() const{return SVCov_;}
+	const TVector3& getPV() const{return PV_;}
+	const TMatrixTSym<double>& getPVCov() const{return PVCov_;}
+	const TVector3& getSV() const{return SV_;}
+	const TMatrixTSym<double>& getSVCov() const{return SVCov_;}
 	const TPTRObject& getTPTRObject() const{return TPTRObject_;}
 
   protected:
