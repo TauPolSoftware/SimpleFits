@@ -27,6 +27,10 @@ GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, dou
 	Phi_Res_ = Phi_Res;
 
 	TPTRObject_ = ThreeProngTauReco();
+
+	useDefaultMaxIterations_ = true;
+	useDefaultMaxDelta_ = true;
+	useDefaultEpsilon_ = true;
 }
 GlobalEventFit::~GlobalEventFit(){
 
@@ -47,7 +51,6 @@ TPTRObject GlobalEventFit::ThreeProngTauReco(){
 		TauA1NuConstrainedFitter TauA1NU(Ambiguity,A1_,PV_,PVCov_);
 		recostatus.push_back(TauA1NU.Fit());
 		if(recostatus.at(Ambiguity)){
-			//phisign =TauA1NU.GetTauRotationSignificance();
 			Taus.push_back(TauA1NU.GetMother());
 			LorentzVectorParticle Nu = TauA1NU.GetReFitDaughters().at(1);
 			Neutrinos.push_back(Nu);
@@ -65,7 +68,7 @@ TPTRObject GlobalEventFit::ThreeProngTauReco(){
 	return Results;
 }
 
-// Translates the vector of ambiguity into a single bool
+// Translates the vector of ambiguity into a single boolean
 bool GlobalEventFit::IsAmbiguous(std::vector<bool> recostatus){
 	if(recostatus.at(0) && !recostatus.at(1) && !recostatus.at(2)) return false;
 	else if (!recostatus.at(0) && recostatus.at(1) && recostatus.at(2)) return true;
@@ -104,9 +107,9 @@ GEFObject GlobalEventFit::Fit(){
 		DiTauConstrainedFitter Z2Tau(Taus.at(Ambiguity), Muon_, Phi_Res_, PV_, PVCov_);
 		InitDaughters.push_back(Z2Tau.GetInitialDaughters());
 
-		Z2Tau.SetMaxDelta(1.0);
-		Z2Tau.SetNIterMax(50);
-		Z2Tau.SetEpsilon(0.001);
+		if(!useDefaultMaxDelta_) Z2Tau.SetMaxDelta(MaxDelta_);
+		if(!useDefaultMaxIterations_) Z2Tau.SetNIterMax(MaxIterations_);
+		if(!useDefaultEpsilon_) Z2Tau.SetEpsilon(Epsilon_);
 
 		fitstatus.push_back(Z2Tau.Fit());
 		if(fitstatus.at(Ambiguity) && Z2Tau.isConverged()){

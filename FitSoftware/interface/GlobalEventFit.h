@@ -34,6 +34,22 @@ class GlobalEventFit{
 	const TVector3& getSV() const{return SV_;}
 	const TMatrixTSym<double>& getSVCov() const{return SVCov_;}
 	const TPTRObject& getTPTRObject() const{return TPTRObject_;}
+	
+	int getMaxIterations() const{return MaxIterations_;}
+	void setMaxIterations(int maxIterations){
+	  MaxIterations_ = maxIterations;
+	  useDefaultMaxIterations_ = false;
+	}
+	double getMaxDelta() const{return MaxDelta_;}
+	void setMaxDelta(double maxDelta){
+	  MaxDelta_ = maxDelta;
+	  useDefaultMaxDelta_ = false;
+	}
+	double getEpsilon() const{return Epsilon_;}
+	void setEpsilon(double epsilon){
+	  Epsilon_ = epsilon;
+	  useDefaultEpsilon_ = false;
+	}
 
   protected:
 	TPTRObject ThreeProngTauReco();
@@ -51,6 +67,10 @@ class GlobalEventFit{
 	bool useMassConstraint_;
 	double MassConstraint_;
 	double Phi_Res_;
+	int MaxIterations_;
+	double MaxDelta_;
+	double Epsilon_;
+	bool useDefaultMaxIterations_, useDefaultMaxDelta_, useDefaultEpsilon_;
 };
 
 

@@ -23,13 +23,13 @@ class GEFObject{
 	virtual ~GEFObject(){}
 	
 	double getChi2() const{ return chi2_;}
-	double getCsum() const{ return csum_;}
+	double getCsum() const{ return csum_;} //returns the sum of all deviations from fit parameters to both hard and soft constraints
 	bool Fitconverged() const{ return fitconverged_;}
-	int getIndex() const{ return Index_;}
+	int getIndex() const{ return Index_;} //returns the ambiguity index resolved by the fit (0 = unphysical, 1 = minus, 2 = plus)
 	LorentzVectorParticle getInitResonance() const{ return InitResonance_;}
 	LorentzVectorParticle getInitTauH() const{ return InitTauH_;}
 	LorentzVectorParticle getInitTauMu() const{ return InitTauMu_;}
-	bool isIsvalid() const{ return isvalid_;}
+	bool isValid() const{ return isvalid_;}
 	double getNiterations() const{ return Niterations_;}
 	LorentzVectorParticle getResonance() const{ return Resonance_;}
 	LorentzVectorParticle getTauH() const{ return TauH_;}

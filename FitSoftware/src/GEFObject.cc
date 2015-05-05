@@ -17,7 +17,7 @@ GEFObject::GEFObject(){
 }
 
 GEFObject::GEFObject(const GEFObject& other){
-  isvalid_ = other.isIsvalid();
+  isvalid_ = other.isValid();
   chi2_ = other.getChi2();
   csum_ = other.getCsum();
   Niterations_ = other.getNiterations();
