@@ -92,10 +92,10 @@ class LagrangeMultipliersFitter{
   TMatrixT<double> ComputeVarianceb();
 
   // Configuration parameters
-  double epsilon_,weight_,MaxDelta_,nitermax_;
+  double epsilon_,weight_,MaxDelta_,nitermax_,MaxParDelta_;
 
   // Fit variables
-  double chi2,chi2prev,delta,niter;
+  double chi2,chi2prev,delta,niter,pardelta, pardeltaprev;
 
   // covariances and derivatives info
 

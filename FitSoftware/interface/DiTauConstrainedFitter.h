@@ -7,7 +7,7 @@
 #include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
 #include "SimpleFits/FitSoftware/interface/ErrorMatrixPropagator.h"
 #include "SimpleFits/FitSoftware/interface/TrackParticle.h"
-#include "SimpleFits/FitSoftware/interface/Logger.h"
+
 #include <vector>
 
 class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
@@ -28,7 +28,6 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   virtual int    NDaughters(){return 2;}
   void DebugFit();
   std::vector<LorentzVectorParticle> GetReFitDaughters();
-  std::vector<LorentzVectorParticle> GetInitialDaughters(){return particles0_;};
   LorentzVectorParticle GetMother();
   LorentzVectorParticle GetTauMuEstimate();
   static TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
@@ -74,8 +73,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
 
-  static TMatrixT<double> Wrapper_To_Call_Function(TMatrixT<double> (*f)(TMatrixT<double>), TMatrixT<double> &inpar);
-  static TMatrixT<double> Wrapper_To_Call_ComputeInitalExpPar(void *ptr2Object, TMatrixT<double> &inpar);
+ 
 
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;
@@ -86,7 +84,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
 
 
-  std::vector<LorentzVectorParticle> particles_, particles0_;
+  std::vector<LorentzVectorParticle> particles_;
   double ThetaForConstrTemporaryIMplementation_;
   double phiz_;
   bool debug;
