@@ -96,6 +96,7 @@ class LagrangeMultipliersFitter{
 
   // Fit variables
   double chi2,chi2prev,delta,niter;
+  TVectorD harddelta_vec, softdelta_vec;
 
   // covariances and derivatives info
 

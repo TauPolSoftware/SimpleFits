@@ -1,4 +1,5 @@
 #include "SimpleFits/FitSoftware/interface/LagrangeMultipliersFitter.h"
+#include "SimpleFits/FitSoftware/interface/Logger.h"
 #include "TDecompBK.h"
 #include <iostream>
 
@@ -35,7 +36,7 @@ bool LagrangeMultipliersFitter::Fit(){
     
     //std::cout<<"fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,1)<<std::endl; 
     if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
-      std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
+      Logger(Logger::Verbose) << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
       return false;
       //return true;
     }
@@ -114,7 +115,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   double detM = M.Determinant();
   if(fabs(detM)>1e40){
-       std::cout << "Fit failed: unable to invert SYM gain matrix LARGE Determinant" << detM << " \n" << std::endl;
+       Logger(Logger::Error) << "Fit failed: unable to invert SYM gain matrix LARGE Determinant" << detM << " \n" << std::endl;
        return false;
   }
   TMatrixT<double> M_inv = M; M_inv.Invert();
@@ -168,8 +169,10 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
     a_s = par_a + s*(y - par_a);
     b_s = par_b + s*(b0 - par_b);
   }
-
-
+  TVectorD a_v = convertToVector(a_s);
+  TVectorD b_v = convertToVector(b_s);
+  softdelta_vec = SoftValue(a_v,b_v);
+  harddelta_vec = HardValue(a_v,b_v);
 
   // set chi2
   chi2=Curentchi2;  
@@ -278,7 +281,7 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
 
 bool LagrangeMultipliersFitter::isConverged(){
   if(delta<MaxDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
-    std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl; 
+	Logger(Logger::Verbose) << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl;
     return true;
   }
   return false;
@@ -461,6 +464,7 @@ double LagrangeMultipliersFitter::ConstraintDelta(TVectorT<double> a,TVectorT<do
   TVectorD ds_par=SoftValue(a,b);
   //  TVectorD ds_par=converToMatrix(SoftValue(convertToVector(a),convertToVector(b)));
   double delta_d(0);
+  double delta_dNew = dh_par.Norm1() + ds_par.Norm1();
   for(int i = 0; i<dh_par.GetNrows(); i++){
     delta_d+=fabs(dh_par(i)) + fabs(ds_par(i));
   }
