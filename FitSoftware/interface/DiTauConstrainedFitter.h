@@ -13,6 +13,7 @@
 class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
  public:
   DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov);
+  DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
   virtual ~DiTauConstrainedFitter(){};
  
   enum Pars{taua1_px=0,taua1_py,taua1_pz,taumu_px,taumu_py,taumu_pz,npar};
@@ -32,10 +33,13 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   LorentzVectorParticle GetMother();
   LorentzVectorParticle GetInitMother(){return Init_Resonance_;};
   LorentzVectorParticle GetTauMuEstimate();
+  double GetMassConstraint() const{return MassConstraint_;};
+  void SetMassConstraint(double MassConstraint) const{MassConstraint_ = MassConstraint;};
   static TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
   static double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
   static TMatrixT<double> TauMuEstimator(TMatrixT<double> &inpar);
   static double static_ResRecoil_;
+  static double MassConstraint_;
 
  protected:
   virtual TVectorD HardValue(TVectorD &va,TVectorD &vb);

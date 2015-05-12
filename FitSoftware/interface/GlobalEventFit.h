@@ -28,12 +28,12 @@ class GlobalEventFit{
 	bool isConfigured() const{return isConfigured_;}
 	bool isFit() const{return isFit_;}
 	
-	const TrackParticle& getMuon() const{return Muon_;}
-	const TVector3& getPV() const{return PV_;}
-	const TMatrixTSym<double>& getPVCov() const{return PVCov_;}
-	const TVector3& getSV() const{return SV_;}
-	const TMatrixTSym<double>& getSVCov() const{return SVCov_;}
-	const TPTRObject& getTPTRObject() const{return TPTRObject_;}
+	const TrackParticle getMuon() const{return Muon_;}
+	const TVector3 getPV() const{return PV_;}
+	const TMatrixTSym<double> getPVCov() const{return PVCov_;}
+	const TVector3 getSV() const{return SV_;}
+	const TMatrixTSym<double> getSVCov() const{return SVCov_;}
+	const TPTRObject getTPTRObject() const{return TPTRObject_;}
 	
 	int getMaxIterations() const{return MaxIterations_;}
 	void setMaxIterations(int maxIterations){
@@ -49,6 +49,12 @@ class GlobalEventFit{
 	void setEpsilon(double epsilon){
 	  Epsilon_ = epsilon;
 	  useDefaultEpsilon_ = false;
+	}
+
+	double getMassConstraint() const{return MassConstraint_;}
+	void setMassConstraint(double MassConstraint){
+	  MassConstraint_ = MassConstraint;
+	  useDefaultMassConstraint_ = false;
 	}
 
   protected:
@@ -70,7 +76,7 @@ class GlobalEventFit{
 	int MaxIterations_;
 	double MaxDelta_;
 	double Epsilon_;
-	bool useDefaultMaxIterations_, useDefaultMaxDelta_, useDefaultEpsilon_;
+	bool useDefaultMaxIterations_, useDefaultMaxDelta_, useDefaultEpsilon_, useDefaultMassConstraint_;
 };
 
 

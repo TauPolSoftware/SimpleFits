@@ -31,9 +31,11 @@ bool LagrangeMultipliersFitter::Fit(){
   isFit=true;
   niter=0;
   for(niter=0;niter<=nitermax_;niter++){
+	  Logger(Logger::Debug) << "Debug 8.8" << std::endl;
 
     bool passed=ApplyLagrangianConstraints();
-    
+    Logger(Logger::Debug) << "Debug 8.9" << std::endl;
+
     //std::cout<<"fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,1)<<std::endl; 
     if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
       Logger(Logger::Verbose) << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
@@ -43,9 +45,11 @@ bool LagrangeMultipliersFitter::Fit(){
     if(isConverged()) break; 
   
   }
+  Logger(Logger::Debug) << "Debug 9" << std::endl;
 
    ComputeVariancea();
    ComputeVarianceb();
+	  Logger(Logger::Debug) << "Debug 10" << std::endl;
 
   return true;
 }
@@ -171,6 +175,8 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   }
   TVectorD a_v = convertToVector(a_s);
   TVectorD b_v = convertToVector(b_s);
+  softdelta_vec.ResizeTo(NSoftConstraints());
+  harddelta_vec.ResizeTo(NConstraints());
   softdelta_vec = SoftValue(a_v,b_v);
   harddelta_vec = HardValue(a_v,b_v);
 

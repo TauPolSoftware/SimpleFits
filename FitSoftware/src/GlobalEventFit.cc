@@ -31,6 +31,7 @@ GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, dou
 	useDefaultMaxIterations_ = true;
 	useDefaultMaxDelta_ = true;
 	useDefaultEpsilon_ = true;
+	useDefaultMassConstraint_ = true;
 }
 GlobalEventFit::~GlobalEventFit(){
 
@@ -104,21 +105,31 @@ GEFObject GlobalEventFit::Fit(){
 			Niterats.push_back(-1);
 			continue;
 		}
-		DiTauConstrainedFitter Z2Tau(Taus.at(Ambiguity), Muon_, Phi_Res_, PV_, PVCov_);
-		InitDaughters.push_back(Z2Tau.GetInitialDaughters());
 
-		if(!useDefaultMaxDelta_) Z2Tau.SetMaxDelta(MaxDelta_);
-		if(!useDefaultMaxIterations_) Z2Tau.SetNIterMax(MaxIterations_);
-		if(!useDefaultEpsilon_) Z2Tau.SetEpsilon(Epsilon_);
+		DiTauConstrainedFitter* ptr2DTCF = NULL;
+		if(useDefaultMassConstraint_){
+		  ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, Phi_Res_, PV_, PVCov_);
+		}
+		else{
+		  ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
+		}
 
-		fitstatus.push_back(Z2Tau.Fit());
-		if(fitstatus.at(Ambiguity) && Z2Tau.isConverged()){
-			FitResonance.push_back(Z2Tau.GetMother());
-			InitResonance.push_back(Z2Tau.GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
-			RefitDaughters.push_back(Z2Tau.GetReFitDaughters());
-			Chi2s.push_back(Z2Tau.ChiSquare());
-			Niterats.push_back(Z2Tau.NIter());
-			Csums.push_back(Z2Tau.CSum());
+		InitDaughters.push_back(ptr2DTCF->GetInitialDaughters());
+		  Logger(Logger::Debug) << "Debug 6" << std::endl;
+
+		if(!useDefaultMaxDelta_) ptr2DTCF->SetMaxDelta(MaxDelta_);
+		if(!useDefaultMaxIterations_) ptr2DTCF->SetNIterMax(MaxIterations_);
+		if(!useDefaultEpsilon_) ptr2DTCF->SetEpsilon(Epsilon_);
+		  Logger(Logger::Debug) << "Debug 7" << std::endl;
+
+		fitstatus.push_back(ptr2DTCF->Fit());
+		if(fitstatus.at(Ambiguity) && ptr2DTCF->isConverged()){
+			FitResonance.push_back(ptr2DTCF->GetMother());
+			InitResonance.push_back(ptr2DTCF->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
+			RefitDaughters.push_back(ptr2DTCF->GetReFitDaughters());
+			Chi2s.push_back(ptr2DTCF->ChiSquare());
+			Niterats.push_back(ptr2DTCF->NIter());
+			Csums.push_back(ptr2DTCF->CSum());
 		}
 		else{
 			fitstatus.push_back(false);
@@ -131,6 +142,8 @@ GEFObject GlobalEventFit::Fit(){
 			Csums.push_back(-1);
 			Niterats.push_back(-1);
 		}
+		  Logger(Logger::Debug) << "Debug 8" << std::endl;
+		delete ptr2DTCF;
 	}
 	int IndexToReturn(-1);
 	if(AmbiguitySolverByChi2(recostatus, fitstatus, Chi2s, IndexToReturn)){
