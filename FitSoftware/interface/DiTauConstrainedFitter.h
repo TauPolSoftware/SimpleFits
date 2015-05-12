@@ -7,7 +7,7 @@
 #include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
 #include "SimpleFits/FitSoftware/interface/ErrorMatrixPropagator.h"
 #include "SimpleFits/FitSoftware/interface/TrackParticle.h"
-#include "SimpleFits/FitSoftware/interface/Logger.h"
+
 #include <vector>
 
 class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
@@ -84,8 +84,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   TMatrixT<double> ConfigureMuTrackTauA1Parameters(TrackParticle Muon, LorentzVectorParticle TauA1);
   TMatrixTSym<double> ConfigureMuTrackTauA1Errors(TrackParticle Muon, LorentzVectorParticle TauA1);
 
-  static TMatrixT<double> Wrapper_To_Call_Function(TMatrixT<double> (*f)(TMatrixT<double>), TMatrixT<double> &inpar);
-  static TMatrixT<double> Wrapper_To_Call_ComputeInitalExpPar(void *ptr2Object, TMatrixT<double> &inpar);
+ 
 
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;

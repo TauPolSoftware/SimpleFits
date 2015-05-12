@@ -115,12 +115,10 @@ GEFObject GlobalEventFit::Fit(){
 		}
 
 		InitDaughters.push_back(ptr2DTCF->GetInitialDaughters());
-		  Logger(Logger::Debug) << "Debug 6" << std::endl;
 
 		if(!useDefaultMaxDelta_) ptr2DTCF->SetMaxDelta(MaxDelta_);
 		if(!useDefaultMaxIterations_) ptr2DTCF->SetNIterMax(MaxIterations_);
 		if(!useDefaultEpsilon_) ptr2DTCF->SetEpsilon(Epsilon_);
-		  Logger(Logger::Debug) << "Debug 7" << std::endl;
 
 		fitstatus.push_back(ptr2DTCF->Fit());
 		if(fitstatus.at(Ambiguity) && ptr2DTCF->isConverged()){
@@ -142,7 +140,6 @@ GEFObject GlobalEventFit::Fit(){
 			Csums.push_back(-1);
 			Niterats.push_back(-1);
 		}
-		  Logger(Logger::Debug) << "Debug 8" << std::endl;
 		delete ptr2DTCF;
 	}
 	int IndexToReturn(-1);

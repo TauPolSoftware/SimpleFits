@@ -1,0 +1,30 @@
+
+ 1303  mkdir gitarea
+ 1304  cd gitarea/
+ 1305  git clone -b DiTauDifferentConstrType  git@github.com:cherepan/SimpleFits.git
+ 1306  git branch -bva
+ 1307  git branch -va
+ 1308  pwd
+ 1309  cd SimpleFits/
+ 1310  git branch -va
+ 1311  git checkout Development
+ 1312  git branch
+ 1313  git branch -va
+ 1314  git remote add AZotz https://github.com/azotz/SimpleFits
+ 1315  git remote
+ 1316  git branch -va
+ 1317  git fetch AZotz
+ 1318  git branch -va
+ 1319  ls
+ 1320  git checkout AZotz/DevAlex
+ 1321  git branch DevVlad
+ 1322  git branch -va
+ 1323  git branch DevVlad
+ 1324  git checkout DevVlad
+ 1325  git status
+ 1326  pwd
+ 1327  ls -lt
+ 1328  gitk
+ 1329  pwd
+ 1330  git branch -va
+ 1331  git push origin DevVlad
