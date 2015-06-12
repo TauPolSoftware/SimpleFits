@@ -13,10 +13,12 @@
 #include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
 #include "SimpleFits/FitSoftware/interface/Logger.h"
 #include "SimpleFits/FitSoftware/interface/TrackParticle.h"
+#include "SimpleFits/FitSoftware/interface/PTObject.h"
 
 class GlobalEventFit{
   public:
 	GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov);
+	GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double> PVCov);
 	virtual ~GlobalEventFit();
 
 	GEFObject Fit();
@@ -70,6 +72,7 @@ class GlobalEventFit{
 	LorentzVectorParticle A1_;
 	TVector3 PV_, SV_;
 	TMatrixTSym<double> PVCov_, SVCov_;
+	PTObject METminusNeutrino_;
 	bool useMassConstraint_;
 	double MassConstraint_;
 	double Phi_Res_;
@@ -77,6 +80,7 @@ class GlobalEventFit{
 	double MaxDelta_;
 	double Epsilon_;
 	bool useDefaultMaxIterations_, useDefaultMaxDelta_, useDefaultEpsilon_, useDefaultMassConstraint_;
+	bool useFullRecoil_;
 };
 
 

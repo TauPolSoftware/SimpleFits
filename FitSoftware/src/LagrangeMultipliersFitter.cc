@@ -32,7 +32,6 @@ bool LagrangeMultipliersFitter::Fit(){
   isFit=true;
   niter=0;
   for(niter=0;niter<=nitermax_;niter++){
-	  Logger(Logger::Debug) << "Debug 8.8" << std::endl;
 
     bool passed=ApplyLagrangianConstraints();
     

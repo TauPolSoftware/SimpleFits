@@ -1,20 +1,48 @@
 #include "SimpleFits/FitSoftware/interface/DiTauConstrainedFitter.h"
 #include "SimpleFits/FitSoftware/interface/PDGInfo.h"
+#include "SimpleFits/FitSoftware/interface/Logger.h"
 #include <iostream>
 
-double DiTauConstrainedFitter::static_ResRecoil_ = 0;
 double DiTauConstrainedFitter::MassConstraint_ = 91.5;
 
-DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov):
+DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov){
+  DiTauConstrainedFitter(TauA1, MuTrack, phiz, PVertex, VertexCov, 91.5);
+}
+
+DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
   LagrangeMultipliersFitter()
 {
   debug = false;
   AnalyticalCovariance =false;
 
   phiz_ = phiz;
-  static_ResRecoil_=phiz_;
+  ptz_ = 0;
+  useFullRecoil_ = false;
+  MassConstraint_ = MassConstraint;
 
-  LorentzVectorParticle  TauMuGuess  = TauMuStartingPoint( MuTrack,TauA1,PVertex, VertexCov, TauA1.Vertex(),TauA1.VertexCov());
+  Configure(TauA1, MuTrack, PVertex, VertexCov);
+}
+
+DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, PTObject METminusNeutrino, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
+  LagrangeMultipliersFitter()
+{
+  debug = false;
+  AnalyticalCovariance =false;
+
+  METminusNeutrino_ = METminusNeutrino;
+  useFullRecoil_ = true;
+  MassConstraint_ = MassConstraint;
+
+  Configure(TauA1, MuTrack, PVertex, VertexCov);
+}
+
+void DiTauConstrainedFitter::Configure(LorentzVectorParticle TauA1,TrackParticle MuTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov){
+  debug = false;
+  AnalyticalCovariance =false;
+
+  LorentzVectorParticle  TauMuGuess;
+  if(!useFullRecoil_) TauMuGuess  = TauMuStartingPoint( MuTrack,TauA1,PVertex, VertexCov, TauA1.Vertex(),TauA1.VertexCov());
+  else TauMuGuess  = TauMuStartingPointwithFullRecoil(MuTrack,TauA1, METminusNeutrino_, PVertex, VertexCov, TauA1.Vertex(),TauA1.VertexCov());
 
   ThetaForConstrTemporaryIMplementation_=TauMuGuess.LV().Theta();
   particles_.push_back(TauA1);
@@ -23,6 +51,7 @@ DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,Track
   particles0_.push_back(TauA1);
   particles0_.push_back(TauMuGuess);
 
+  Logger(Logger::Debug) << "(TauA1.LV() + TauMuGuess.LV()).M(): " << (TauA1.LV() + TauMuGuess.LV()).M() << std::endl;
 
   isconfigured=false;
 
@@ -112,12 +141,6 @@ DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,Track
 
   isconfigured=true;
   Init_Resonance_ = GetMother();
-
-}
-
-DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint){
-  MassConstraint_ = MassConstraint,
-  DiTauConstrainedFitter(TauA1, MuTrack, phiz, PVertex, VertexCov);
 }
 
 TMatrixT<double> DiTauConstrainedFitter::ComputeInitalExpPar(TMatrixT<double> &inpar){
@@ -184,11 +207,11 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeTauA1LorentzVectorPar(TMatrixT<d
   outpar(LorentzVectorParticle::py,0)=inpar(1,0);
   outpar(LorentzVectorParticle::pz,0)=inpar(2,0);
   outpar(LorentzVectorParticle::m,0) =1.777;  
-//    std::cout<<"ComputeTauA1LorentzVectorPar  "<<std::endl; 
-    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(0,0)"<< outpar(3,0)<<std::endl; 
-    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(1,0)"<< outpar(4,0)<<std::endl; 
-    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(2,0)"<< outpar(5,0)<<std::endl; 
-    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(3,0)"<< outpar(6,0)<<std::endl; 
+//    std::cout<<"ComputeTauA1LorentzVectorPar  "<<std::endl;
+    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(0,0)"<< outpar(3,0)<<std::endl;
+    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(1,0)"<< outpar(4,0)<<std::endl;
+    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(2,0)"<< outpar(5,0)<<std::endl;
+    // std::cout<<"ComputeTauA1LorentzVectorPar  outpar(3,0)"<< outpar(6,0)<<std::endl;
   return outpar;
 }
 
@@ -208,96 +231,43 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeMotherLorentzVectorPar(TMatrixT<
   return outpar;
 }
 
-// void DiTauConstrainedFitter::UpdateExpandedPar(){
-
-
-
-//   // assumes changes to a1 correlation to vertex is small
-//   //if(par.GetNrows()==3 && cov.GetNrows() && exppar.GetNrows()==npar && expcov.GetNrows()) return;
-//   for(int i=0; i<3;i++){ 
-//     exppar(i+3,0)=par(i);
-//     //    std::cout<<"  in loop  par "<<par(i)<<std::endl;
-//     for(int j=0; j<3;j++){expcov(i+3,j+3)=cov(i,j);}
-//   }
-
-
-
-// }
-// void DiTauConstrainedFitter::UpdateExpandedPar(){
-//   // assumes changes to a1 correlation to vertex is small
-//   //if(par.GetNrows()==npar && cov.GetNrows() && exppar.GetNrows()==npar && expcov.GetNrows()) return;
-//   for(int i=0; i<npa;i++){
-// 	  exppar(i,0)=par(i);
-// 	  for(int j=0; j<npar;j++){expcov(i,j)=cov(i,j);}
-//   }
-// }
 void DiTauConstrainedFitter::UpdateExpandedPar(){
   // assumes changes to a1 correlation to vertex is small
   //if(par.GetNrows()==npar && cov.GetNrows() && exppar.GetNrows()==npar && expcov.GetNrows()) return;
-  std::cout<<"UEP debug 1 "<<std::endl;
+  //std::cout<<"UEP debug 1 "<<std::endl;
   for(int i=0; i<npartr;i++){
 	  exppar(i,0)=para(i);
-	  std::cout<<"UEP debug 2para(i) "<<  para(i)<< " exppar(i,0)  " <<exppar(i,0)<<std::endl;
+	  //std::cout<<"UEP debug 2para(i) "<<  para(i)<< " exppar(i,0)  " <<exppar(i,0)<<std::endl;
 	  for(int j=0; j<npartr;j++){expcov(i,j)=cova_0(i,j);}
   }
-  std::cout<<"UEP debug 3 "<<std::endl;
+  //std::cout<<"UEP debug 3 "<<std::endl;
   int offset = npartr;
   for(int i=0; i<npartr;i++){
-    std::cout<<"UEP debug 4parb(i)  "<<parb(i)<<std::endl;
+	//std::cout<<"UEP debug 4parb(i)  "<<parb(i)<<std::endl;
 	  exppar(i+offset,0)=parb(i);
 	  for(int j=0; j<npartr;j++){expcov(i+offset,j+offset)=covb_0(i,j);}
   }
-  std::cout<<"UEP debug 5 "<<std::endl;
+  //std::cout<<"UEP debug 5 "<<std::endl;
   // std::cout<<"DiTau  debug 9"<<std::endl;
 }
 
 std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
   std::vector<LorentzVectorParticle> refitParticles;
 
-//      std::cout<<"UpdateExpandedPar   exppar  1"<<std::endl;
-//      for(int str =0; str < exppar.GetNrows(); str++){
-//        for(int kol =0; kol < exppar.GetNcols(); kol++){
-//          std::cout<<"  "<< exppar(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
-
-
 
   UpdateExpandedPar();
-//      std::cout<<"UpdateExpandedPar   exppar  2"<<std::endl;
-//      for(int str =0; str < exppar.GetNrows(); str++){
-//        for(int kol =0; kol < exppar.GetNcols(); kol++){
-//          std::cout<<"  "<< exppar(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
-
-
-
 
   double c(0),b(0);
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
   TMatrixT<double> a1=ComputeTauA1LorentzVectorPar(exppar);
 
-//      std::cout<<"a1  "<<std::endl;
-//      for(int str =0; str < a1.GetNrows(); str++){
-//        for(int kol =0; kol < a1.GetNcols(); kol++){
-//          std::cout<<"  "<< a1(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
-
-
-
 //    std::cout<<"a1 cross ComputeTauA1LorentzVectorPar  "<<std::endl; 
 
   // TMatrixTSym<double> a1cov=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeTauA1LorentzVectorPar,exppar,expcov);
   //  refitParticles.push_back(LorentzVectorParticle(a1,a1cov,PDGInfo::tau_plus,c,b));
-  refitParticles.push_back(LorentzVectorParticle(a1,cova_0,PDGInfo::tau_plus,c,b));  //set origingal variance for now
+  TMatrixTSym<double> zeros(7);
+  //refitParticles.push_back(LorentzVectorParticle(a1,cova_0,PDGInfo::tau_plus,c,b));  //set origingal variance for now
+  refitParticles.push_back(LorentzVectorParticle(a1,zeros,PDGInfo::tau_plus,c,b));  //set empty variance for now
 
      // std::cout<<"a1 cross2 ComputeTauA1LorentzVectorPar  "<<std::endl; 
      // std::cout<<"a1 cross2 ComputeTauA1LorentzVectorPar  outpar(0,0)"<< refitParticles.at(0).LV().Px()<<std::endl; 
@@ -306,16 +276,6 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
      // std::cout<<"a1 cross2 ComputeTauA1LorentzVectorPar  outpar(3,0)"<< refitParticles.at(0).LV().M()<<std::endl; 
 
   TMatrixT<double> nu=ComputeTauMuLorentzVectorPar(exppar);
-
-
-//      std::cout<<"nu  "<<std::endl;
-//      for(int str =0; str < nu.GetNrows(); str++){
-//        for(int kol =0; kol < nu.GetNcols(); kol++){
-//          std::cout<<"  "<< nu(str,kol)<<"  ";
-
-//        }    
-//        std::cout<<std::endl;
-//     }
 
      nu(0,0)= particles_.at(1).Parameter(LorentzVectorParticle::vx);
      nu(1,0)= particles_.at(1).Parameter(LorentzVectorParticle::vy);
@@ -328,7 +288,9 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
   //   }
   // }
   
-  refitParticles.push_back(LorentzVectorParticle(nu,cova_0,PDGInfo::tau_minus,0.0,b));
+  //refitParticles.push_back(LorentzVectorParticle(nu,cova_0,PDGInfo::tau_minus,0.0,b));
+
+  refitParticles.push_back(LorentzVectorParticle(nu,zeros,PDGInfo::tau_minus,0.0,b));
     // std::cout<<"a1 cross3 ComputeTauA1LorentzVectorPar  "<<std::endl; 
     // std::cout<<"a1 cross3 ComputeTauA1LorentzVectorPar outpar(0,0)"<< refitParticles.at(1).LV().Px()<<std::endl; 
     // std::cout<<"a1 cross3 ComputeTauA1LorentzVectorPar  outpar(1,0)"<< refitParticles.at(1).LV().Py()<<std::endl; 
@@ -387,7 +349,6 @@ DiTauConstrainedFitter::SoftValue(TVectorD &va,TVectorD &vb){
   return d;
 } 
 
-
 void DiTauConstrainedFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass){
   // Taua1=particles_.at(0).LV();//TLorentzVector(v(taua1_px),v(taua1_py),v(taua1_pz),sqrt(1.777*1.777+v(taua1_px)*v(taua1_px)+v(taua1_py)*v(taua1_py)+v(taua1_pz)*v(taua1_pz)));
   // Taumu=TLorentzVector(v(taua1_px),v(taua1_py),v(taua1_pz),sqrt(1.777*1.777+v(taua1_px)*v(taua1_px)+v(taua1_py)*v(taua1_py)+v(taua1_pz)*v(taua1_pz)));
@@ -417,9 +378,9 @@ DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorPa
   parameterErrors.ResizeTo(5,5);
 
   TMatrixT<double>    parametersAd;
-  parametersAd.ResizeTo(10,1);
+  parametersAd.ResizeTo(9,1);
   TMatrixTSym<double>    parameterErrorsAd;
-  parameterErrorsAd.ResizeTo(10,10);
+  parameterErrorsAd.ResizeTo(9,9);
 
   TMatrixT<double>    taumudirection;
   taumudirection.ResizeTo(2,1);
@@ -443,11 +404,11 @@ DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorPa
   parameters = ConfigureParameters(MuTrack, EstimatePhiAngle(TauDir,TauDirError));
   parameterErrors= ConfigureParameterErrors(MuTrack, EstimatePhiAngle(TauDir,TauDirError));
 
-  parametersAd = ConfigureInitialAdvancedParameters(MuTrack, PV,SV);
-  parameterErrorsAd= ConfigureInitialAdvancedParameterErrors(MuTrack, PVCov,SVCov);
+  parametersAd = ConfigureInitialAdvancedParameters(MuTrack, PV, TauA1);
+  parameterErrorsAd= ConfigureInitialAdvancedParameterErrors(MuTrack, PVCov, TauA1.getCovMatrix());
 
   taumudirection = EstimateTauDirectionAdvanced(parametersAd);
-  taumudirectionError = ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::EstimateTauDirectionAdvanced,ConfigureInitialAdvancedParameters(MuTrack, PV,SV),ConfigureInitialAdvancedParameterErrors(MuTrack, PVCov,SVCov));
+  taumudirectionError = ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::EstimateTauDirectionAdvanced,ConfigureInitialAdvancedParameters(MuTrack, PV, TauA1),ConfigureInitialAdvancedParameterErrors(MuTrack, PVCov, TauA1.getCovMatrix()));
 
   kinematicparameters = ConfigureKinematicParameters(taumudirection,TauA1);
   kinematicparametererrors =  ConfigureKinematicParameterErrors(taumudirectionError,TauA1);
@@ -569,91 +530,143 @@ DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorPa
   return LorentzVectorParticle(par,Cov,PDGInfo::tau_minus,0,0);
 }
 
+LorentzVectorParticle
+DiTauConstrainedFitter::TauMuStartingPointwithFullRecoil(TrackParticle MuTrack,LorentzVectorParticle TauA1, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov){
 
+  TVector3 TauDir =   PV - SV;
+  TVector3 TauDirError(sqrt(SVCov(0,0) + PVCov(0,0)),
+		       sqrt(SVCov(1,1) + PVCov(1,1)),
+		       sqrt(SVCov(2,2) + PVCov(2,2)));
+
+  TMatrixT<double>    parameters;
+  parameters.ResizeTo(5,1);
+  TMatrixT<double>    parameterErrors;
+  parameterErrors.ResizeTo(5,5);
+
+  TMatrixT<double>    parametersAd;
+  parametersAd.ResizeTo(9,1);
+  TMatrixTSym<double>    parameterErrorsAd;
+  parameterErrorsAd.ResizeTo(9,9);
+
+  TMatrixT<double>    taumudirection;
+  taumudirection.ResizeTo(2,1);
+  TMatrixTSym<double>    taumudirectionError;
+  taumudirectionError.ResizeTo(2,2);
+
+  TMatrixT<double>    kinematicparameters;
+  kinematicparameters.ResizeTo(5,1);
+  TMatrixTSym<double>    kinematicparametererrors;
+  kinematicparametererrors.ResizeTo(5,5);
+
+  TMatrixT<double>    taumuptparameters;
+  kinematicparameters.ResizeTo(4,1);
+  TMatrixTSym<double>    taumuptparametererrors;
+  kinematicparametererrors.ResizeTo(4,4);
+
+  TMatrixT<double>    TauMuPt;
+  kinematicparameters.ResizeTo(2,1);
+  TMatrixTSym<double>    TauMuPterrors;
+  kinematicparametererrors.ResizeTo(2,2);
+
+
+  TMatrixT<double>    TauKin;
+  TauKin.ResizeTo(3,1);
+
+  TMatrixT<double>    TauKinErrorAnalytical;
+  TauKinErrorAnalytical.ResizeTo(3,3);
+
+  TMatrixT<double>    TauKinErrorNumerical;
+  TauKinErrorNumerical.ResizeTo(3,3);
+
+  taumuptparameters = ConfigureTauMuPtParameters(MuTrack, METminusNeutrino);
+  taumuptparametererrors = ConfigureTauMuPtParameterErrors(MuTrack, METminusNeutrino);
+
+  TauMuPt = EstimateTauPt(taumuptparameters);
+  TauMuPterrors = ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::EstimateTauPt,taumuptparameters,taumuptparametererrors);
+
+  kinematicparameters = ConfigureKinematicParametersFullRecoil(MuTrack, PV, TauA1, TauMuPt);
+  kinematicparametererrors =  ConfigureKinematicParameterErrorsFullRecoil(MuTrack, PVCov, TauA1, TauMuPterrors);
+
+  TauKin=EstimateTauKinematicFullRecoil(kinematicparameters);
+  TauKinErrorNumerical = ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::EstimateTauKinematicFullRecoil,kinematicparameters,kinematicparametererrors);
+
+
+  TauKinErrorAnalytical=ComputeAngleCovarianceAnalytically(MuTrack,EstimatePhiAngle(TauDir,TauDirError),PV,SV,TauA1);
+
+  TMatrixT<double>    par(LorentzVectorParticle::NLorentzandVertexPar,1);
+  TMatrixTSym<double> Cov(LorentzVectorParticle::NLorentzandVertexPar);
+
+  par(LorentzVectorParticle::vx,0)=0; // fill zero vertex for now
+  par(LorentzVectorParticle::vy,0)=0;
+  par(LorentzVectorParticle::vz,0)=0;
+  par(LorentzVectorParticle::px,0)=TauKin(0,0);
+  par(LorentzVectorParticle::py,0)=TauKin(1,0);
+  par(LorentzVectorParticle::pz,0)=TauKin(2,0);
+  par(LorentzVectorParticle::m,0) =1.777;
+
+   for(int i=0; i<LorentzVectorParticle::NVertex; i++){
+     for(int j=0; j<LorentzVectorParticle::NVertex; j++){
+       if(AnalyticalCovariance){Cov(i+3,j+3)=TauKinErrorAnalytical(i,j);}
+       else{Cov(i+3,j+3)=TauKinErrorNumerical(i,j);}
+     }
+   }
+
+  return LorentzVectorParticle(par,Cov,PDGInfo::tau_minus,0,0);
+}
 
 TMatrixT<double> 
 DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
   TMatrixT<double>    outpar(2,1);
 
-
-    double dxy   =fabs(inpar(0,0));
+  double dxy   =inpar(0,0);
   double phi0  =inpar(1,0);
   double lam   =inpar(2,0);
-  double dsz   =fabs(inpar(3,0));
-  //  double phiAnot = inpar(4,0);
+  double dz    =inpar(3,0);
 
   TVector3 PV(inpar(4,0),inpar(5,0),inpar(6,0));
-  TVector3 SV(inpar(7,0),inpar(8,0),inpar(9,0)); 
+  TVector2 TauMuPt(-inpar(7,0), -inpar(8,0));
   
-  TVector3 TauDir = PV - SV;
-  double TauA1OppositePhi = atan2(TauDir.Y(), TauDir.X());
+  double tanphi_tau = TauMuPt.Y()/TauMuPt.X();
+  double a = tanphi_tau;
+  double b = PV.Y() - a*PV.X();
 
-  TVector3 TauMuDirNEW = DiTauConstrainedFitter::TauMuPtBalanceEstimator(inpar, PV,SV);
-  outpar(0,0) = TauMuDirNEW.Theta();
-  outpar(1,0) = TauMuDirNEW.Phi();
+  double tmu  = (dxy*(cos(phi0) + a*sin(phi0)) - b) / (a*cos(phi0) - sin(phi0)); //projection onto XY plane
+
+  double xdoc = -dxy*sin(phi0) + tmu*cos(phi0);
+  double ydoc = dxy*cos(phi0) + tmu*sin(phi0);
+  double zdoc = dz + tmu*tan(lam);
+
+  TVector3 PointGuess(xdoc, ydoc, zdoc);
+  TVector3 TauMuDir = PointGuess - PV;
+
+  outpar(0,0) = TauMuDir.Theta();
+  outpar(1,0) = atan2(TauMuPt.Y(),TauMuPt.X());
+  //inpar.Print();
 
 
-  // reconstruct line of 1st tau
-  double aPVSV = (PV.Y() - SV.Y())/(PV.X() - SV.X());
-  double bPVSV = (PV.X()*SV.Y() - SV.X()*PV.Y())/(PV.X() - SV.X());
+  double aNEW = inpar(8,0)/inpar(7,0);
+  double bNEW = inpar(5,0) - aNEW*inpar(4,0);
+  double tmuNEW  = (dxy*(cos(phi0) + aNEW*sin(phi0)) - bNEW) / (aNEW*cos(phi0) - sin(phi0)); //projection onto XY plane
 
-  double t  = (dxy*(cos(phi0) - aPVSV*sin(phi0)) - bPVSV)  / (aPVSV*cos(phi0) - sin(phi0)); //projection onto XY plane
+  double xdocNEW = -dxy*sin(phi0) + tmuNEW*cos(phi0);
+  double ydocNEW = dxy*cos(phi0) + tmuNEW*sin(phi0);
+  double zdocNEW = dz + tmuNEW*tan(lam);
 
+  double xdirNEW = xdocNEW - inpar(4,0);
+  double ydirNEW = ydocNEW - inpar(5,0);
+  double zdirNEW = zdocNEW - inpar(6,0);
 
-  double xdoc = dxy*sin(phi0) + t*cos(phi0);
-  double ydoc = dxy*cos(phi0) + t*sin(phi0);
-  double zdoc = dsz*cos(lam) + t*tan(lam);
-  //  std::cout<<" xdoc, ydoc, zdoc"<<  xdoc << "  "<<ydoc<<"  "<<zdoc<< "  "<< t <<" aPVSV  "<< aPVSV<< "  "<<bPVSV<< "  "<<TauDir.Phi()<<std::endl;
-  // double dxy   =inpar(0,0);
-  // double phi0  =inpar(1,0);
-  // double lam   =inpar(2,0);
-  // double dsz   =inpar(3,0);
-  // //  double phiAnot = inpar(4,0);
-
-  // TVector3 PV(inpar(4,0),inpar(5,0),inpar(6,0));
-  // TVector3 SV(inpar(7,0),inpar(8,0),inpar(9,0)); 
-  
-  // TVector3 TauDir = PV - SV;
-  // double TauA1OppositePhi = atan2(TauDir.Y(), TauDir.X());
-
-  // double xdoc = dxy*sin(phi0) - PV.X();
-  // double ydoc = -dxy*cos(phi0) - PV.Y();
-  // double zdoc = dsz;
-
-  // double amuon = tan(phi0);
-  // double bmuon = ydoc  - amuon*xdoc;
-  
-  // double r = sqrt( pow(bmuon/(tan(TauA1OppositePhi) - amuon )  ,2) + pow(bmuon*tan(TauA1OppositePhi)/(tan(TauA1OppositePhi) - amuon) ,2));//(bAnot)/(tan(phiAnot) - tan(phi0))/cos(phiAnot);
-  
-  // double xPoint = r*cos(TauA1OppositePhi);
-  // double yPoint = r*sin(TauA1OppositePhi);
-  
-  // //    double zPoint = zdoc + r*cos(phi0 +TauA1OppositePhi )*lam;
-  // double zPoint = (r - dxy)*lam - zdoc;
-  
-  // double cosTheta2 = zPoint/sqrt(r*r + zPoint*zPoint) ;
-   TVector3 PointGuess(xdoc, ydoc, zdoc);
-   TVector3 TauMuDir = PV - PointGuess;
-   double cosTheta2 = TauMuDir.Z()/TauMuDir.Mag();
-  
-  // outpar(0,0) = acos(cosTheta2);
-  // outpar(1,0) = TauDir.Phi();
-   
-   
-//    std::cout<<" xPoint, yPoint, zPoint  "<< xPoint << "  " <<yPoint <<" "<<zPoint<<std::endl;
-//    std::cout<<" TauDir.Phi()   "<< TauDir.Phi() <<"  PointGuess.Phi() "<< TauMuDir.Phi()<<std::endl;
-//    std::cout<<" TauMuDir.Theta()   "<< TauMuDir.Theta() <<std::endl;
-//    std::cout<<" cosTheta2   "<< cosTheta2 <<std::endl;
-//    std::cout<<"  EstimateTauDirectionAdvanced  inpar "<<std::endl;
-//    for(int str =0; str < inpar.GetNrows(); str++){
-//      for(int kol =0; kol < inpar.GetNcols(); kol++){
-//        std::cout<<"  "<< inpar(str,kol)<<"  ";
-//      }    
-//      std::cout<<std::endl;
-//    }
-//    std::cout<<"  EstimateTauDirectionAdvanced  outpar(0,0) "<<outpar(0,0)<<std::endl;
-//    std::cout<<"  EstimateTauDirectionAdvanced  outpar(1,0) "<<outpar(1,0)<<std::endl;
-   
+  Logger(Logger::Debug) << "PV: " << inpar(4,0) << ", " << inpar(5,0) << ", " << inpar(6,0) << std::endl;
+  Logger(Logger::Debug) << "dxy, phi0, lam, dz: " << dxy << ", " << phi0 << ", " << lam << ", " << dz << std::endl;
+  Logger(Logger::Debug) << "PointGuess: " << xdoc << ", " << ydoc << ", " << zdoc << std::endl;
+  Logger(Logger::Debug) << "PointGuessNEW: " << xdocNEW << ", " << ydocNEW << ", " << zdocNEW << std::endl;
+  Logger(Logger::Debug) << "DirGuess: " << TauMuDir.X() << ", " << TauMuDir.Y() << ", " << TauMuDir.Z() << std::endl;
+  Logger(Logger::Debug) << "PointGuessNEW: " << xdirNEW << ", " << ydirNEW << ", " << zdirNEW << std::endl;
+  Logger(Logger::Debug) << "a, b, t: " << a << ", " << b << ", " << tmu <<  std::endl;
+  Logger(Logger::Debug) << "aNEW, bNEW, tNEW: " << aNEW << ", " << bNEW << ", " << tmuNEW << std::endl;
+  Logger(Logger::Debug) << "TauH X, Y: " << inpar(7,0) << ", " << inpar(8,0) << std::endl;
+  Logger(Logger::Debug) << "TauMuDir.Phi(): " << TauMuDir.Phi() << " TauH phi: " << atan2(inpar(8,0), inpar(7,0)) << std::endl;
+  Logger(Logger::Debug) << "dPhi: " << TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)) << "/pi= " << (TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)))/TMath::Pi() << std::endl;
 
   return outpar; 
 }
@@ -670,24 +683,19 @@ DiTauConstrainedFitter::EstimateTauKinematic(TMatrixT<double> &inpar){
   double cosTauTau = cos(TauA1p4.Theta() + inpar(0,0));
   double TauMuP =  MassConstraint_*MassConstraint_/2/(1-cosTauTau)/TauA1p4.P(); // neglecting tau mass w.r.t Z
   
+  TVector3 TauMuDir(cos(inpar(1,0))*sin(inpar(0,0)), sin(inpar(1,0))*sin(inpar(0,0)), cos(inpar(0,0)));
+  double TauMuPNew = MassConstraint_*MassConstraint_/2/(1-cos(TauA1p4.Angle(TauMuDir)))/TauA1p4.P();
+
+  //Logger(Logger::Debug) << "TauMuP: " << TauMuP << std::endl;
+
   outpar(0,0) = TauMuP*cos(inpar(1,0))*sin(inpar(0,0));
   outpar(1,0) = TauMuP*sin(inpar(1,0))*sin(inpar(0,0));
   outpar(2,0) = TauMuP*cos(inpar(0,0));
-  /*
-  std::cout<<"  inpar(0,0)   "<<inpar(0,0) <<"  inpar(1,0)   " <<inpar(1,0) <<std::endl;
-  std::cout<<"  TauA1p4.Phi()   "<<TauA1p4.Phi() <<"  TauA1p4.P()   " <<TauA1p4.P()<<std::endl;
-  std::cout<<"  compare phis2  "<<fabs(TauA1p4.Phi() - inpar(1,0))<<std::endl;
 
-  std::cout<<"  TauMuP   "<<TauMuP <<"  cosTauTau   " <<cosTauTau <<std::endl;
+  Logger(Logger::Debug) << "TauDir.Phi(): " << TauA1p4.Phi() << " TauMuDirNEW2.Phi(): " << inpar(1,0) << std::endl;
+  Logger(Logger::Debug) << "TauA1 p3: " << TauA1p4.X() << ", " << TauA1p4.Y() << ", " << TauA1p4.Z() << std::endl;
+  Logger(Logger::Debug) << "TauMu p3: " << outpar(0,0) << ", " << outpar(1,0) << ", " << outpar(2,0) << std::endl;
 
-  std::cout<<"  EstimateTauKinematic   outpar  "<<std::endl;
-  for(int str =0; str < outpar.GetNrows(); str++){
-    for(int kol =0; kol < outpar.GetNcols(); kol++){
-      std::cout<<"  "<< outpar(str,kol)<<"  ";
-    }    
-    std::cout<<std::endl;
-  }
-  */
   return outpar; 
 }
 
@@ -744,9 +752,9 @@ DiTauConstrainedFitter::ConfigureParameterErrors(TrackParticle MuTrack, std::pai
 
 
 TMatrixT<double> 
-DiTauConstrainedFitter::ConfigureInitialAdvancedParameters(TrackParticle MuTrack,  TVector3 PV, TVector3 SV){
+DiTauConstrainedFitter::ConfigureInitialAdvancedParameters(TrackParticle MuTrack,  TVector3 PV, LorentzVectorParticle TauA1){
   TMatrixT<double>    outpar;
-  outpar.ResizeTo(10,1);
+  outpar.ResizeTo(9,1);
    outpar(0,0)  = MuTrack.Parameter(TrackParticle::dxy);
    outpar(1,0)  = MuTrack.Parameter(TrackParticle::phi);
    outpar(2,0)  = MuTrack.Parameter(TrackParticle::lambda);
@@ -754,9 +762,8 @@ DiTauConstrainedFitter::ConfigureInitialAdvancedParameters(TrackParticle MuTrack
    outpar(4,0)  = PV.X();
    outpar(5,0)  = PV.Y();
    outpar(6,0)  = PV.Z();
-   outpar(7,0)  = SV.X();
-   outpar(8,0)  = SV.Y();
-   outpar(9,0)  = SV.Z();
+   outpar(7,0) = TauA1.LV().X();
+   outpar(8,0) = TauA1.LV().Y();
    /*
    std::cout<<" ConfigureInitialAdvancedParameters   outpar "<<std::endl;
    for(int str =0; str < outpar.GetNrows(); str++){
@@ -770,9 +777,9 @@ DiTauConstrainedFitter::ConfigureInitialAdvancedParameters(TrackParticle MuTrack
  }
 
 TMatrixTSym<double> 
-DiTauConstrainedFitter::ConfigureInitialAdvancedParameterErrors(TrackParticle MuTrack, TMatrixTSym<double>  PVCov,TMatrixTSym<double>  SVCov){
+DiTauConstrainedFitter::ConfigureInitialAdvancedParameterErrors(TrackParticle MuTrack, TMatrixTSym<double> PVCov, TMatrixTSym<double> TauA1Cov){
   TMatrixTSym<double>  Cov;
-    Cov.ResizeTo(10,10);
+    Cov.ResizeTo(9,9);
  
     Cov(0,0) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dxy);
     Cov(0,1) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::phi);
@@ -796,7 +803,11 @@ DiTauConstrainedFitter::ConfigureInitialAdvancedParameterErrors(TrackParticle Mu
     for(int i=0; i<3; i++){
       for(int j=0; j<3; j++){
 	Cov(i+4,j+4)=PVCov(i,j);
-	Cov(i+7,j+7)=SVCov(i,j);
+      }
+    }
+    for(int i=0; i<2; i++){
+      for(int j=0; j<2; j++){
+	Cov(i+7,j+7)=TauA1Cov(i+4,j+4);
       }
     }
     if(debug){
@@ -1052,48 +1063,46 @@ DiTauConstrainedFitter::GetTauMuEstimate(){
 }
 
 TVector3 DiTauConstrainedFitter::TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV){
-		 double dxy 							  		 = Muon(0,0);	//= Muon.Parameter(TrackParticle::dxy);
-		 double phi0 									   = Muon(1,0);	    //= Muon.Parameter(TrackParticle::phi);
-		 double lambda 									     = Muon(2,0);   	//= Muon.Parameter(TrackParticle::lambda);
-		 double dz 									       			= Muon(3,0);  //= Muon.Parameter(TrackParticle::dz);
-		 double cosphi0 											  = cos(phi0); 	     double sinphi0   = sin(phi0);
-		 double coslambda 											  = cos(lambda);     	    	      	double sinlambda  = sin(lambda);
-		 double tanlambda											  = tan(lambda);
+	double dxy 		= Muon(0,0);	//= Muon.Parameter(TrackParticle::dxy);
+	double phi0 	= Muon(1,0);	//= Muon.Parameter(TrackParticle::phi);
+	double lambda 	= Muon(2,0);   	//= Muon.Parameter(TrackParticle::lambda);
+	double dz 		= Muon(3,0);  //= Muon.Parameter(TrackParticle::dz);
+	double cosphi0 	= cos(phi0);  double sinphi0 = sin(phi0);
+	double coslambda= cos(lambda);double sinlambda = sin(lambda);
+	double tanlambda= tan(lambda);
 
-		 TVector3 SVPV = SV - PV;
-		 TVector3 Muon0 = TVector3(-sinphi0*dxy,cosphi0*dxy,dz);
-		 TVector3 Taumu0 = TVector3(PV);
-		 TVector3 Delta0 = TVector3(Muon0 - Taumu0);
+	TVector3 SVPV = SV - PV;
+	TVector3 Muon0 = TVector3(-sinphi0*dxy,cosphi0*dxy,dz);
+	TVector3 Taumu0 = TVector3(PV);
+	TVector3 Delta0 = TVector3(Muon0 - Taumu0);
 
-		 double phitau = atan2(-SVPV.Y(),-SVPV.X());
+	double phitau = atan2(-SVPV.Y(),-SVPV.X());
+	double cosphitau	= cos(phitau);	double sinphitau	= sin(phitau);
+	//double cosphitau 	= -SVPV.X()/SVPV.Perp(); 		double sinphitau	= -SVPV.Y()/SVPV.Perp();
 
-		 double cosphitau	= cos(phitau);	double sinphitau	= sin(phitau);
-		 //double cosphitau 	= -SVPV.X()/SVPV.Perp(); 		double sinphitau	= -SVPV.Y()/SVPV.Perp();
+	double tmu = (Delta0.X()/cosphitau - Delta0.Y()/sinphitau)/(cosphi0/cosphitau - sinphi0/sinphitau);
+	TVector3 MuonDir = TVector3(tmu*cosphi0, tmu*sinphi0, tmu*tanlambda);
+	TVector3 Intersection = MuonDir + Muon0;
+	TVector3 TauMuDirFromIntersection = Intersection - Taumu0;
 
-		 double tmu = (Delta0.Y()/sinphitau - Delta0.X()/cosphitau)/(cosphi0/cosphitau - sinphi0/sinphitau);
+	double distnew = Distance(Muon0, Taumu0, MuonDir, TauMuDirFromIntersection);
 
-		 TVector3 MuonDir = TVector3(tmu*cosphi0, tmu*sinphi0, tmu*tanlambda);
-		 TVector3 Intersection = MuonDir + Muon0;
-		 TVector3 TauMuDirFromIntersection = Intersection - Taumu0;
+	TVector3 TauMuDir = TVector3();
 
-		 double distnew = Distance(Muon0, Taumu0, MuonDir, TauMuDirFromIntersection);
+	//(distplus < distminus) ? TauMuDir = TauMuDirPlus : TauMuDir = TauMuDirMinus;
+	TauMuDir = TauMuDirFromIntersection;
 
-		 TVector3 TauMuDir = TVector3();
-
-		 //(distplus < distminus) ? TauMuDir = TauMuDirPlus : TauMuDir = TauMuDirMinus;
-		 TauMuDir = TauMuDirFromIntersection;
-
-		 //TauMuDir.SetMag(1.);
-		 return TauMuDir;
+	//TauMuDir.SetMag(1.);
+	return TauMuDir;
 }
 double DiTauConstrainedFitter::Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2){
        TVector3 vecproduct = DirectionVector1.Cross(DirectionVector2);
        TVector3 relvec = TVector3(Location2 - Location1);
        double Mag = abs(vecproduct.Mag());
-       double distance = (Mag == 0) ? 0. : abs(vecproduct.Dot(relvec))/Mag;
+       double distance = (Mag == 0) ? -1. : abs(vecproduct.Dot(relvec))/Mag;
        return distance;
 }
-TMatrixT<double> DiTauConstrainedFitter::TauMuEstimator(TMatrixT<double> &inpar){
+/*TMatrixT<double> DiTauConstrainedFitter::TauMuEstimator(TMatrixT<double> &inpar){
 	double lambda = inpar(0,0);   	//= Muon.Parameter(TrackParticle::lambda);
 	double phi0   = inpar(1,0);	    //= Muon.Parameter(TrackParticle::phi);
 	double dxy    = inpar(2,0);	//= Muon.Parameter(TrackParticle::dxy);
@@ -1118,4 +1127,150 @@ TMatrixT<double> DiTauConstrainedFitter::TauMuEstimator(TMatrixT<double> &inpar)
 	outpar(2,0) = P_TauMu*MuonDir.Z();
 
 	return outpar;
+}
+*/
+
+TMatrixT<double> DiTauConstrainedFitter::ConfigureKinematicParametersFullRecoil(TrackParticle MuTrack, TVector3 PV, LorentzVectorParticle TauA1, TMatrixT<double> TauMuPt){
+  TMatrixT<double> outpar(12,1);
+
+  outpar(0,0)  = MuTrack.Parameter(TrackParticle::dxy);
+  outpar(1,0)  = MuTrack.Parameter(TrackParticle::phi);
+  outpar(2,0)  = MuTrack.Parameter(TrackParticle::lambda);
+  outpar(3,0)  = MuTrack.Parameter(TrackParticle::dz);
+  outpar(4,0)  = PV.X();
+  outpar(5,0)  = PV.Y();
+  outpar(6,0)  = PV.Z();
+  outpar(7,0)  = TauA1.LV().X();
+  outpar(8,0)  = TauA1.LV().Y();
+  outpar(9,0)  = TauA1.LV().Z();
+  outpar(10,0) = TauMuPt(0,0);
+  outpar(11,0) = TauMuPt(1,0);
+
+  return outpar;
+}
+
+TMatrixTSym<double> DiTauConstrainedFitter::ConfigureKinematicParameterErrorsFullRecoil(TrackParticle MuTrack, TMatrixTSym<double> PVCov, LorentzVectorParticle TauA1, TMatrixTSym<double> TauMuPtCov){
+  TMatrixTSym<double>  Cov;
+    Cov.ResizeTo(12,12);
+
+    Cov(0,0) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dxy);
+    Cov(0,1) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::phi);
+    Cov(0,2) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dz);
+    Cov(0,3) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::lambda);
+
+    Cov(1,0) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::dxy);
+    Cov(1,1) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::phi);
+    Cov(1,2) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::dz);
+    Cov(1,3) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::lambda);
+
+    Cov(2,0) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::dxy);
+    Cov(2,1) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::phi);
+    Cov(2,2) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::dz);
+    Cov(2,3) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::lambda);
+
+    Cov(3,0) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::dxy);
+    Cov(3,1) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::phi);
+    Cov(3,2) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::dz);
+    Cov(3,3) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::lambda);
+
+    for(int i=0; i<3; i++){
+      for(int j=0; j<3; j++){
+        Cov(i+4,j+4)=PVCov(i,j);
+        Cov(i+7,j+7)=TauA1.Covariance(i+4,j+4);
+      }
+    }
+    for(int i=0; i<2; i++){
+      for(int j=0; j<2; j++){
+        Cov(i+10,j+10)=TauMuPtCov(i,j);
+      }
+    }
+    return Cov;
+}
+
+TMatrixT<double> DiTauConstrainedFitter::ConfigureTauMuPtParameters(TrackParticle Muon, PTObject METminusNeutrino){
+  TMatrixT<double>  outpar(4,1);
+
+  outpar(0,0) = Muon.Parameter(TrackParticle::kappa)/Muon.BField();
+  outpar(1,0) = Muon.Parameter(TrackParticle::phi);
+  outpar(2,0) = METminusNeutrino.X();
+  outpar(3,0) = METminusNeutrino.Y();
+
+  return outpar;
+}
+
+TMatrixTSym<double> DiTauConstrainedFitter::ConfigureTauMuPtParameterErrors(TrackParticle Muon, PTObject METminusNeutrino){
+  TMatrixTSym<double>  outpar(4,4);
+
+  outpar(0,0) = Muon.Covariance(TrackParticle::kappa, TrackParticle::kappa)/Muon.BField()/Muon.BField();
+  outpar(1,0) = Muon.Covariance(TrackParticle::kappa, TrackParticle::phi)/Muon.BField();
+  outpar(0,1) = Muon.Covariance(TrackParticle::phi, TrackParticle::kappa)/Muon.BField();
+  outpar(1,1) = Muon.Covariance(TrackParticle::phi, TrackParticle::phi);
+
+  for(unsigned i=0; i<2; i++){
+	for(unsigned j=0; j<2; j++){
+	  outpar(i+2,j+2) = METminusNeutrino.Cov()(i,j);
+	}
+  }
+  return outpar;
+}
+
+TMatrixT<double> DiTauConstrainedFitter::EstimateTauPt(TMatrixT<double> &inpar){
+  TMatrixT<double>  outpar(2,1);
+
+  double MetX = inpar(2,0);
+  double MetY = inpar(3,0);
+
+  double kappaoveralpha = inpar(0,0);
+  double phi0 = inpar(1,0);
+
+  outpar(0,0) = MetX + fabs(1/kappaoveralpha)*cos(phi0);
+  outpar(1,0) = MetY + fabs(1/kappaoveralpha)*sin(phi0);
+
+  return outpar;
+}
+
+TMatrixT<double> DiTauConstrainedFitter::EstimateTauKinematicFullRecoil(TMatrixT<double> &inpar){
+
+  TMatrixT<double> outpar(3,1);
+  double dxy   =inpar(0,0);
+  double phi0  =inpar(1,0);
+  double lam   =inpar(2,0);
+  double dz    =inpar(3,0);
+
+  TVector3 PV(inpar(4,0),inpar(5,0),inpar(6,0));
+  TVector3 P_Tauh(inpar(7,0), inpar(8,0), inpar(9,0));
+  TVector2 TauMuPt(inpar(10,0),inpar(11,0));
+
+  double tanphi_tau = TauMuPt.Y()/TauMuPt.X();
+  double a = tanphi_tau;
+  double b = PV.Y() - a*PV.X();
+
+  double tmu  = (dxy*(cos(phi0) + a*sin(phi0)) - b) / (a*cos(phi0) - sin(phi0)); //projection onto XY plane
+
+  double xdoc = -dxy*sin(phi0) + tmu*cos(phi0);
+  double ydoc = dxy*cos(phi0) + tmu*sin(phi0);
+  double zdoc = dz + tmu*tan(lam);
+
+  TVector3 PointGuess(xdoc, ydoc, zdoc);
+  TVector3 TauMuDir = PointGuess - PV;
+
+  double P_TauMu = pow(MassConstraint_, 2.)/2./P_Tauh.Mag()/(1 - cos(P_Tauh.Angle(TauMuDir)));
+
+  double phitau = atan2(TauMuPt.Y(),TauMuPt.X());
+  double thetatau = TauMuDir.Theta();
+
+  outpar(0,0) = P_TauMu*cos(phitau)*sin(thetatau);
+  outpar(1,0) = P_TauMu*sin(phitau)*sin(thetatau);
+  outpar(2,0) = P_TauMu*cos(thetatau);
+
+  Logger(Logger::Debug) << "PV: " << inpar(4,0) << ", " << inpar(5,0) << ", " << inpar(6,0) << std::endl;
+  Logger(Logger::Debug) << "dxy, phi0, lam, dz: " << dxy << ", " << phi0 << ", " << lam << ", " << dz << std::endl;
+  Logger(Logger::Debug) << "PointGuess: " << xdoc << ", " << ydoc << ", " << zdoc << std::endl;
+  Logger(Logger::Debug) << "DirGuess: " << TauMuDir.X() << ", " << TauMuDir.Y() << ", " << TauMuDir.Z() << std::endl;
+  Logger(Logger::Debug) << "a, b, t: " << a << ", " << b << ", " << tmu <<  std::endl;
+  Logger(Logger::Debug) << "TauH X, Y: " << inpar(7,0) << ", " << inpar(8,0) << std::endl;
+  Logger(Logger::Debug) << "TauMuDir.Phi(): " << TauMuDir.Phi() << " TauH phi: " << atan2(inpar(8,0), inpar(7,0)) << std::endl;
+  Logger(Logger::Debug) << "dPhi: " << TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)) << "/pi= " << (TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)))/TMath::Pi() << std::endl;
+
+  return outpar;
 }
