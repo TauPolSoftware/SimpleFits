@@ -118,7 +118,7 @@ void DiTauConstrainedFitter::Configure(LorentzVectorParticle TauA1,TrackParticle
   PARa_0=ComputeExpParToPara(exppar);
   for(int i=0; i<npartr;i++)para_0(i)=PARa_0(i,0);
 
-  cova_0=ErrorMatrixPropagator::PropogateError(&DiTauConstrainedFitter::ComputeExpParToPara,exppar,expcov);
+  cova_0=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeExpParToPara,exppar,expcov);
 
 
   para.ResizeTo(npartr);
@@ -243,7 +243,7 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
   double c(0),b(0);
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
   TMatrixT<double> a1=ComputeTauA1LorentzVectorPar(exppar);
-  TMatrixTSym<double> a1cov=ErrorMatrixPropagator::PropogateError(&DiTauConstrainedFitter::ComputeTauA1LorentzVectorPar,exppar,expcov);
+  TMatrixTSym<double> a1cov=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeTauA1LorentzVectorPar,exppar,expcov);
      
    for(int i=0; i<LorentzVectorParticle::NVertex; i++){
      for(int j=0; j<LorentzVectorParticle::NVertex; j++){
@@ -259,7 +259,7 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
     mu(1,0)= particles_.at(1).Parameter(LorentzVectorParticle::vy);
     mu(2,0)= particles_.at(1).Parameter(LorentzVectorParticle::vz);
   
-    TMatrixTSym<double> mucov=ErrorMatrixPropagator::PropogateError(&DiTauConstrainedFitter::ComputeTauMuLorentzVectorPar,exppar,expcov);
+    TMatrixTSym<double> mucov=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeTauMuLorentzVectorPar,exppar,expcov);
     for(int i=0; i<LorentzVectorParticle::NVertex; i++){
       for(int j=0; j<LorentzVectorParticle::NVertex; j++){
 	mucov(i,j)=particles_.at(1).VertexCov()(i,j);
@@ -277,7 +277,7 @@ DiTauConstrainedFitter::GetMother(){
   double c(0),b(0);
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
   TMatrixT<double> m=ComputeMotherLorentzVectorPar(exppar);
-  TMatrixTSym<double> mcov=ErrorMatrixPropagator::PropogateError(&DiTauConstrainedFitter::ComputeMotherLorentzVectorPar,exppar,expcov);
+  TMatrixTSym<double> mcov=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeMotherLorentzVectorPar,exppar,expcov);
 
   return LorentzVectorParticle(m,mcov,PDGInfo::Z0,c,b);
 }
@@ -550,36 +550,14 @@ DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
   outpar(0,0) = TauMuDir.Theta();
   outpar(1,0) = atan2(TauMuPt.Y(),TauMuPt.X());
  
-  double aNEW = inpar(8,0)/inpar(7,0);
-  double bNEW = inpar(5,0) - aNEW*inpar(4,0);
-  double tmuNEW  = (dxy*(cos(phi0) + aNEW*sin(phi0)) - bNEW) / (aNEW*cos(phi0) - sin(phi0)); //projection onto XY plane
-
-  double xdocNEW = -dxy*sin(phi0) + tmuNEW*cos(phi0);
-  double ydocNEW = dxy*cos(phi0) + tmuNEW*sin(phi0);
-  double zdocNEW = dz + tmuNEW*tan(lam);
-
-  double xdirNEW = xdocNEW - inpar(4,0);
-  double ydirNEW = ydocNEW - inpar(5,0);
-  double zdirNEW = zdocNEW - inpar(6,0);
-
-
-  TVector3 PointGuess(xdoc, ydoc, zdoc);
-  TVector3 TauMuDir = PV - PointGuess;
-  double cosTheta2 = TauMuDir.Z()/TauMuDir.Mag();
-  
- 
   Logger(Logger::Debug) << "PV: " << inpar(4,0) << ", " << inpar(5,0) << ", " << inpar(6,0) << std::endl;
   Logger(Logger::Debug) << "dxy, phi0, lam, dz: " << dxy << ", " << phi0 << ", " << lam << ", " << dz << std::endl;
   Logger(Logger::Debug) << "PointGuess: " << xdoc << ", " << ydoc << ", " << zdoc << std::endl;
-  Logger(Logger::Debug) << "PointGuessNEW: " << xdocNEW << ", " << ydocNEW << ", " << zdocNEW << std::endl;
   Logger(Logger::Debug) << "DirGuess: " << TauMuDir.X() << ", " << TauMuDir.Y() << ", " << TauMuDir.Z() << std::endl;
-  Logger(Logger::Debug) << "PointGuessNEW: " << xdirNEW << ", " << ydirNEW << ", " << zdirNEW << std::endl;
   Logger(Logger::Debug) << "a, b, t: " << a << ", " << b << ", " << tmu <<  std::endl;
-  Logger(Logger::Debug) << "aNEW, bNEW, tNEW: " << aNEW << ", " << bNEW << ", " << tmuNEW << std::endl;
   Logger(Logger::Debug) << "TauH X, Y: " << inpar(7,0) << ", " << inpar(8,0) << std::endl;
   Logger(Logger::Debug) << "TauMuDir.Phi(): " << TauMuDir.Phi() << " TauH phi: " << atan2(inpar(8,0), inpar(7,0)) << std::endl;
   Logger(Logger::Debug) << "dPhi: " << TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)) << "/pi= " << (TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)))/TMath::Pi() << std::endl;
-
 
   return outpar; 
 }
