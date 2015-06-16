@@ -1,4 +1,5 @@
 #include "SimpleFits/FitSoftware/interface/LagrangeMultipliersFitter.h"
+#include "SimpleFits/FitSoftware/interface/Logger.h"
 #include "TDecompBK.h"
 #include <iostream>
 
@@ -131,8 +132,10 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
  
 
   double detM = M.Determinant();
+
   if(fabs(detM)>1e40 or fabs(detM)  < 1e-25){
-       std::cout << "Fit failed: unable to invert SYM gain matrix LARGE Determinant" << detM << " \n" << std::endl;
+       Logger(Logger::Error) << "Fit failed: unable to invert SYM  matrix LARGE Determinant or Singular Matrix" << detM << " \n" << std::endl;
+
        return false;
   }
   TMatrixT<double> M_inv = M; M_inv.Invert();
@@ -196,7 +199,12 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
      a_s = par_a;
      b_s = par_b;
-
+     TVectorD a_v = convertToVector(a_s);
+     TVectorD b_v = convertToVector(b_s);
+     softdelta_vec.ResizeTo(NSoftConstraints());
+     harddelta_vec.ResizeTo(NConstraints());
+     softdelta_vec = SoftValue(a_v,b_v);
+     harddelta_vec = HardValue(a_v,b_v);
 
 
   // set chi2
@@ -307,11 +315,10 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
 
 
 bool LagrangeMultipliersFitter::isConverged(){
-
-
   if(pardelta<MaxParDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
-    // std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl; 
-      
+
+    //	Logger(Logger::Verbose) << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl;
+
     return true;
   }
 
@@ -505,6 +512,7 @@ double LagrangeMultipliersFitter::ConstraintDelta(TVectorT<double> a,TVectorT<do
   TVectorD ds_par=SoftValue(a,b);
   //  TVectorD ds_par=converToMatrix(SoftValue(convertToVector(a),convertToVector(b)));
   double delta_d(0);
+  double delta_dNew = dh_par.Norm1() + ds_par.Norm1();
   for(int i = 0; i<dh_par.GetNrows(); i++){
     delta_d+=fabs(dh_par(i)) + fabs(ds_par(i));
   }

@@ -19,6 +19,7 @@ class TPTRObject{
 	virtual ~TPTRObject(){};
 
 	std::vector<bool> CreateVectorFromAmbiguity();
+	bool isAmbiguous() const;
 
 	LorentzVectorParticle getNeutrinoZero() const;
 	LorentzVectorParticle getNeutrinoMinus() const;

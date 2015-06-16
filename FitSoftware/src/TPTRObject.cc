@@ -21,6 +21,14 @@ TPTRObject::TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorPartic
   }
 }
 
+bool TPTRObject::isAmbiguous() const{
+  if(isvalid_){
+	return isambiguous_;
+  }
+  Logger(Logger::Error) << "TPTRObject is NOT valid!" << std::endl;
+  return false;
+}
+
 LorentzVectorParticle TPTRObject::getNeutrinoMinus() const{
   if(isvalid_){
 	if(isambiguous_){
