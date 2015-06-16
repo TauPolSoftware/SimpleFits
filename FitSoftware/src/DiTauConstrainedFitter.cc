@@ -42,8 +42,15 @@ void DiTauConstrainedFitter::Configure(LorentzVectorParticle TauA1,TrackParticle
 
   LorentzVectorParticle  TauMuGuess;
   if(!useFullRecoil_) TauMuGuess  = TauMuStartingPoint( MuTrack,TauA1,PVertex, VertexCov, TauA1.Vertex(),TauA1.VertexCov());
-  else TauMuGuess  = TauMuStartingPointwithFullRecoil(MuTrack,TauA1, METminusNeutrino_, PVertex, VertexCov, TauA1.Vertex(),TauA1.VertexCov());
+  else{
+	TauMuGuess  = TauMuStartingPointwithFullRecoil(MuTrack,TauA1, METminusNeutrino_, PVertex, VertexCov, TauA1.Vertex(),TauA1.VertexCov());
+	phiz_ = (TauA1.LV() + TauMuGuess.LV()).Phi();
+  }
 
+  Logger(Logger::Debug) << "Passed: TauMuStartingPoint" << std::endl;
+
+  RecoilX_ = TauA1.LV().X() + TauMuGuess.LV().X();
+  RecoilY_ = TauA1.LV().Y() + TauMuGuess.LV().Y();
   ThetaForConstrTemporaryIMplementation_=TauMuGuess.LV().Theta();
   particles_.push_back(TauA1);
   particles_.push_back(TauMuGuess);
@@ -342,10 +349,17 @@ DiTauConstrainedFitter::SoftValue(TVectorD &va,TVectorD &vb){
   CovertParToObjects(va,vb,Taua1,Taumu,ZMass);
   TVectorD d(NSoftConstraints());
 
-  d(0) = Taua1.Px() + Taumu.Px();
-  d(1) = Taua1.Py() + Taumu.Py();
-  d(2) = atan( (Taua1.Py() + Taumu.Py())/(Taua1.Px() + Taumu.Px())) - phiz_;
+  if(!useFullRecoil_){
+	d(0) = Taua1.Px() + Taumu.Px();
+	d(1) = Taua1.Py() + Taumu.Py();
+	d(2) = atan( (Taua1.Py() + Taumu.Py())/(Taua1.Px() + Taumu.Px())) - phiz_;
   //  std::cout<<"ThetaForConstrTemporaryIMplementation_ " << ThetaForConstrTemporaryIMplementation_  <<std::endl; 
+  }
+  else{
+	d(0) = Taua1.Px() + Taumu.Px() - RecoilX_;
+	d(1) = Taua1.Py() + Taumu.Py() - RecoilY_;
+	d(2) = atan( (Taua1.Py() + Taumu.Py())/(Taua1.Px() + Taumu.Px())) - phiz_;
+  }
   return d;
 } 
 
@@ -538,35 +552,20 @@ DiTauConstrainedFitter::TauMuStartingPointwithFullRecoil(TrackParticle MuTrack,L
 		       sqrt(SVCov(1,1) + PVCov(1,1)),
 		       sqrt(SVCov(2,2) + PVCov(2,2)));
 
-  TMatrixT<double>    parameters;
-  parameters.ResizeTo(5,1);
-  TMatrixT<double>    parameterErrors;
-  parameterErrors.ResizeTo(5,5);
-
-  TMatrixT<double>    parametersAd;
-  parametersAd.ResizeTo(9,1);
-  TMatrixTSym<double>    parameterErrorsAd;
-  parameterErrorsAd.ResizeTo(9,9);
-
-  TMatrixT<double>    taumudirection;
-  taumudirection.ResizeTo(2,1);
-  TMatrixTSym<double>    taumudirectionError;
-  taumudirectionError.ResizeTo(2,2);
-
   TMatrixT<double>    kinematicparameters;
-  kinematicparameters.ResizeTo(5,1);
+  kinematicparameters.ResizeTo(12,1);
   TMatrixTSym<double>    kinematicparametererrors;
-  kinematicparametererrors.ResizeTo(5,5);
+  kinematicparametererrors.ResizeTo(12,12);
 
   TMatrixT<double>    taumuptparameters;
-  kinematicparameters.ResizeTo(4,1);
+  taumuptparameters.ResizeTo(4,1);
   TMatrixTSym<double>    taumuptparametererrors;
-  kinematicparametererrors.ResizeTo(4,4);
+  taumuptparametererrors.ResizeTo(4,4);
 
   TMatrixT<double>    TauMuPt;
-  kinematicparameters.ResizeTo(2,1);
+  TauMuPt.ResizeTo(2,1);
   TMatrixTSym<double>    TauMuPterrors;
-  kinematicparametererrors.ResizeTo(2,2);
+  TauMuPterrors.ResizeTo(2,2);
 
 
   TMatrixT<double>    TauKin;
@@ -1131,7 +1130,8 @@ double DiTauConstrainedFitter::Distance(TVector3 Location1, TVector3 Location2, 
 */
 
 TMatrixT<double> DiTauConstrainedFitter::ConfigureKinematicParametersFullRecoil(TrackParticle MuTrack, TVector3 PV, LorentzVectorParticle TauA1, TMatrixT<double> TauMuPt){
-  TMatrixT<double> outpar(12,1);
+  TMatrixT<double> outpar;
+  outpar.ResizeTo(12,1);
 
   outpar(0,0)  = MuTrack.Parameter(TrackParticle::dxy);
   outpar(1,0)  = MuTrack.Parameter(TrackParticle::phi);
@@ -1188,7 +1188,8 @@ TMatrixTSym<double> DiTauConstrainedFitter::ConfigureKinematicParameterErrorsFul
 }
 
 TMatrixT<double> DiTauConstrainedFitter::ConfigureTauMuPtParameters(TrackParticle Muon, PTObject METminusNeutrino){
-  TMatrixT<double>  outpar(4,1);
+  TMatrixT<double>  outpar;
+  outpar.ResizeTo(4,1);
 
   outpar(0,0) = Muon.Parameter(TrackParticle::kappa)/Muon.BField();
   outpar(1,0) = Muon.Parameter(TrackParticle::phi);
@@ -1199,7 +1200,8 @@ TMatrixT<double> DiTauConstrainedFitter::ConfigureTauMuPtParameters(TrackParticl
 }
 
 TMatrixTSym<double> DiTauConstrainedFitter::ConfigureTauMuPtParameterErrors(TrackParticle Muon, PTObject METminusNeutrino){
-  TMatrixTSym<double>  outpar(4,4);
+  TMatrixTSym<double>  outpar;
+  outpar.ResizeTo(4,4);
 
   outpar(0,0) = Muon.Covariance(TrackParticle::kappa, TrackParticle::kappa)/Muon.BField()/Muon.BField();
   outpar(1,0) = Muon.Covariance(TrackParticle::kappa, TrackParticle::phi)/Muon.BField();
@@ -1215,7 +1217,8 @@ TMatrixTSym<double> DiTauConstrainedFitter::ConfigureTauMuPtParameterErrors(Trac
 }
 
 TMatrixT<double> DiTauConstrainedFitter::EstimateTauPt(TMatrixT<double> &inpar){
-  TMatrixT<double>  outpar(2,1);
+  TMatrixT<double>  outpar;
+  outpar.ResizeTo(2,1);
 
   double MetX = inpar(2,0);
   double MetY = inpar(3,0);
@@ -1230,8 +1233,9 @@ TMatrixT<double> DiTauConstrainedFitter::EstimateTauPt(TMatrixT<double> &inpar){
 }
 
 TMatrixT<double> DiTauConstrainedFitter::EstimateTauKinematicFullRecoil(TMatrixT<double> &inpar){
+  TMatrixT<double> outpar;
+  outpar.ResizeTo(3,1);
 
-  TMatrixT<double> outpar(3,1);
   double dxy   =inpar(0,0);
   double phi0  =inpar(1,0);
   double lam   =inpar(2,0);

@@ -7,10 +7,10 @@
 #include "SimpleFits/FitSoftware/interface/PTObject.h"
 
   PTObject::PTObject(){
-	TMatrixT<double> par(2,1);
+	TMatrixT<double> par; par.ResizeTo(2,1);
 	par_.ResizeTo(par);
 	par_=par;
-	TMatrixTSym<double> cov(2,2);
+	TMatrixTSym<double> cov; cov.ResizeTo(2,2);
 	cov_.ResizeTo(cov);
 	cov_=cov;
   }

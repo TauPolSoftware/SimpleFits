@@ -62,6 +62,7 @@ class GlobalEventFit{
   protected:
 	TPTRObject ThreeProngTauReco();
 	bool IsAmbiguous(std::vector<bool> recostatus);
+	PTObject SubtractNeutrinoFromMET(unsigned Ambiguity);
 
   private:
 	bool isConfigured_;
@@ -72,7 +73,8 @@ class GlobalEventFit{
 	LorentzVectorParticle A1_;
 	TVector3 PV_, SV_;
 	TMatrixTSym<double> PVCov_, SVCov_;
-	PTObject METminusNeutrino_;
+	PTObject MET_;
+	std::vector<PTObject> METminusNeutrino_;
 	bool useMassConstraint_;
 	double MassConstraint_;
 	double Phi_Res_;

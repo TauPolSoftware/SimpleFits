@@ -35,7 +35,7 @@ GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, dou
 	useFullRecoil_ = false;
 }
 
-GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double> PVCov){
+GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, PTObject MET, TVector3 PV, TMatrixTSym<double> PVCov){
 	isConfigured_ = false;
 	isFit_ = false;
 	Muon_ = Muon;
@@ -46,7 +46,7 @@ GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, PTO
 	SV_ = A1.Vertex();
 	SVCov_.ResizeTo(A1.VertexCov());
 	SVCov_ = A1.VertexCov();
-	METminusNeutrino_ = METminusNeutrino;
+	MET_ = MET;
 
 	TPTRObject_ = ThreeProngTauReco();
 
@@ -57,6 +57,7 @@ GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, PTO
 	useFullRecoil_ = true;
 
 }
+
 GlobalEventFit::~GlobalEventFit(){
 
 }
@@ -113,6 +114,7 @@ GEFObject GlobalEventFit::Fit(){
 	std::vector<LorentzVectorParticle> Taus = TPTRObject_.getTaus();
 	std::vector< std::vector<LorentzVectorParticle> > InitDaughters, RefitDaughters;
 	std::vector<LorentzVectorParticle> InitResonance, FitResonance;
+	std::vector<PTObject> METMinusNeutrino;
 	std::vector<double> Chi2s, Csums, Niterats;
 	std::vector<bool> fitstatus;
 
@@ -124,20 +126,23 @@ GEFObject GlobalEventFit::Fit(){
 			RefitDaughters.push_back(tmp);
 			InitResonance.push_back(LorentzVectorParticle());
 			FitResonance.push_back(LorentzVectorParticle());
+			METMinusNeutrino.push_back(PTObject());
 			Chi2s.push_back(-1);
 			Csums.push_back(-1);
 			Niterats.push_back(-1);
 			continue;
 		}
 
+		METMinusNeutrino.push_back(SubtractNeutrinoFromMET(Ambiguity));
+
 		DiTauConstrainedFitter* ptr2DTCF = NULL;
 		if(useFullRecoil_){
 			if(useDefaultMassConstraint_){
-				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, METminusNeutrino_, PV_, PVCov_, 91.5);
+				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
 				Logger(Logger::Debug) << "Case 1: ptr2DTCF->GetMassConstraint(): " << ptr2DTCF->GetMassConstraint() << std::endl;
 			}
 			else{
-			  ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, METminusNeutrino_, PV_, PVCov_, MassConstraint_);
+			  ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
 				Logger(Logger::Debug) << "Case 2: ptr2DTCF->GetMassConstraint(): " << ptr2DTCF->GetMassConstraint() << std::endl;
 			}
 		}
@@ -211,4 +216,22 @@ bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<
 		}
 	}
 	return false;
+}
+
+PTObject GlobalEventFit::SubtractNeutrinoFromMET(unsigned Ambiguity){
+  TMatrixT<double> METMinusNeutrinoPar; METMinusNeutrinoPar.ResizeTo(2,1);
+  TMatrixTSym<double> METMinusNeutrinoCov; METMinusNeutrinoCov.ResizeTo(2,2);
+
+  for(unsigned i=0; i<METMinusNeutrinoCov.GetNrows(); i++){
+	METMinusNeutrinoPar(i,0) = MET_.Par()(i,0) - TPTRObject_.getNeutrinos().at(Ambiguity).getParMatrix()(i,0);
+	Logger(Logger::Debug) << "METMinusNeutrinoPar(" << i << ",0) " << METMinusNeutrinoPar(i,0) << std::endl;
+	for(unsigned j=0; j<METMinusNeutrinoCov.GetNcols(); j++){
+	  METMinusNeutrinoCov(i,j) = MET_.Cov()(i,j) + TPTRObject_.getNeutrinos().at(Ambiguity).getCovMatrix()(i,j);
+	  Logger(Logger::Debug) << "METMinusNeutrinoCov(" << i << "," << j << ") " << METMinusNeutrinoCov(i,j) << std::endl;
+	}
+  }
+
+  PTObject METminusNeutrino(METMinusNeutrinoPar, METMinusNeutrinoCov);
+
+  return METminusNeutrino;
 }

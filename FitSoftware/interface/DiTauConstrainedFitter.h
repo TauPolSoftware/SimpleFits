@@ -28,7 +28,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
   virtual bool Fit();
   virtual double NConstraints(){return 2;}
-  virtual double NSoftConstraints(){return 3;}
+  virtual double NSoftConstraints(){if(!useFullRecoil_) return 3; return 3;}
   virtual double NDF(){return 1;}
   virtual int    NDaughters(){return 2;}
   void DebugFit();
@@ -108,6 +108,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   LorentzVectorParticle Init_Resonance_;
   double ThetaForConstrTemporaryIMplementation_;
   double phiz_, ptz_;
+  double RecoilX_, RecoilY_;
   PTObject METminusNeutrino_;
   bool debug;
   bool AnalyticalCovariance;
