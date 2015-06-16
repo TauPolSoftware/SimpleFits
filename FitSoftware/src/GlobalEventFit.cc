@@ -101,9 +101,8 @@ GEFObject GlobalEventFit::Fit(){
 		InitDaughters.push_back(Z2Tau.GetInitialDaughters());
 
 		Z2Tau.SetMaxDelta(1.0);
-		Z2Tau.SetNIterMax(100);
+		Z2Tau.SetNIterMax(15);
 		Z2Tau.SetEpsilon(0.01);
-
 		fitstatus.push_back(Z2Tau.Fit());
 		if(fitstatus.at(Ambiguity) && Z2Tau.isConverged()){
 			FitResonance.push_back(Z2Tau.GetMother());
@@ -125,16 +124,17 @@ GEFObject GlobalEventFit::Fit(){
 	}
 	int IndexToReturn(-1);
 	if(AmbiguitySolverByChi2(recostatus, fitstatus, Chi2s, IndexToReturn)){
-		GEFObject Results = GEFObject(InitDaughters.at(IndexToReturn),
-			InitResonance.at(IndexToReturn),
-			RefitDaughters.at(IndexToReturn),
-			FitResonance.at(IndexToReturn),
-			true, Chi2s.at(IndexToReturn), Csums.at(IndexToReturn), Niterats.at(IndexToReturn), IndexToReturn);
+	  GEFObject Results = GEFObject(InitDaughters.at(IndexToReturn),
+					InitResonance.at(IndexToReturn),
+					FitDaughtersCorr(RefitDaughters.at(IndexToReturn)),
+					FitResonance.at(IndexToReturn),
+					true, Chi2s.at(IndexToReturn), Csums.at(IndexToReturn), Niterats.at(IndexToReturn), IndexToReturn);
+
 		isFit_ = true;
 		return Results;
 	}
 	else{
-		Logger(Logger::Verbose) << "Fit failed: Ambiguity was not solvable" << std::endl;
+	  	Logger(Logger::Verbose) << "Fit failed: Ambiguity was not solvable" << std::endl;
 		return GEFObject();
 	}
 }
@@ -146,8 +146,64 @@ bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<
 	if(EventFit.at(1) == false && EventFit.at(2) == true && Chi2s.at(2) > 0){ IndexToReturn = 2;return true;}
 
 	if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == true && EventFit.at(2) == true)){
-		if(Chi2s.at(1) < Chi2s.at(2) && Chi2s.at(1) > 0){ IndexToReturn =1;return true;}
-		if(Chi2s.at(1) > Chi2s.at(2) && Chi2s.at(2) > 0){ IndexToReturn =2;return true;}
+	  if(Chi2s.at(1) < Chi2s.at(2) && Chi2s.at(1) > 0){ IndexToReturn =1;return true;}
+	  if(Chi2s.at(1) > Chi2s.at(2) && Chi2s.at(2) > 0){ IndexToReturn =2;return true;}
 	}
 	return false;
 }
+
+
+std::vector<LorentzVectorParticle> GlobalEventFit::FitDaughtersCorr(std::vector<LorentzVectorParticle> FitDaughters){
+
+  std::vector<LorentzVectorParticle> out;
+  //  constants are taken from pol1 fit to profile of pt resolution vs post fit pt:
+
+  // **********Tau A1 ******************************
+  // Minimizer is Linear
+  // Chi2                      =      149.414
+  // NDf                       =           48
+  // p0                        =      35.9909   +/-   0.725711    
+  // p1                        =    -0.833072   +/-   0.0172851  
+
+
+  // **********Tau Mu ******************************
+  // Minimizer is Linear
+  // Chi2                      =      76.3996
+  // NDf                       =           48
+  // p0                        =      44.9105   +/-   0.728919    
+  // p1                        =    -0.967167   +/-   0.0186608   
+
+
+  double p0tmu = 44.9105;
+  double p1tmu =-0.967167;
+
+  double p0ta1 = 35.9909;
+  double p1ta1 =-0.833072;
+
+  TLorentzVector TauA1 =FitDaughters.at(0).LV();
+  TLorentzVector TauMu =FitDaughters.at(1).LV();
+
+  TauA1.SetPerp(TauA1.Perp()*(1+ (p1ta1*TauA1.Perp() + p0ta1)/TauA1.Perp()));
+  TauMu.SetPerp(TauMu.Perp()*(1+ (p1tmu*TauMu.Perp() + p0tmu)/TauMu.Perp()));
+
+  TMatrixT<double> parTauA1 = FitDaughters.at(0).getParMatrix();
+  TMatrixT<double> parTauMu = FitDaughters.at(1).getParMatrix(); 
+
+  // -----  correct only LorenzVector  for now;   momentum covariance to be corrected later;
+  parTauA1(LorentzVectorParticle::px,0) = TauA1.Px();
+  parTauA1(LorentzVectorParticle::py,0) = TauA1.Py();
+  parTauA1(LorentzVectorParticle::pz,0) = TauA1.Pz();
+  parTauA1(LorentzVectorParticle::m,0)  = 1.777;
+
+  parTauMu(LorentzVectorParticle::px,0) = TauMu.Px();
+  parTauMu(LorentzVectorParticle::py,0) = TauMu.Py();
+  parTauMu(LorentzVectorParticle::pz,0) = TauMu.Pz();
+  parTauMu(LorentzVectorParticle::m,0)  = 1.777;
+
+  out.push_back(LorentzVectorParticle(parTauA1,FitDaughters.at(0).getCovMatrix(),FitDaughters.at(0).PDGID(),FitDaughters.at(0).Charge(),FitDaughters.at(0).BField()));
+  out.push_back(LorentzVectorParticle(parTauMu,FitDaughters.at(1).getCovMatrix(),FitDaughters.at(1).PDGID(),FitDaughters.at(1).Charge(),FitDaughters.at(1).BField()));
+
+  return out;
+}
+
+

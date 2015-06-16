@@ -29,6 +29,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   void DebugFit();
   std::vector<LorentzVectorParticle> GetReFitDaughters();
   LorentzVectorParticle GetMother();
+  std::vector<LorentzVectorParticle> GetInitialDaughters(){return particles0_;};
   LorentzVectorParticle GetTauMuEstimate();
   static TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
   static double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
@@ -84,7 +85,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
 
 
-  std::vector<LorentzVectorParticle> particles_;
+  std::vector<LorentzVectorParticle> particles_, particles0_;
   double ThetaForConstrTemporaryIMplementation_;
   double phiz_;
   bool debug;

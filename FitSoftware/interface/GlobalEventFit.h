@@ -23,7 +23,7 @@ class GlobalEventFit{
 	void ReConfigure(unsigned int MuonIndex,unsigned int TauIndex);
 	GEFObject Fit();
 	bool AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn);
-
+	std::vector<LorentzVectorParticle> FitDaughtersCorr(std::vector<LorentzVectorParticle> FitDaughters);
 	const LorentzVectorParticle& getA1() const{ return A1_;}
 	const GEFObject& getGEFObject() const{ return GEFObject_;}
 	

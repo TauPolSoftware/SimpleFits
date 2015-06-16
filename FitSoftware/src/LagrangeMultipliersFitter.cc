@@ -8,7 +8,7 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
   epsilon_(0.001),
   weight_(1.0),
   MaxDelta_(0.1),
-  nitermax_(50),
+  nitermax_(15),
   chi2(1e10),
   MaxParDelta_(0.1),
   D(1,1),
@@ -18,10 +18,8 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
 }
 
 bool LagrangeMultipliersFitter::Fit(){
-  //  std::cout<<"LagrangeMultipliersFitter  deb 1  "<<std::endl;
+ 
   if(cov.GetNrows()!=par_0.GetNrows()){
-    //std::cout<<"LagrangeMultipliersFitter  deb 2  "<<std::endl;
-    // set cov to cov_0 until value is computed
     cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
     cov=cov_0;
 
@@ -31,22 +29,20 @@ bool LagrangeMultipliersFitter::Fit(){
   isFit=true;
   niter=0;
   for(niter=0;niter<=nitermax_;niter++){
-
+    //   std::cout<<" start  ApplyLagrangianConstraints "<<std::endl;
     bool passed=ApplyLagrangianConstraints();
-    
-    //std::cout<<"global iteration ========== > "<< niter<<" fit   chi2 delta  "<<chi2<<"   "<< delta<<"   probability  " <<  TMath::Prob(chi2,1)<<std::endl; 
     if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
-      std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
+      //std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
        return false;
-      //  return true;
     }
+
     if(isConverged()) break; 
   
   }
 
-   ComputeVariancea();
-   ComputeVarianceb();
-
+   // ComputeVariancea();
+   // ComputeVarianceb();
+ 
   return true;
 }
 
@@ -84,22 +80,38 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixT<double> BT=B; BT.T();
 
 
-
-
   TMatrixTSym<double> V_a=cova_0;
-  TMatrixTSym<double> V_f=V_a;//ComputeV_f(V_a,para_0, parb_0);
-  V_f.SetTol(1.e-40);
-  V_f.Similarity(Fa);
+  TMatrixTSym<double> V_b=covb_0;
+  //TMatrixTSym<double> V_f=V_a;//ComputeV_f(V_a,V_b,para_0, parb_0);
+  TMatrixTSym<double> V_f; V_f.ResizeTo(3,3);
 
-  //----  fill final matrix blocks 
-
-  TMatrixTSym<double> V_a_inv= V_a; V_a_inv.Invert();
-
-
-
+  V_f=ComputeV_f(V_a,V_b,para_0, parb_0);
  
 
-  TMatrixTSym<double> V_f_inv= V_f; V_f_inv.Invert();
+
+  V_f.SetTol(1.e-50);
+  V_f.Similarity(Fa);
+
+
+  //----  fill final matrix blocks 
+  
+  TMatrixTSym<double> V_a_inv= V_a;
+  if( fabs(V_a_inv.Determinant())  < 1e-25){
+       std::cout << "Fit failed: unable to invert, matrix is singular " << " \n" << std::endl;
+       return false;
+  } V_a_inv.Invert();
+
+
+
+
+  TMatrixTSym<double> V_f_inv= V_f;
+
+  double detVf = V_f_inv.Determinant(); 
+  if( fabs(detVf)  < 1e-25){
+       std::cout << "Fit failed: unable to invert, matrix is singular " << detVf << " \n" << std::endl;
+       return false;
+  } V_f_inv.Invert();
+ 
   TMatrixT<double> M11 = V_a_inv + FaT*V_f_inv*Fa;
   TMatrixT<double> M12 = FaT*V_f_inv*Fb;
   TMatrixT<double> M21 = FbT*V_f_inv*Fa;
@@ -111,17 +123,19 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixT<double> M = MakeFullMatrix(M11,M12,M21,M22,A,B);
   TMatrixT<double> V = MakeFullVector(V1,V2,V3);
 
-  // V_f_inv.Print();
 
+  TMatrixDEigen  MEig(V_f);
+  // std::cout<<" EigenValues "<<std::endl;(MEig.GetEigenValues()).Print();
+  // std::cout<<" EigenVectors "<<std::endl;(MEig.GetEigenVectors()).Print();
 
+ 
 
   double detM = M.Determinant();
-  if(fabs(detM)>1e40){
+  if(fabs(detM)>1e40 or fabs(detM)  < 1e-25){
        std::cout << "Fit failed: unable to invert SYM gain matrix LARGE Determinant" << detM << " \n" << std::endl;
        return false;
   }
   TMatrixT<double> M_inv = M; M_inv.Invert();
-
  // solve equations
   TMatrixT<double> res = M_inv*V;
  
@@ -134,24 +148,15 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   para  = convertToVector(par_a);
   parb  = convertToVector(par_b);
 
-  // std::cout<<" par_a  " <<std::endl;
-  // par_a.Print();
-
-  // std::cout<<" par_b  " <<std::endl;
-  // par_b.Print();
 
   // do while loop to see if the convergance criteria are satisfied
   double s(1), stepscale(0.05);
   chi2prev=chi2;
 
-
-
-  
-  double Curentchi2(ChiSquareUsingInitalPoint(y,par_a,par_b,lambda)), Currentdelta(ConstraintDelta(para,parb));
+  double Curentchi2(ChiSquareUsingInitalPoint(y,par_a,par_b,lambda,V_f_inv)), Currentdelta(ConstraintDelta(para,parb));
 
   TMatrixT<double> a_s=par_a;
   TMatrixT<double> b_s=par_b;
-
   // convergence in 2 step procedure to minimize chi2 within MaxDelta_ of the constriants
   // 1) Get within 5x MaxDelta_
   // 2) converge based on improving chi2 and constrianed delta
@@ -198,8 +203,6 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   chi2=Curentchi2;  
   //set delta
   delta=Currentdelta;
-  //    std::cout << "LagrangeMultipliersFitter Chi^2 " << chi2 << " delta " << Currentdelta << std::endl; 
-  //correct finPar to new stepsize
   para = convertToVector(a_s);
   parb = convertToVector(b_s);
   for(int l=0;l<par_a.GetNrows();l++){
@@ -296,6 +299,9 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
     }
   }
    Derivatives(2,2) =1;
+   // Derivatives(0,2) =1/Derivatives(2,0);
+   // Derivatives(1,2) =1/Derivatives(2,1);
+
   return Derivatives;
 }
 
@@ -304,8 +310,8 @@ bool LagrangeMultipliersFitter::isConverged(){
 
 
   if(pardelta<MaxParDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
-    //   std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl; 
-    
+    // std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl; 
+      
     return true;
   }
 
@@ -417,24 +423,27 @@ double LagrangeMultipliersFitter::ChiSquare(TMatrixT<double> delta_alpha,TMatrix
   double c2=chisquare(0,0);
   return c2;
 }
-double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda){
+double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
   // if(cova_0.GetNrows()!=V_alpha0_inv.GetNrows()){
   TMatrixTSym<double> V_alpha0=cova_0;
   V_alpha0_inv.ResizeTo(cova_0.GetNrows(),cova_0.GetNrows());
-  TDecompBK Inverter(V_alpha0);
-  if(!Inverter.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
-    std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
-    for(int j=0;j<par.GetNrows();j++){
-      for(int i=0;i<par.GetNrows();i++){
-	if(i==j) V_alpha0_inv(i,j)=1.0/V_alpha0(i,j);
-	else V_alpha0_inv(i,j)=0.0;
+    TDecompBK Inverter(V_alpha0);
+   if(!Inverter.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
+      std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
+      for(int j=0;j<par.GetNrows();j++){
+        for(int i=0;i<par.GetNrows();i++){
+    	if(i==j) V_alpha0_inv(i,j)=1.0/V_alpha0(i,j);
+    	else V_alpha0_inv(i,j)=0.0;
+        }
       }
     }
-  }
-  else{
-    V_alpha0_inv=Inverter.Invert();
-  }
-  
+    else{
+      V_alpha0_inv=Inverter.Invert();
+    }
+  // V_alpha0_inv=V_alpha0;V_alpha0_inv.Invert();
+
+  // std::cout<<"V_alpha0  "<<std::endl;V_alpha0.Print();
+  // std::cout<<"V_alpha0_inv  "<<std::endl;V_alpha0_inv.Print();
   TMatrixT<double> lambdaT=lambda; lambdaT.T();
   TMatrixT<double> a0=convertToMatrix(para_0);
   TMatrixT<double> b0=convertToMatrix(parb_0);
@@ -450,9 +459,10 @@ double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y, 
   TMatrixT<double> Fa =DerivativeSCa();
   TMatrixT<double> FaT=Fa; Fa.T();
 
-  //  
-  TMatrixT<double> chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v));// + fT*(Fa*V_alpha0_inv*FaT)*f;
+
+  TMatrixT<double> chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v)) + fT*(V_f_inv*FaT)*f;
   double c2=chisquare_var(0,0)+chisquare_constraints(0,0);
+
   return c2;
 
 }
@@ -503,40 +513,42 @@ double LagrangeMultipliersFitter::ConstraintDelta(TVectorT<double> a,TVectorT<do
 
 TMatrixT<double>  LagrangeMultipliersFitter::ComputeVarianceb(){
  
-  TMatrixTSym<double> V_0=cova_0;
-  TMatrixTSym<double> DTV_DD=V_0.SimilarityT(Fa);DTV_DD.Invert();
-  TMatrixT<double> FbT = Fb; FbT.T();
-  TMatrixT<double> CovCor=FbT*DTV_DD*Fb;CovCor.Invert();
+  // TMatrixTSym<double> V_0=covb_0;
+  // TMatrixTSym<double> DTV_DD=V_0.SimilarityT(Fa);DTV_DD.Invert();
+  // TMatrixT<double> FbT = Fb; FbT.T();
+  // TMatrixT<double> CovCor=FbT*DTV_DD*Fb;CovCor.Invert();
 
 
-  for(int i=0; i<covb.GetNrows();i++){
-    for(int j=0; j<=i;j++){
-      covb(i,j)=CovCor(i,j);
-    }
-  }
+  // for(int i=0; i<covb.GetNrows();i++){
+  //   for(int j=0; j<=i;j++){
+  //     covb(i,j)=CovCor(i,j);
+  //   }
+  // }
 
-  return covb;
+  //  return covb;
+
+return covb_0;
 }
 
 TMatrixT<double>  LagrangeMultipliersFitter::ComputeVariancea(){
 
 
  
-  TMatrixTSym<double> V_0=cova_0;
-  TMatrixTSym<double> DTV_DD=V_0.SimilarityT(Fa);DTV_DD.Invert();
-  TMatrixT<double> FbT = Fb; FbT.T();
-  TMatrixT<double> Vz=FbT*DTV_DD*Fb;
-  TMatrixT<double> Vlambda = DTV_DD - DTV_DD*Vz*DTV_DD;
-  TMatrixT<double> Valpha = V_0 - V_0*(V_0.SimilarityT(Fa).T())*V_0;
+  // TMatrixTSym<double> V_0=cova_0;
+  // TMatrixTSym<double> DTV_DD=V_0.SimilarityT(Fa);DTV_DD.Invert();
+  // TMatrixT<double> FbT = Fb; FbT.T();
+  // TMatrixT<double> Vz=FbT*DTV_DD*Fb;
+  // TMatrixT<double> Vlambda = DTV_DD - DTV_DD*Vz*DTV_DD;
+  // TMatrixT<double> Valpha = V_0 - V_0*(V_0.SimilarityT(Fa).T())*V_0;
 
   
-  for(int i=0; i<cova.GetNrows();i++){
-    for(int j=0; j<=i;j++){
-      cova(i,j)=Valpha(i,j);
-    }
-  }
+  // for(int i=0; i<cova.GetNrows();i++){
+  //   for(int j=0; j<=i;j++){
+  //     cova(i,j)=Valpha(i,j);
+  //   }
+  // }
 
-  return cova;
+  return cova_0;
 }
 void  LagrangeMultipliersFitter::Print(TMatrixT<double> M){
 
@@ -551,26 +563,53 @@ void  LagrangeMultipliersFitter::Print(TMatrixT<double> M){
 
 
 }
-TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  cov, TVectorD para,TVectorD parb){
+TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  ca, TMatrixTSym<double>  cb, TVectorD pa,TVectorD pb){
   TMatrixTSym<double> Vf;
-  Vf.ResizeTo(cov.GetNrows(), cov.GetNcols());
-  Vf = cov;
-
-  double dgdx = -(para(1) + parb(1))/(pow(para(0) + parb(0),2) + pow(para(1) + parb(1),2));
-  double dgdy = (para(0) + parb(0))/(pow(para(0) + parb(0),2) + pow(para(1) + parb(1),2));
-  
-  double deltaxx = cov(0,0);
-  double deltayy = cov(1,1);
-  double deltaxy = cov(0,1);
-
-  Vf(2,0) = dgdx*deltaxx + dgdy*deltaxy; Vf(0,2) = Vf(2,0);
-  Vf(2,1) = dgdx*deltaxy + dgdy*deltayy; Vf(1,2) = Vf(2,1);
-  Vf(2,2) = pow(dgdx,2)*deltaxx + pow(dgdy,2)*deltayy + 2*dgdx*dgdy*deltaxy; 
+  Vf.ResizeTo(ca.GetNrows(), ca.GetNcols());
+  Vf = ca;
 
 
+  TMatrixTSym<double> Vfa;
+  Vfa.ResizeTo(ca.GetNrows(), ca.GetNcols());
+  Vfa = ca;
+
+  TMatrixTSym<double> Vfb;
+  Vfb.ResizeTo(cb.GetNrows(), cb.GetNcols());
+  Vfb = cb;
+
+  TMatrixDEigen  MEigca(ca);
+
+  // double dgdx = -(pa(1) + pb(1))/(pow(pa(0) + pb(0),2) + pow(pa(1) + pb(1),2));
+  // double dgdya = (pa(0) + pb(0))/(pow(pa(0) + pb(0),2) + pow(pa(1) + pb(1),2));
+  // double dgdyb = dgdya;
+  double dgdx=-(pa(1) + pb(1))/(pow(pa(0) + pb(0),2));
+  double dgdya=pb(1)/(pa(0) + pb(0));
+  double dgdyb=pa(1)/(pa(0) + pb(0));
+
+  double deltaxxa = ca(0,0);
+  double deltayya = ca(1,1);
+  double deltaxya = ca(0,1);
+
+  double deltaxxb = cb(0,0);
+  double deltayyb = cb(1,1);
+  double deltaxyb = cb(0,1);
+
+
+  Vfa(2,0) = dgdx*deltaxxa + dgdya*deltaxya; Vfa(0,2) = Vfa(2,0);
+  Vfa(2,1) = dgdx*deltaxya + dgdya*deltayya; Vfa(1,2) = Vfa(2,1);
+  Vfa(2,2) = pow(dgdx,2)*deltaxxa + pow(dgdya,2)*deltayya + 2*dgdx*dgdya*deltaxya; 
+
+  Vfb(2,0) = dgdx*deltaxxb + dgdyb*deltaxyb; Vfb(0,2) = Vfb(2,0);
+  Vfb(2,1) = dgdx*deltaxyb + dgdyb*deltayyb; Vfb(1,2) = Vfb(2,1);
+  Vfb(2,2) = (pow(dgdx,2)*deltaxxb + pow(dgdyb,2)*deltayyb + 2*dgdx*dgdyb*deltaxyb); 
+
+
+
+  Vf = Vfa + Vfb;
   return Vf;
 
 }
+
 TMatrixTSym<double>  LagrangeMultipliersFitter::ScaleMatrix(TMatrixTSym<double>  M, double scale){
   TMatrixTSym<double> out(M.GetNrows());
 

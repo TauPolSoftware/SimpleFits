@@ -5,6 +5,7 @@
 #include "TMatrixT.h"
 #include "TVectorT.h"
 #include "TMatrixTSym.h"
+#include "TMatrixDEigen.h"
 #include <vector>
 
 class LagrangeMultipliersFitter{
@@ -82,10 +83,10 @@ class LagrangeMultipliersFitter{
   TMatrixT<double> DerivativeHCb();
   TMatrixT<double> DerivativeSCa();
   TMatrixT<double> DerivativeSCb();
-  TMatrixTSym<double> ComputeV_f(TMatrixTSym<double>  cov,TVectorD para,TVectorD parb);
+  TMatrixTSym<double> ComputeV_f(TMatrixTSym<double>  ca,TMatrixTSym<double>  cb,TVectorD pa,TVectorD pb);
   TMatrixTSym<double> ScaleMatrix(TMatrixTSym<double>  M, double scale);
   double ChiSquare(TMatrixT<double> delta_alpha,TMatrixT<double> lambda,TMatrixT<double> D,TMatrixT<double> d);
-  double ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda);
+  double ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv);
   double ConstraintDelta(TVectorT<double> a,TVectorT<double>  b);
   TMatrixT<double> ComputeVariance();
   TMatrixT<double> ComputeVariancea();
