@@ -19,14 +19,20 @@ class LorentzVectorParticle : public Particle {
 
   static TString Name(int i);
   virtual int NParameters(){return NLorentzandVertexPar;}
-  virtual double Parameter(int i){
-    if(i==E)  return sqrt(pow(Particle::Parameter(m),2.0)+pow(Particle::Parameter(px),2.0)+pow(Particle::Parameter(py),2.0)+pow(Particle::Parameter(pz),2.0)); 
-    if(i==p)  return sqrt(pow(Particle::Parameter(px),2.0)+pow(Particle::Parameter(py),2.0)+pow(Particle::Parameter(pz),2.0));
-    if(i==pt) return sqrt(pow(Particle::Parameter(px),2.0)+pow(Particle::Parameter(py),2.0));
-    return Particle::Parameter(i);
-  }
+  virtual double Parameter(int i);
+  virtual double Covariance(int i,int j);
   virtual double Mass(){return Parameter(m);}
   TLorentzVector LV(){return TLorentzVector(Parameter(px),Parameter(py),Parameter(pz),Parameter(E));}
+  TMatrixTSym<double> LVCov(){
+	TMatrixTSym<double> lvcov(4);
+    for(int i=px;i<=pz;i++){
+      for(int j=px;j<pz;j++){lvcov(i,j)=Covariance(i,j);} // 3x3 matrix
+      lvcov(4,i) = Covariance(E,i);
+      lvcov(i,4) = lvcov(4,i);
+    }
+    lvcov(4,4) = Covariance(E,E);
+    return lvcov;
+  }
   TVector3 Vertex(){return TVector3(Parameter(vx),Parameter(vy),Parameter(vz));}
   TMatrixTSym<double> VertexCov(){
     TMatrixTSym<double> vcov(NVertex);
