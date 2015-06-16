@@ -19,7 +19,17 @@ class Logger {
   // Manipulate output levels
   void SetLevel(level _l){l=_l;}
   level Level(){return l;}
-  std::ostream& Stream(){return (*s);} 
+  std::ostream& Stream(){return (*s);}
+
+  static int levelColor(level l){
+	  if (l == Fatal)	return 41; // red background
+	  if (l == Error)	return 43; // yellow background
+	  if (l == Warning)	return 31; // red font
+	  if (l == Info)	return 34; // blue font
+	  if (l == Verbose)	return 0; // nothing
+	  if (l == Debug)	return 0; // nothing
+	  return 30;
+  }
 
  private:
   Logger():l(Verbose){Set_cout();}
@@ -32,7 +42,7 @@ class Logger {
 
 #define Logger(level) \
   if(Logger::Instance()->Level()>=level) \
-    Logger::Instance()->Stream() << #level << " [File: " << __FILE__ << " Function: " <<  __func__ << " Line: " << __LINE__ << "] - "  
+    Logger::Instance()->Stream() << "\033[1;" << Logger::levelColor(level) << "m" << #level << "\033[0m" << "[" << __FILE__ << " " <<  __func__ << "(..) l. " << __LINE__ << "] - "
 
 #endif
 

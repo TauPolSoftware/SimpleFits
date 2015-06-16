@@ -1,5 +1,17 @@
 #include "SimpleFits/FitSoftware/interface/TrackParticle.h"
 
+TrackParticle::TrackParticle():
+  Particle(TMatrixT<double>(NHelixPar,1),TMatrixTSym<double>(NHelixPar),0,0,0),
+  mass(0)
+{
+}
+
+TrackParticle::TrackParticle(const TrackParticle& another):
+  Particle(another.getParMatrix(), another.getCovMatrix(), another.PDGID(), another.Charge(), another.BField()),
+  mass(another.Mass())
+{
+}
+
 TrackParticle::TrackParticle(TMatrixT<double> par_, TMatrixTSym<double> cov_, int pdgid_,double mass_, double charge_, double b_):
   Particle(par_,cov_,pdgid_,charge_,b_),
   mass(mass_)
