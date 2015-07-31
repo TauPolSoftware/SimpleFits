@@ -11,13 +11,14 @@ TPTRObject::TPTRObject(){
   isvalid_ = false;
 }
 
-TPTRObject::TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorParticle> Taus, std::vector<LorentzVectorParticle> Neutrinos, bool isambiguous, bool isvalid){
+TPTRObject::TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorParticle> Taus, std::vector<LorentzVectorParticle> Neutrinos, bool isambiguous, double RotSig, bool isvalid){
   isvalid_ = isvalid;
   isambiguous_ = isambiguous;
   if(isvalid_){
 	A1_ = A1;
 	Taus_ = Taus;
 	Neutrinos_ = Neutrinos;
+	if(isambiguous_) RotationSignificance_ = RotSig;
   }
 }
 
@@ -137,6 +138,24 @@ LorentzVectorParticle TPTRObject::getA1() const{
   }
   Logger(Logger::Error) << "TPTRObject is NOT valid!" << std::endl;
   return LorentzVectorParticle();
+}
+
+double TPTRObject::getRotationSignificance() const{
+  if(isvalid_){
+	if(isambiguous_) return RotationSignificance_;
+	else{
+	  Logger(Logger::Error) << "TPTRObject has no ambiguity!" << std::endl;
+	  return 0;
+	}
+  }
+  else{
+	  Logger(Logger::Error) << "TPTRObject is NOT valid!" << std::endl;
+	  return 0;
+  }
+}
+
+double TPTRObject::getRotSigma() const{
+  return getRotationSignificance();
 }
 
 std::vector<bool> TPTRObject::CreateVectorFromAmbiguity(){

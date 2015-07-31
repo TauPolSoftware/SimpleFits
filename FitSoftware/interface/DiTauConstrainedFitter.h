@@ -27,8 +27,8 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
 
   virtual bool Fit();
-  virtual double NConstraints(){return 2;}
-  virtual double NSoftConstraints(){if(!useFullRecoil_) return 3; return 3;}
+  virtual double NConstraints(){if(!useFullRecoil_) return 2; return 2;}
+  virtual double NSoftConstraints(){if(!useFullRecoil_) return 3; return 2;}
   virtual double NDF(){return 1;}
   virtual int    NDaughters(){return 2;}
   void DebugFit();
@@ -43,6 +43,9 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   static double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
   static TMatrixT<double> TauMuEstimator(TMatrixT<double> &inpar);
   static double MassConstraint_;
+
+  TMatrixD GetExppar() const{return exppar;}
+  TMatrixDSym GetExpcov() const{return expcov;}
 
  protected:
   virtual TVectorD HardValue(TVectorD &va,TVectorD &vb);
@@ -95,6 +98,8 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   TMatrixTSym<double> ConfigureKinematicParameterErrorsFullRecoil(TrackParticle MuTrack, TMatrixTSym<double> PVCov, LorentzVectorParticle TauA1, TMatrixTSym<double> TauMuPtCov);
   static TMatrixT<double> EstimateTauKinematicFullRecoil(TMatrixT<double> &inpar);
 
+  void SetRecoil(TMatrixD &inpar);
+
   TMatrixT<double> exppar;
   TMatrixTSym<double> expcov;
   TMatrixT<double> exppara;
@@ -113,7 +118,6 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   PTObject METminusNeutrino_;
   bool debug;
   bool AnalyticalCovariance;
-  bool useFullRecoil_;
   int ConstraintMode;
 
 

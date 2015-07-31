@@ -15,7 +15,7 @@
 class TPTRObject{
   public:
 	TPTRObject();
-	TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorParticle> Taus, std::vector<LorentzVectorParticle> Neutrinos, bool isambiguous, bool isvalid);
+	TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorParticle> Taus, std::vector<LorentzVectorParticle> Neutrinos, bool isambiguous, double RotSig, bool isvalid);
 	virtual ~TPTRObject(){};
 
 	std::vector<bool> CreateVectorFromAmbiguity();
@@ -33,12 +33,16 @@ class TPTRObject{
 
 	LorentzVectorParticle getA1() const;
 
+	double getRotSigma() const;
+	double getRotationSignificance() const;
+
   private:
 	bool isvalid_;
 	bool isambiguous_; //true = 2 physical solutions, false = 1 unphysical solution projected to maximal GJ angle
 	std::vector<LorentzVectorParticle> Taus_;
 	std::vector<LorentzVectorParticle> Neutrinos_;
 	LorentzVectorParticle A1_;
+	double RotationSignificance_;
 };
 
 

@@ -22,7 +22,7 @@ class GlobalEventFit{
 	virtual ~GlobalEventFit();
 
 	GEFObject Fit();
-	bool AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn);
+	bool AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<TVectorD> Chi2Vecs, int &IndexToReturn);
 	std::vector<LorentzVectorParticle> FitDaughtersCorr(std::vector<LorentzVectorParticle> FitDaughters);
 	const LorentzVectorParticle& getA1() const{ return A1_;}
 	const GEFObject& getGEFObject() const{ return GEFObject_;}
@@ -36,6 +36,7 @@ class GlobalEventFit{
 	const TVector3 getSV() const{return SV_;}
 	const TMatrixTSym<double> getSVCov() const{return SVCov_;}
 	const TPTRObject getTPTRObject() const{return TPTRObject_;}
+	std::vector<bool> getFitStatuses() const{return fitstatuses_;}
 	
 	int getMaxIterations() const{return MaxIterations_;}
 	void setMaxIterations(int maxIterations){
@@ -58,9 +59,11 @@ class GlobalEventFit{
 	  MassConstraint_ = MassConstraint;
 	  useDefaultMassConstraint_ = false;
 	}
+	void SetCorrectPt(bool correct){correctPt_ = correct;}
 
   protected:
-	TPTRObject ThreeProngTauReco();
+	void Configure(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov);
+	TPTRObject ThreeProngTauReconstruction();
 	bool IsAmbiguous(std::vector<bool> recostatus);
 	PTObject SubtractNeutrinoFromMET(unsigned Ambiguity);
 
@@ -75,6 +78,9 @@ class GlobalEventFit{
 	TMatrixTSym<double> PVCov_, SVCov_;
 	PTObject MET_;
 	std::vector<PTObject> METminusNeutrino_;
+	std::vector<bool> fitstatuses_;
+	TMatrixD FitPar_;
+	TMatrixDSym FitCov_;
 	bool useMassConstraint_;
 	double MassConstraint_;
 	double Phi_Res_;
@@ -82,7 +88,7 @@ class GlobalEventFit{
 	double MaxDelta_;
 	double Epsilon_;
 	bool useDefaultMaxIterations_, useDefaultMaxDelta_, useDefaultEpsilon_, useDefaultMassConstraint_;
-	bool useFullRecoil_;
+	bool useFullRecoil_, correctPt_;
 };
 
 

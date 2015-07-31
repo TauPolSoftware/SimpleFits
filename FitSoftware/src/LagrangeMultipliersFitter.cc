@@ -84,14 +84,14 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixTSym<double> V_a=cova_0;
   TMatrixTSym<double> V_b=covb_0;
   //TMatrixTSym<double> V_f=V_a;//ComputeV_f(V_a,V_b,para_0, parb_0);
-  TMatrixTSym<double> V_f; V_f.ResizeTo(3,3);
+  TMatrixTSym<double> V_f; V_f.ResizeTo(NSoftConstraints(),NSoftConstraints());
 
   V_f=ComputeV_f(V_a,V_b,para_0, parb_0);
  
 
 
   V_f.SetTol(1.e-50);
-  V_f.Similarity(Fa);
+  if(!useFullRecoil_) V_f.Similarity(Fa);
 
 
   //----  fill final matrix blocks 
@@ -156,7 +156,8 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   double s(1), stepscale(0.05);
   chi2prev=chi2;
 
-  double Curentchi2(ChiSquareUsingInitalPoint(y,par_a,par_b,lambda,V_f_inv)), Currentdelta(ConstraintDelta(para,parb));
+  TVectorD Currentchi2_vec = ChiSquareUsingInitalPoint(y,par_a,par_b,lambda,V_f_inv);
+  double Curentchi2(Currentchi2_vec.Sum()), Currentdelta(ConstraintDelta(para,parb));
 
   TMatrixT<double> a_s=par_a;
   TMatrixT<double> b_s=par_b;
@@ -209,6 +210,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   // set chi2
   chi2=Curentchi2;  
+  chi2_vec.ResizeTo(Currentchi2_vec); chi2_vec = Currentchi2_vec;
   //set delta
   delta=Currentdelta;
   para = convertToVector(a_s);
@@ -267,9 +269,12 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCa(){ // always evaluated at curr
 
   TVectorD paraFD(para_0.GetNrows()); 
 
-  paraFD(0) = para_0(0);
-  paraFD(1) = para_0(1);
-  paraFD(2) = atan(para_0(1)/para_0(0));
+  if(!useFullRecoil_){
+	paraFD(0) = para_0(0);
+	paraFD(1) = para_0(1);
+	paraFD(2) = atan(para_0(1)/para_0(0));
+  }
+  else paraFD = para_0;
 
   TVectorD paraFD_plus(para_0.GetNrows()); 
 
@@ -286,7 +291,8 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCa(){ // always evaluated at curr
       Derivatives(i,j)=(value_plus(i)-value(i))/epsilon_;
     }
   }
-  Derivatives(2,2) =1;
+  if(!useFullRecoil_) Derivatives(2,2) =1;
+  else Derivatives(1,2) =1;
   return Derivatives;
 }
 
@@ -306,7 +312,8 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
       Derivatives(i,j)=(value_plus(i)-value(i))/epsilon_;
     }
   }
-   Derivatives(2,2) =1;
+  if(!useFullRecoil_) Derivatives(2,2) =1;
+  else Derivatives(1,2) =1;
    // Derivatives(0,2) =1/Derivatives(2,0);
    // Derivatives(1,2) =1/Derivatives(2,1);
 
@@ -315,13 +322,17 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
 
 
 bool LagrangeMultipliersFitter::isConverged(){
-  if(pardelta<MaxParDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
-
+  if(!useFullRecoil_){
+	if(pardelta<MaxParDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
     //	Logger(Logger::Verbose) << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl;
-
-    return true;
+	  return true;
+	}
   }
-
+  else{
+	if(pardelta<MaxParDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
+	  return true;
+	}
+  }
   // if(delta<MaxDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
   //   std::cout << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl; 
     
@@ -430,7 +441,7 @@ double LagrangeMultipliersFitter::ChiSquare(TMatrixT<double> delta_alpha,TMatrix
   double c2=chisquare(0,0);
   return c2;
 }
-double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
+TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
   // if(cova_0.GetNrows()!=V_alpha0_inv.GetNrows()){
   TMatrixTSym<double> V_alpha0=cova_0;
   V_alpha0_inv.ResizeTo(cova_0.GetNrows(),cova_0.GetNrows());
@@ -466,11 +477,21 @@ double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y, 
   TMatrixT<double> Fa =DerivativeSCa();
   TMatrixT<double> FaT=Fa; Fa.T();
 
-
-  TMatrixT<double> chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v)) + fT*(V_f_inv*FaT)*f;
+  TMatrixT<double> chisquare_constraints(1,1);
+  if(!useFullRecoil_) chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v)) + fT*(V_f_inv*FaT)*f;
+  else chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v)) + fT*V_f_inv*f;
   double c2=chisquare_var(0,0)+chisquare_constraints(0,0);
 
-  return c2;
+  TVectorD chi2(3);
+  chi2(0) = chisquare_var(0,0);
+  if(!useFullRecoil_) chi2(1) = (fT*(V_f_inv*FaT)*f)(0,0);
+  else chi2(1) = (fT*V_f_inv*f)(0,0);
+  chi2(2) = (lambdaT*convertToMatrix(HardValue(a_v,b_v)))(0,0);
+
+  Logger(Logger::Debug) << "chi2 comparison: " << c2 << ", " << chi2.Sum() << std::endl;
+  Logger(Logger::Debug) << "chi2 contributions: " << chi2(0) << " (orig) + " << chi2(1) << " (SC) + " << chi2(2) << " (HC) = " << chi2.Sum() << std::endl;
+
+  return chi2;
 
 }
 
@@ -573,47 +594,77 @@ void  LagrangeMultipliersFitter::Print(TMatrixT<double> M){
 }
 TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  ca, TMatrixTSym<double>  cb, TVectorD pa,TVectorD pb){
   TMatrixTSym<double> Vf;
-  Vf.ResizeTo(ca.GetNrows(), ca.GetNcols());
-  Vf = ca;
+  if(!useFullRecoil_){
+	Vf.ResizeTo(ca.GetNrows(), ca.GetNcols());
+	Vf = ca;
 
 
-  TMatrixTSym<double> Vfa;
-  Vfa.ResizeTo(ca.GetNrows(), ca.GetNcols());
-  Vfa = ca;
+	TMatrixTSym<double> Vfa;
+	Vfa.ResizeTo(ca.GetNrows(), ca.GetNcols());
+	Vfa = ca;
 
-  TMatrixTSym<double> Vfb;
-  Vfb.ResizeTo(cb.GetNrows(), cb.GetNcols());
-  Vfb = cb;
+	TMatrixTSym<double> Vfb;
+	Vfb.ResizeTo(cb.GetNrows(), cb.GetNcols());
+	Vfb = cb;
 
-  TMatrixDEigen  MEigca(ca);
+	TMatrixDEigen  MEigca(ca);
 
-  // double dgdx = -(pa(1) + pb(1))/(pow(pa(0) + pb(0),2) + pow(pa(1) + pb(1),2));
-  // double dgdya = (pa(0) + pb(0))/(pow(pa(0) + pb(0),2) + pow(pa(1) + pb(1),2));
-  // double dgdyb = dgdya;
-  double dgdx=-(pa(1) + pb(1))/(pow(pa(0) + pb(0),2));
-  double dgdya=pb(1)/(pa(0) + pb(0));
-  double dgdyb=pa(1)/(pa(0) + pb(0));
+	// double dgdx = -(pa(1) + pb(1))/(pow(pa(0) + pb(0),2) + pow(pa(1) + pb(1),2));
+	// double dgdya = (pa(0) + pb(0))/(pow(pa(0) + pb(0),2) + pow(pa(1) + pb(1),2));
+	// double dgdyb = dgdya;
+	double dgdx=-(pa(1) + pb(1))/(pow(pa(0) + pb(0),2));
+	double dgdya=pb(1)/(pa(0) + pb(0));
+	double dgdyb=pa(1)/(pa(0) + pb(0));
 
-  double deltaxxa = ca(0,0);
-  double deltayya = ca(1,1);
-  double deltaxya = ca(0,1);
+	double deltaxxa = ca(0,0);
+	double deltayya = ca(1,1);
+	double deltaxya = ca(0,1);
 
-  double deltaxxb = cb(0,0);
-  double deltayyb = cb(1,1);
-  double deltaxyb = cb(0,1);
-
-
-  Vfa(2,0) = dgdx*deltaxxa + dgdya*deltaxya; Vfa(0,2) = Vfa(2,0);
-  Vfa(2,1) = dgdx*deltaxya + dgdya*deltayya; Vfa(1,2) = Vfa(2,1);
-  Vfa(2,2) = pow(dgdx,2)*deltaxxa + pow(dgdya,2)*deltayya + 2*dgdx*dgdya*deltaxya; 
-
-  Vfb(2,0) = dgdx*deltaxxb + dgdyb*deltaxyb; Vfb(0,2) = Vfb(2,0);
-  Vfb(2,1) = dgdx*deltaxyb + dgdyb*deltayyb; Vfb(1,2) = Vfb(2,1);
-  Vfb(2,2) = (pow(dgdx,2)*deltaxxb + pow(dgdyb,2)*deltayyb + 2*dgdx*dgdyb*deltaxyb); 
+	double deltaxxb = cb(0,0);
+	double deltayyb = cb(1,1);
+	double deltaxyb = cb(0,1);
 
 
+	Vfa(2,0) = dgdx*deltaxxa + dgdya*deltaxya; Vfa(0,2) = Vfa(2,0);
+	Vfa(2,1) = dgdx*deltaxya + dgdya*deltayya; Vfa(1,2) = Vfa(2,1);
+	Vfa(2,2) = pow(dgdx,2)*deltaxxa + pow(dgdya,2)*deltayya + 2*dgdx*dgdya*deltaxya;
 
-  Vf = Vfa + Vfb;
+	Vfb(2,0) = dgdx*deltaxxb + dgdyb*deltaxyb; Vfb(0,2) = Vfb(2,0);
+	Vfb(2,1) = dgdx*deltaxyb + dgdyb*deltayyb; Vfb(1,2) = Vfb(2,1);
+	Vfb(2,2) = (pow(dgdx,2)*deltaxxb + pow(dgdyb,2)*deltayyb + 2*dgdx*dgdyb*deltaxyb);
+
+
+
+	Vf = Vfa + Vfb;
+  }
+  else{
+	Vf.ResizeTo(NSoftConstraints(),NSoftConstraints());
+
+	TMatrixT<double> Jacobi(NSoftConstraints(),par.GetNrows());
+	TMatrixTSym<double> fullcov = cov; //copy of the cov matrix as similarity overrides the matrix
+
+	double Resonance_Pt = sqrt(pow(para_0(0) + parb_0(0), 2.) + pow(para_0(1) + parb_0(1), 2.));
+	for(unsigned i=0; i<para_0.GetNrows();i++){
+	  if(i==2) {
+		Jacobi(0,i) = 0; //derivates of the z component are zero for the soft constraints
+		Jacobi(1,i) = 0;
+		Jacobi(0,i+3) = 0;
+		Jacobi(1,i+3) = 0;
+	  }
+	  else{
+		Jacobi(0,i) = (para_0(i) + parb_0(i))/Resonance_Pt;
+		Jacobi(0,i+3) = (para_0(i) + parb_0(i))/Resonance_Pt;
+	  }
+	}
+	Jacobi(1,0) = (para_0(1) + parb_0(1))/pow(para_0(0) + parb_0(0), 2.); Jacobi(1,3) = Jacobi(1,0);
+	Jacobi(1,1) = parb_0(1)/(para_0(0) + parb_0(0));
+	Jacobi(1,4) = para_0(1)/(para_0(0) + parb_0(0));
+	Vf = fullcov.Similarity(Jacobi);
+	if(Logger::Instance()->Level() == Logger::Debug){
+	  Jacobi.Print();
+	  Vf.Print();
+	}
+  }
   return Vf;
 
 }
