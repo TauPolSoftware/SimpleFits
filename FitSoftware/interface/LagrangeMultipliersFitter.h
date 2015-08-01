@@ -26,6 +26,7 @@ class LagrangeMultipliersFitter{
   virtual bool isConverged();
   virtual bool isConfigured(){return isconfigured;}
   virtual double ChiSquare(){return chi2;}
+  virtual TVectorD ChiSquareVector(){return chi2_vec;}
   virtual double CSum(){return delta;};
   virtual double NIter(){return niter;};
   virtual double NConstraints()=0;
@@ -74,6 +75,8 @@ class LagrangeMultipliersFitter{
 
   bool isconfigured;
   bool isFit;
+  bool useFullRecoil_;
+
 
  private:
   bool  ApplyLagrangianConstraints();
@@ -86,7 +89,7 @@ class LagrangeMultipliersFitter{
   TMatrixTSym<double> ComputeV_f(TMatrixTSym<double>  ca,TMatrixTSym<double>  cb,TVectorD pa,TVectorD pb);
   TMatrixTSym<double> ScaleMatrix(TMatrixTSym<double>  M, double scale);
   double ChiSquare(TMatrixT<double> delta_alpha,TMatrixT<double> lambda,TMatrixT<double> D,TMatrixT<double> d);
-  double ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv);
+  TVectorD ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv);
   double ConstraintDelta(TVectorT<double> a,TVectorT<double>  b);
   TMatrixT<double> ComputeVariance();
   TMatrixT<double> ComputeVariancea();
@@ -97,7 +100,7 @@ class LagrangeMultipliersFitter{
 
   // Fit variables
   double chi2,chi2prev,delta,niter,pardelta, pardeltaprev;
-  TVectorD harddelta_vec, softdelta_vec;
+  TVectorD harddelta_vec, softdelta_vec, chi2_vec;
 
   // covariances and derivatives info
 
@@ -112,6 +115,7 @@ class LagrangeMultipliersFitter{
   TMatrixTSym<double> V_D;
   double ScaleFactor;
   TMatrixT<double> V_corr_prev;
+
   
 };
 #endif
