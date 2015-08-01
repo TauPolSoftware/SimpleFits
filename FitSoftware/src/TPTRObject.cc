@@ -18,7 +18,7 @@ TPTRObject::TPTRObject(LorentzVectorParticle A1, std::vector<LorentzVectorPartic
 	A1_ = A1;
 	Taus_ = Taus;
 	Neutrinos_ = Neutrinos;
-	if(isambiguous_) RotationSignificance_ = RotSig;
+	RotationSignificance_ = isambiguous_ ? 0 : RotSig;
   }
 }
 

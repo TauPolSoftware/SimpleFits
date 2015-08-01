@@ -43,9 +43,6 @@ void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVe
 
 	TPTRObject_ = ThreeProngTauReconstruction();
 
-	useDefaultMaxIterations_ = true;
-	useDefaultMaxDelta_ = true;
-	useDefaultEpsilon_ = true;
 	useDefaultMassConstraint_ = true;
 	correctPt_ = true;
 }
@@ -163,10 +160,6 @@ GEFObject GlobalEventFit::Fit(){
 		}
 
 		InitDaughters.push_back(ptr2DTCF->GetInitialDaughters());
-
-		if(!useDefaultMaxDelta_) ptr2DTCF->SetMaxDelta(MaxDelta_);
-		if(!useDefaultMaxIterations_) ptr2DTCF->SetNIterMax(MaxIterations_);
-		if(!useDefaultEpsilon_) ptr2DTCF->SetEpsilon(Epsilon_);
 
 		fitstatus.push_back(ptr2DTCF->Fit() && ptr2DTCF->isConverged());
 		if(fitstatus.at(Ambiguity)){

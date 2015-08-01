@@ -37,29 +37,13 @@ class GlobalEventFit{
 	const TMatrixTSym<double> getSVCov() const{return SVCov_;}
 	const TPTRObject getTPTRObject() const{return TPTRObject_;}
 	std::vector<bool> getFitStatuses() const{return fitstatuses_;}
-	
-	int getMaxIterations() const{return MaxIterations_;}
-	void setMaxIterations(int maxIterations){
-	  MaxIterations_ = maxIterations;
-	  useDefaultMaxIterations_ = false;
-	}
-	double getMaxDelta() const{return MaxDelta_;}
-	void setMaxDelta(double maxDelta){
-	  MaxDelta_ = maxDelta;
-	  useDefaultMaxDelta_ = false;
-	}
-	double getEpsilon() const{return Epsilon_;}
-	void setEpsilon(double epsilon){
-	  Epsilon_ = epsilon;
-	  useDefaultEpsilon_ = false;
-	}
 
 	double getMassConstraint() const{return MassConstraint_;}
 	void setMassConstraint(double MassConstraint){
 	  MassConstraint_ = MassConstraint;
 	  useDefaultMassConstraint_ = false;
 	}
-	void SetCorrectPt(bool correct){correctPt_ = correct;}
+	void SetCorrectPt(bool correct){correctPt_ = correct;}  //default is set to true. Can be set to false inside your analysis to prevent the corrections of the reconstructed pt of both taus to preserve the hard constraints imposed on the fit resonance
 
   protected:
 	void Configure(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov);
@@ -87,8 +71,7 @@ class GlobalEventFit{
 	int MaxIterations_;
 	double MaxDelta_;
 	double Epsilon_;
-	bool useDefaultMaxIterations_, useDefaultMaxDelta_, useDefaultEpsilon_, useDefaultMassConstraint_;
-	bool useFullRecoil_, correctPt_;
+	bool useDefaultMassConstraint_, useFullRecoil_, correctPt_;
 };
 
 

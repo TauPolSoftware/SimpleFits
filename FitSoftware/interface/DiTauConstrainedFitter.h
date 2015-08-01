@@ -39,9 +39,6 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   LorentzVectorParticle GetTauMuEstimate();
   double GetMassConstraint() const{return MassConstraint_;};
   void SetMassConstraint(double MassConstraint) const{MassConstraint_ = MassConstraint;};
-  static TVector3 TauMuPtBalanceEstimator(TMatrixT<double> Muon, TVector3 PV, TVector3 SV);
-  static double Distance(TVector3 Location1, TVector3 Location2, TVector3 DirectionVector1, TVector3 DirectionVector2);
-  static TMatrixT<double> TauMuEstimator(TMatrixT<double> &inpar);
   static double MassConstraint_;
 
   TMatrixD GetExppar() const{return exppar;}
