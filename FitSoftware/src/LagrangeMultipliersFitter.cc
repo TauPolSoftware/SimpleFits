@@ -9,9 +9,14 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
   epsilon_(0.001),
   weight_(1.0),
   MaxDelta_(0.1),
-  nitermax_(15),
-  chi2(1e10),
+  nitermax_(1000),
   MaxParDelta_(0.1),
+  MaxHCDelta_(1e-3),
+  MaxSCDelta_(50.),
+  MaxChi2Delta_(1e-2),
+  nCutStepmax_(100),
+  chi2(1e10),
+  niter(0),
   D(1,1),
   V_D(1,1)
 {
@@ -21,24 +26,75 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
 bool LagrangeMultipliersFitter::Fit(){
  
   if(cov.GetNrows()!=par_0.GetNrows()){
-    cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
-    cov=cov_0;
-
+	cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
+	cov=cov_0;
   }
   if(!isconfigured) return false;
   if(isFit)return isConverged();
   isFit=true;
-  niter=0;
-  for(niter=0;niter<=nitermax_;niter++){
-    //   std::cout<<" start  ApplyLagrangianConstraints "<<std::endl;
-    bool passed=ApplyLagrangianConstraints();
-    if (!passed || (niter==nitermax_ && delta>=4.0*MaxDelta_)) {
-      //std::cout << "Reached Maximum number of iterations..." << niter << " and delta "<< delta <<std::endl;
-       return false;
+
+  Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints "<< std::endl;
+
+  for(niter=0; niter < nitermax_; niter++){
+	Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints iteration no.: " << niter << std::endl;
+	bool passed=ApplyLagrangianConstraints();
+
+	  if(harddelta_vecprev.Norm1() < harddelta_vec.Norm1() && harddelta_vec.Norm1() > MaxHCDelta_){ //CutStep method
+		  Logger(Logger::Debug) << "Starting CutStep Method"<< std::endl;
+		  TVectorD paraprev_(paraprev); //save copies because para/bprev are changed at the beginning of ApplyLagrangianConstraints
+		  TVectorD parbprev_(parbprev);
+		  TVectorD para_delta(para_0 - paraprev_);
+		  TVectorD parb_delta(parb_0 - parbprev_);
+		  TVectorD harddelta_vecprev_(harddelta_vecprev);
+		  if(Logger::Instance()->Level() == Logger::Debug){
+			Logger(Logger::Debug) << "para_delta: " << std::endl;
+			para_delta.Print();
+			Logger(Logger::Debug) << "parb_delta: " << std::endl;
+			parb_delta.Print();
+		  }
+		  for(unsigned i_CutStep = 1; i_CutStep < nCutStepmax_+1; i_CutStep++){
+			//double corrFactor = 1/pow(2., (double) i_CutStep + 1);
+			double corrFactor = 1-(i_CutStep)/nCutStepmax_;
+			Logger(Logger::Debug) << "corrFactor: " << corrFactor << std::endl;
+			para_delta *= corrFactor;
+			parb_delta *= corrFactor;
+			para_0 = paraprev_ + para_delta;
+			parb_0 = parbprev_ + parb_delta;
+			  if(Logger::Instance()->Level() == Logger::Debug){
+				Logger(Logger::Debug) << "para_0: " << std::endl;
+				para_0.Print();
+				Logger(Logger::Debug) << "para_delta after i = " << i_CutStep << " Cutsteps: " << std::endl;
+				para_delta.Print();
+				Logger(Logger::Debug) << "parb_0: " << std::endl;
+				parb_0.Print();
+				Logger(Logger::Debug) << "parb_delta after i = " << i_CutStep << " Cutsteps: " << std::endl;
+				parb_delta.Print();
+			  }
+			passed = ApplyLagrangianConstraints();
+			if(passed && harddelta_vecprev_.Norm1() > harddelta_vec.Norm1()){
+			  Logger(Logger::Debug) << "Stopped CutStep Method after i_CutStep = "<< i_CutStep << " iterations" << std::endl;
+			  break;
+			}
+		  }
+	  }
+
+	if(!passed){
+	  Logger(Logger::Error) << "Did not pass ApplyLagrangianConstraints(). Matrix inversion failed probably." << std::endl;
+	  return false;
+	}
+	if(niter==nitermax_ && delta>=MaxDelta_){
+	  Logger(Logger::Error) << "Reached Maximum number of iterations = " << niter << " and delta = "<< delta << std::endl;
+	  return false;
+	}
+	if(harddelta_vecprev.Norm1()>=1e12) {
+	  Logger(Logger::Error) << "Huge deviations from hard constraints --> overshoot during chi2 min. niter = "<< niter << " and delta = "<< harddelta_vecprev.Norm1() <<std::endl;
+	  return false;
+	}
+
+    if(isConverged()){
+      break;
     }
 
-    if(isConverged()) break; 
-  
   }
 
    // ComputeVariancea();
@@ -59,6 +115,12 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
 
   // Setup intial values
+	harddelta_vecprev.ResizeTo(NConstraints());
+	harddelta_vecprev=HardValue(para_0,parb_0);
+	softdelta_vecprev.ResizeTo(NSoftConstraints());
+	softdelta_vecprev=SoftValue(para_0,parb_0);
+	paraprev.ResizeTo(para_0); paraprev=para_0;
+	parbprev.ResizeTo(parb_0); parbprev=parb_0;
 
   // TMatrixT<double> alpha_A=convertToMatrix(par);
   // TMatrixT<double> alpha_0=convertToMatrix(par_0);
@@ -89,13 +151,22 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   V_f=ComputeV_f(V_a,V_b,para_0, parb_0);
  
 
+  if(Logger::Instance()->Level() == Logger::Debug){
+	Logger(Logger::Debug) << "Jacobi Matrices Fa and Fb " << std::endl;
+	Fa.Print();
+	Fb.Print();
+	Logger(Logger::Debug) << "Jacobi Matrices A and B " << std::endl;
+	A.Print();
+	B.Print();
+  }
+
 
   V_f.SetTol(1.e-50);
   if(!useFullRecoil_) V_f.Similarity(Fa);
 
 
   //----  fill final matrix blocks 
-  
+
   TMatrixTSym<double> V_a_inv= V_a;
   if( fabs(V_a_inv.Determinant())  < 1e-25){
        std::cout << "Fit failed: unable to invert, matrix is singular " << " \n" << std::endl;
@@ -157,7 +228,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   chi2prev=chi2;
 
   TVectorD Currentchi2_vec = ChiSquareUsingInitalPoint(y,par_a,par_b,lambda,V_f_inv);
-  double Curentchi2(Currentchi2_vec.Sum()), Currentdelta(ConstraintDelta(para,parb));
+  double Curentchi2(Currentchi2_vec(0)), Currentdelta(ConstraintDelta(para,parb));
 
   TMatrixT<double> a_s=par_a;
   TMatrixT<double> b_s=par_b;
@@ -292,7 +363,6 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCa(){ // always evaluated at curr
     }
   }
   if(!useFullRecoil_) Derivatives(2,2) =1;
-  else Derivatives(1,2) =1;
   return Derivatives;
 }
 
@@ -313,7 +383,6 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
     }
   }
   if(!useFullRecoil_) Derivatives(2,2) =1;
-  else Derivatives(1,2) =1;
    // Derivatives(0,2) =1/Derivatives(2,0);
    // Derivatives(1,2) =1/Derivatives(2,1);
 
@@ -323,14 +392,24 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
 
 bool LagrangeMultipliersFitter::isConverged(){
   if(!useFullRecoil_){
-	if(pardelta<MaxParDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
+//	if(pardelta<MaxParDelta_ /*&& harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_  && chi2prev>chi2*/){
+		if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_ /*&& chi2prev>chi2*/){
+
     //	Logger(Logger::Verbose) << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl;
 	  return true;
 	}
   }
   else{
-	if(pardelta<MaxParDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
+	//if(pardelta<MaxParDelta_ && harddelta_vec.Norm1() < MaxHCDelta_ && softdelta_vec.Norm1() < MaxSCDelta_){
+	if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_ /*&& chi2prev>chi2*/){
 	  return true;
+	}
+	else{
+	  Logger(Logger::Debug) << "Fit did not converge, because: " << std::endl;
+	  if(pardelta > MaxParDelta_) Logger(Logger::Debug) << "pardelta  = " << pardelta <<" > MaxParDelta_ = " << MaxParDelta_ << std::endl;
+	  if(chi2prev - chi2 > MaxChi2Delta_) Logger(Logger::Debug) << "chi2prev - chi2  = "<< chi2prev - chi2 << " > " << MaxChi2Delta_ << std::endl;
+	  if(harddelta_vec.Sum() >= MaxHCDelta_) Logger(Logger::Debug) << "harddelta_vec.Norm1() = " << harddelta_vec.Norm1() <<" >= MaxHCDelta_ = " << MaxHCDelta_ << std::endl;
+	  if(softdelta_vec.Sum() >= MaxSCDelta_) Logger(Logger::Debug) << "softdelta_vec.Norm1() = " << softdelta_vec.Norm1() <<" >= MaxSCDelta_ = " << MaxSCDelta_ << std::endl;
 	}
   }
   // if(delta<MaxDelta_ /*&& chi2prev-chi2<1.0 && chi2prev>chi2*/){
@@ -475,18 +554,16 @@ TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y
   TMatrixT<double> f = convertToMatrix(SoftValue(a_v,b_v));
   TMatrixT<double> fT = f; fT.T();
   TMatrixT<double> Fa =DerivativeSCa();
-  TMatrixT<double> FaT=Fa; Fa.T();
+  TMatrixT<double> FaT=Fa; FaT.T();
 
   TMatrixT<double> chisquare_constraints(1,1);
-  if(!useFullRecoil_) chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v)) + fT*(V_f_inv*FaT)*f;
-  else chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v)) + fT*V_f_inv*f;
+  chisquare_constraints=lambdaT*convertToMatrix(HardValue(a_v,b_v)) + fT*V_f_inv*f;
   double c2=chisquare_var(0,0)+chisquare_constraints(0,0);
 
   TVectorD chi2(3);
   chi2(0) = chisquare_var(0,0);
-  if(!useFullRecoil_) chi2(1) = (fT*(V_f_inv*FaT)*f)(0,0);
-  else chi2(1) = (fT*V_f_inv*f)(0,0);
-  chi2(2) = (lambdaT*convertToMatrix(HardValue(a_v,b_v)))(0,0);
+  chi2(1) = (fT*V_f_inv*f)(0,0);
+  chi2(2) = 2*(lambdaT*convertToMatrix(HardValue(a_v,b_v)))(0,0);
 
   Logger(Logger::Debug) << "chi2 comparison: " << c2 << ", " << chi2.Sum() << std::endl;
   Logger(Logger::Debug) << "chi2 contributions: " << chi2(0) << " (orig) + " << chi2(1) << " (SC) + " << chi2(2) << " (HC) = " << chi2.Sum() << std::endl;
@@ -537,7 +614,8 @@ double LagrangeMultipliersFitter::ConstraintDelta(TVectorT<double> a,TVectorT<do
   for(int i = 0; i<dh_par.GetNrows(); i++){
     delta_d+=fabs(dh_par(i)) + fabs(ds_par(i));
   }
-  return delta_d;
+  if(!useFullRecoil_) return delta_d;
+  else return delta_dNew;
 }
 
 TMatrixT<double>  LagrangeMultipliersFitter::ComputeVarianceb(){
@@ -643,6 +721,7 @@ TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  c
 	TMatrixT<double> Jacobi(NSoftConstraints(),par.GetNrows());
 	TMatrixTSym<double> fullcov = cov; //copy of the cov matrix as similarity overrides the matrix
 
+	/*
 	double Resonance_Pt = sqrt(pow(para_0(0) + parb_0(0), 2.) + pow(para_0(1) + parb_0(1), 2.));
 	for(unsigned i=0; i<para_0.GetNrows();i++){
 	  if(i==2) {
@@ -659,6 +738,11 @@ TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  c
 	Jacobi(1,0) = (para_0(1) + parb_0(1))/pow(para_0(0) + parb_0(0), 2.); Jacobi(1,3) = Jacobi(1,0);
 	Jacobi(1,1) = parb_0(1)/(para_0(0) + parb_0(0));
 	Jacobi(1,4) = para_0(1)/(para_0(0) + parb_0(0));
+	*/
+	Jacobi(0,0) = 1;
+	Jacobi(0,3) = 1;
+	Jacobi(1,1) = 1;
+	Jacobi(1,4) = 1;
 	Vf = fullcov.Similarity(Jacobi);
 	if(Logger::Instance()->Level() == Logger::Debug){
 	  Jacobi.Print();

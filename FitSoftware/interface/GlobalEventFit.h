@@ -50,6 +50,8 @@ class GlobalEventFit{
 	TPTRObject ThreeProngTauReconstruction();
 	bool IsAmbiguous(std::vector<bool> recostatus);
 	PTObject SubtractNeutrinoFromMET(unsigned Ambiguity);
+	PTObject AddA1(PTObject MET);
+	PTObject AddMuon(PTObject MET);
 
   private:
 	bool isConfigured_;

@@ -2,6 +2,7 @@
 #define LagrangeMultipliersFitter_H
 
 #include "SimpleFits/FitSoftware/interface/LorentzVectorParticle.h"
+#include "SimpleFits/FitSoftware/interface/PDGInfo.h"
 #include "TMatrixT.h"
 #include "TVectorT.h"
 #include "TMatrixTSym.h"
@@ -54,7 +55,6 @@ class LagrangeMultipliersFitter{
   virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb)=0;
 
 
-
   TVectorD par_0; // parameter values for linearization point
   TVectorD par; // current parameter values
   TMatrixTSym<double> cov_0; //covariance matrix for linearization point (corresponding to par_0) 
@@ -63,12 +63,12 @@ class LagrangeMultipliersFitter{
 
   //  a and b denotes taua1 and taumu parameters correspondingly
   TVectorD para_0; // parameter values for linearization point
-  TVectorD para; // current parameter values
+  TVectorD para, paraprev; // current parameter values
   TMatrixTSym<double> cova_0; //covariance matrix for linearization point (corresponding to par_0) 
   TMatrixTSym<double> cova; // current covariance matrix (corresponding to par) 
 
   TVectorD parb_0; // parameter values for linearization point
-  TVectorD parb; // current parameter values
+  TVectorD parb, parbprev; // current parameter values
   TMatrixTSym<double> covb_0; //covariance matrix for linearization point (corresponding to par_0) 
   TMatrixTSym<double> covb; // current covariance matrix (corresponding to par) 
 
@@ -96,11 +96,11 @@ class LagrangeMultipliersFitter{
   TMatrixT<double> ComputeVarianceb();
 
   // Configuration parameters
-  double epsilon_,weight_,MaxDelta_,nitermax_,MaxParDelta_;
+  double epsilon_,weight_,MaxDelta_,nitermax_,MaxParDelta_, MaxHCDelta_, MaxSCDelta_, MaxChi2Delta_, nCutStepmax_;
 
   // Fit variables
   double chi2,chi2prev,delta,niter,pardelta, pardeltaprev;
-  TVectorD harddelta_vec, softdelta_vec, chi2_vec;
+  TVectorD harddelta_vec, harddelta_vecprev, softdelta_vec, softdelta_vecprev, chi2_vec;
 
   // covariances and derivatives info
 
