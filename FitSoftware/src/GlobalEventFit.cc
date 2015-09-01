@@ -69,16 +69,16 @@ TPTRObject GlobalEventFit::ThreeProngTauReconstruction(){
 			if(Ambiguity == MultiProngTauSolver::zero){
 			  RotationSignificance = TauA1NU.GetTauRotationSignificance();
 			}
-			  Logger(Logger::Debug) << "Tau par and covariance: " << std::endl;
-			  if(Logger::Instance()->Level() == Logger::Debug){
-				Taus.at(Ambiguity).getParMatrix().Print();
-				Taus.at(Ambiguity).getCovMatrix().Print();
-			  }
-			  Logger(Logger::Debug) << "Neutrino par and covariance: " << std::endl;
-			  if(Logger::Instance()->Level() == Logger::Debug){
-				Neutrinos.at(Ambiguity).getParMatrix().Print();
-				Neutrinos.at(Ambiguity).getCovMatrix().Print();
-			  }
+			Logger(Logger::Debug) << "Tau par and covariance: " << std::endl;
+			if(Logger::Instance()->Level() == Logger::Debug){
+			  Taus.at(Ambiguity).getParMatrix().Print();
+			  Taus.at(Ambiguity).getCovMatrix().Print();
+			}
+			Logger(Logger::Debug) << "Neutrino par and covariance: " << std::endl;
+			if(Logger::Instance()->Level() == Logger::Debug){
+			  Neutrinos.at(Ambiguity).getParMatrix().Print();
+			  Neutrinos.at(Ambiguity).getCovMatrix().Print();
+			}
 		}
 		else{
 			Taus.push_back(LorentzVectorParticle());
@@ -137,7 +137,11 @@ GEFObject GlobalEventFit::Fit(){
 		}
 
 		if(useFullRecoil_){
-			METMinusNeutrino.push_back(SubtractNeutrinoFromMET(Ambiguity));
+			PTObject ZPtEst(MET_);
+			AddA1(ZPtEst);
+			AddMuon(ZPtEst);
+			METMinusNeutrino.push_back(ZPtEst);
+			//METMinusNeutrino.push_back(SubtractNeutrinoFromMET(Ambiguity));
 			if(useDefaultMassConstraint_){
 				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
 				Logger(Logger::Debug) << "Case 1: With Recoil, Default MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
@@ -226,8 +230,10 @@ bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<
 	    if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
 	  }
 	  */
-	    if(Chi2Vecs.at(1)(0) < Chi2Vecs.at(2)(0)){ IndexToReturn = 1;return true;}
-	    if(Chi2Vecs.at(1)(0) > Chi2Vecs.at(2)(0)){ IndexToReturn = 2;return true;}
+	    //if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return true;}
+	    //if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return true;}
+	    if(Chi2Vecs.at(1)(2) < Chi2Vecs.at(2)(2)){ IndexToReturn = 1;return true;}
+	    if(Chi2Vecs.at(1)(2) > Chi2Vecs.at(2)(2)){ IndexToReturn = 2;return true;}
 	}
 	return false;
 }
@@ -353,10 +359,10 @@ PTObject GlobalEventFit::SubtractNeutrinoFromMET(unsigned Ambiguity){
   TMatrixT<double> METMinusNeutrinoPar; METMinusNeutrinoPar.ResizeTo(2,1);
   TMatrixTSym<double> METMinusNeutrinoCov; METMinusNeutrinoCov.ResizeTo(2,2);
 
-  for(unsigned i=0; i<METMinusNeutrinoCov.GetNrows(); i++){
+  for(int i=0; i<METMinusNeutrinoCov.GetNrows(); i++){
 	METMinusNeutrinoPar(i,0) = MET_.Par()(i,0) - TPTRObject_.getNeutrinos().at(Ambiguity).getParMatrix()(i,0);
 	Logger(Logger::Debug) << "METMinusNeutrinoPar(" << i << ",0) " << METMinusNeutrinoPar(i,0) << std::endl;
-	for(unsigned j=0; j<METMinusNeutrinoCov.GetNcols(); j++){
+	for(int j=0; j<METMinusNeutrinoCov.GetNcols(); j++){
 	  METMinusNeutrinoCov(i,j) = MET_.Cov()(i,j) + TPTRObject_.getNeutrinos().at(Ambiguity).getCovMatrix()(i+3,j+3);
 	  Logger(Logger::Debug) << "METMinusNeutrinoCov(" << i << "," << j << ") " << METMinusNeutrinoCov(i,j) << std::endl;
 	}
@@ -378,6 +384,80 @@ PTObject GlobalEventFit::SubtractNeutrinoFromMET(unsigned Ambiguity){
 
   return METminusNeutrino;
 }
-//GEFObject GlobalEventFit::Refit(){
-//
-//}
+
+PTObject GlobalEventFit::AddA1(PTObject MET){
+  TMatrixT<double> METPlusA1Par; METPlusA1Par.ResizeTo(2,1);
+  TMatrixTSym<double> METPlusA1Cov; METPlusA1Cov.ResizeTo(2,2);
+
+  for(int i=0; i<METPlusA1Cov.GetNrows(); i++){
+	METPlusA1Par(i,0) = MET.Par()(i,0) + TPTRObject_.getA1().getParMatrix()(i,0);
+	Logger(Logger::Debug) << "METMinusNeutrinoPar(" << i << ",0) " << METPlusA1Par(i,0) << std::endl;
+	for(int j=0; j<METPlusA1Cov.GetNcols(); j++){
+	  METPlusA1Cov(i,j) = MET.Cov()(i,j) + TPTRObject_.getA1().getCovMatrix()(i+3,j+3);
+	  Logger(Logger::Debug) << "METMinusNeutrinoCov(" << i << "," << j << ") " << METPlusA1Cov(i,j) << std::endl;
+	}
+  }
+
+  Logger(Logger::Debug) << "MET covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	MET.Cov().Print();
+  }
+  Logger(Logger::Debug) << "A1 covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	TPTRObject_.getA1().getCovMatrix().Print();
+  }
+  Logger(Logger::Debug) << "METPlusA1Cov covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	METPlusA1Cov.Print();
+  }
+  PTObject METPlusA1(METPlusA1Par, METPlusA1Cov);
+
+  return METPlusA1;
+}
+PTObject GlobalEventFit::AddMuon(PTObject MET){
+  TMatrixT<double> METPlusMuonPar; METPlusMuonPar.ResizeTo(2,1);
+  TMatrixTSym<double> METPlusMuonCov; METPlusMuonCov.ResizeTo(2,2);
+
+  double kappa = Muon_.Parameter(TrackParticle::kappa);
+  double alpha = Muon_.BField();
+  double phi0 = Muon_.Parameter(TrackParticle::phi);
+  METPlusMuonPar(0,0) = MET.Par()(0,0) + fabs(alpha/kappa)*cos(phi0);
+  METPlusMuonPar(1,0) = MET.Par()(1,0) + fabs(alpha/kappa)*sin(phi0);
+
+  TMatrixDSym MuonKappaPhiCov(2);
+  MuonKappaPhiCov(0,0) = Muon_.Covariance(TrackParticle::kappa,TrackParticle::kappa);
+  MuonKappaPhiCov(0,1) = Muon_.Covariance(TrackParticle::kappa,TrackParticle::phi);
+  MuonKappaPhiCov(1,0) = MuonKappaPhiCov(0,1);
+  MuonKappaPhiCov(1,1) = Muon_.Covariance(TrackParticle::phi,TrackParticle::phi);
+
+  TMatrixD Jacobi(2,2);
+  Jacobi(0,0) = - alpha*kappa/fabs(pow(kappa, 3.))*cos(phi0);
+  Jacobi(0,1) = - alpha/fabs(kappa)*sin(phi0);
+  Jacobi(1,0) = - alpha*kappa/fabs(pow(kappa, 3.))*sin(phi0);
+  Jacobi(1,1) = + alpha/fabs(kappa)*cos(phi0);
+
+  TMatrixDSym MuonPtCov(MuonKappaPhiCov);
+  MuonPtCov.Similarity(Jacobi);
+
+  for(int i=0; i<METPlusMuonCov.GetNrows(); i++){
+	for(int j=0; j<METPlusMuonCov.GetNcols(); j++){
+	  METPlusMuonCov(i,j) = MET.Cov()(i,j) + MuonPtCov(i,j);
+	}
+  }
+
+  Logger(Logger::Debug) << "MET covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	MET.Cov().Print();
+  }
+  Logger(Logger::Debug) << "MuonPtCov covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	MuonPtCov.Print();
+  }
+  Logger(Logger::Debug) << "METPlusA1Cov covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	METPlusMuonCov.Print();
+  }
+  PTObject METPlusMuon(METPlusMuonPar, METPlusMuonCov);
+
+  return METPlusMuon;
+}
