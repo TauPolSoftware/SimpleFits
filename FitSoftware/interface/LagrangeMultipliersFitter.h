@@ -60,6 +60,7 @@ class LagrangeMultipliersFitter{
   TMatrixTSym<double> cov_0; //covariance matrix for linearization point (corresponding to par_0) 
   TMatrixTSym<double> cov; // current covariance matrix (corresponding to par) 
 
+  TMatrixT<double> y_;
 
   //  a and b denotes taua1 and taumu parameters correspondingly
   TVectorD para_0; // parameter values for linearization point
@@ -100,7 +101,8 @@ class LagrangeMultipliersFitter{
 
   // Fit variables
   double chi2,chi2prev,delta,niter,pardelta, pardeltaprev;
-  TVectorD harddelta_vec, harddelta_vecprev, softdelta_vec, softdelta_vecprev, chi2_vec;
+  TVectorD harddelta_vec, harddelta_vecprev, softdelta_vec, softdelta_vecprev, chi2_vec, chi2_vecprev;
+  TMatrixD chi2s;
 
   // covariances and derivatives info
 

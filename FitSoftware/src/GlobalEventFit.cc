@@ -232,8 +232,10 @@ bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<
 	  */
 	    //if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return true;}
 	    //if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return true;}
-	    if(Chi2Vecs.at(1)(2) < Chi2Vecs.at(2)(2)){ IndexToReturn = 1;return true;}
-	    if(Chi2Vecs.at(1)(2) > Chi2Vecs.at(2)(2)){ IndexToReturn = 2;return true;}
+	    //if(Chi2Vecs.at(1)(2) < Chi2Vecs.at(2)(2)){ IndexToReturn = 1;return true;}
+	    //if(Chi2Vecs.at(1)(2) > Chi2Vecs.at(2)(2)){ IndexToReturn = 2;return true;}
+	    if(Chi2Vecs.at(1)(0) < Chi2Vecs.at(2)(0)){ IndexToReturn = 1;return true;}
+	    if(Chi2Vecs.at(1)(0) > Chi2Vecs.at(2)(0)){ IndexToReturn = 2;return true;}
 	}
 	return false;
 }

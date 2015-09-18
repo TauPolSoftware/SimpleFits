@@ -137,6 +137,7 @@ void DiTauConstrainedFitter::Configure(LorentzVectorParticle TauA1,TrackParticle
   covb_0.ResizeTo(sizeTrunc,sizeTrunc);
   PARb_0=ComputeExpParToParb(exppar);
   for(int i=0; i<npartr;i++)parb_0(i)=PARb_0(i,0);
+  y_.ResizeTo(npartr,1); y_ = convertToMatrix(para_0);
 
   covb_0=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeExpParToParb,exppar,expcov);
   parb.ResizeTo(npartr);
@@ -205,7 +206,7 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeTauMuLorentzVectorPar(TMatrixT<d
   outpar(LorentzVectorParticle::px,0)=inpar(3,0);
   outpar(LorentzVectorParticle::py,0)=inpar(4,0);
   outpar(LorentzVectorParticle::pz,0)=inpar(5,0);
-  outpar(LorentzVectorParticle::m,0)=1.777;
+  outpar(LorentzVectorParticle::m,0)=PDGInfo::tau_mass();
 
   return outpar;
 }
@@ -219,7 +220,7 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeTauA1LorentzVectorPar(TMatrixT<d
   outpar(LorentzVectorParticle::px,0)=inpar(0,0);
   outpar(LorentzVectorParticle::py,0)=inpar(1,0);
   outpar(LorentzVectorParticle::pz,0)=inpar(2,0);
-  outpar(LorentzVectorParticle::m,0) =1.777;  
+  outpar(LorentzVectorParticle::m,0) =PDGInfo::tau_mass();
 
   return outpar;
 }
@@ -341,8 +342,8 @@ DiTauConstrainedFitter::SoftValue(TVectorD &va,TVectorD &vb){
 void DiTauConstrainedFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass){
   // Taua1=particles_.at(0).LV();//TLorentzVector(v(taua1_px),v(taua1_py),v(taua1_pz),sqrt(1.777*1.777+v(taua1_px)*v(taua1_px)+v(taua1_py)*v(taua1_py)+v(taua1_pz)*v(taua1_pz)));
   // Taumu=TLorentzVector(v(taua1_px),v(taua1_py),v(taua1_pz),sqrt(1.777*1.777+v(taua1_px)*v(taua1_px)+v(taua1_py)*v(taua1_py)+v(taua1_pz)*v(taua1_pz)));
-  Taua1=TLorentzVector(va(tau_px),va(tau_py),va(tau_pz),sqrt(1.777*1.777+va(tau_px)*va(tau_px)+va(tau_py)*va(tau_py)+va(tau_pz)*va(tau_pz)));
-  Taumu=TLorentzVector(vb(tau_px),vb(tau_py),vb(tau_pz),sqrt(1.777*1.777+vb(tau_px)*vb(tau_px)+vb(tau_py)*vb(tau_py)+vb(tau_pz)*vb(tau_pz)));
+  Taua1=TLorentzVector(va(tau_px),va(tau_py),va(tau_pz),sqrt(PDGInfo::tau_mass()*PDGInfo::tau_mass()+va(tau_px)*va(tau_px)+va(tau_py)*va(tau_py)+va(tau_pz)*va(tau_pz)));
+  Taumu=TLorentzVector(vb(tau_px),vb(tau_py),vb(tau_pz),sqrt(PDGInfo::tau_mass()*PDGInfo::tau_mass()+vb(tau_px)*vb(tau_px)+vb(tau_py)*vb(tau_py)+vb(tau_pz)*vb(tau_pz)));
   Zmass = 91.5;
 }
 
@@ -434,7 +435,7 @@ DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorPa
   par(LorentzVectorParticle::px,0)=TauKin(0,0);
   par(LorentzVectorParticle::py,0)=TauKin(1,0);
   par(LorentzVectorParticle::pz,0)=TauKin(2,0);
-  par(LorentzVectorParticle::m,0) =1.777;
+  par(LorentzVectorParticle::m,0) =PDGInfo::tau_mass();
   
    for(int i=0; i<LorentzVectorParticle::NVertex; i++){
      for(int j=0; j<LorentzVectorParticle::NVertex; j++){
@@ -553,7 +554,7 @@ DiTauConstrainedFitter::EstimateTauKinematic(TMatrixT<double> &inpar){
   TLorentzVector TauA1p4(inpar(2,0),
 			 inpar(3,0),
 			 inpar(4,0),
-			 sqrt(pow(1.777,2) + pow(inpar(2,0),2) + pow(inpar(3,0),2) + pow(inpar(4,0),2)  ) );
+			 sqrt(pow(PDGInfo::tau_mass(),2) + pow(inpar(2,0),2) + pow(inpar(3,0),2) + pow(inpar(4,0),2)  ) );
   
   TVector3 TauMuDir(cos(inpar(1,0))*sin(inpar(0,0)), sin(inpar(1,0))*sin(inpar(0,0)), cos(inpar(0,0)));
   TVector3 P_Tauh(inpar(2,0), inpar(3,0), inpar(4,0));
@@ -566,6 +567,10 @@ DiTauConstrainedFitter::EstimateTauKinematic(TMatrixT<double> &inpar){
   outpar(0,0) = P_TauMu*TauMuDir.X();
   outpar(1,0) = P_TauMu*TauMuDir.Y();
   outpar(2,0) = P_TauMu*TauMuDir.Z();
+
+  //outpar(0,0) = P_Tauh.Pt()*cos(inpar(1,0));
+  //outpar(1,0) = P_Tauh.Pt()*sin(inpar(1,0));
+  //outpar(2,0) = P_Tauh.Pt()/tan(inpar(0,0));
 
   Logger(Logger::Debug) << "TauDir.Phi(): " << TauA1p4.Phi() << " TauMuDirNEW2.Phi(): " << inpar(1,0) << std::endl;
   Logger(Logger::Debug) << "TauA1 p3: " << TauA1p4.X() << ", " << TauA1p4.Y() << ", " << TauA1p4.Z() << std::endl;

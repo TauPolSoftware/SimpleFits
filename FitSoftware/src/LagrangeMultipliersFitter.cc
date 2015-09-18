@@ -9,11 +9,11 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
   epsilon_(0.001),
   weight_(1.0),
   MaxDelta_(0.1),
-  nitermax_(1000),
-  MaxParDelta_(0.1),
-  MaxHCDelta_(1e-3),
+  nitermax_(100),
+  MaxParDelta_(10.),
+  MaxHCDelta_(1.0),
   MaxSCDelta_(50.),
-  MaxChi2Delta_(1e-2),
+  MaxChi2Delta_(0.1),
   nCutStepmax_(100),
   chi2(1e10),
   niter(0),
@@ -32,6 +32,9 @@ bool LagrangeMultipliersFitter::Fit(){
   if(!isconfigured) return false;
   if(isFit)return isConverged();
   isFit=true;
+  chi2s.ResizeTo((int)nitermax_,4);
+  chi2_vec.ResizeTo(3);
+  harddelta_vec.ResizeTo(NConstraints());
 
   Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints "<< std::endl;
 
@@ -39,12 +42,18 @@ bool LagrangeMultipliersFitter::Fit(){
 	Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints iteration no.: " << niter << std::endl;
 	bool passed=ApplyLagrangianConstraints();
 
-	  if(harddelta_vecprev.Norm1() < harddelta_vec.Norm1() && harddelta_vec.Norm1() > MaxHCDelta_){ //CutStep method
+	  bool cut_step(false);
+	  bool directing_step(false);
+	  if(harddelta_vecprev.Norm1() < harddelta_vec.Norm1() && harddelta_vec.Norm1() > MaxHCDelta_) cut_step = true;//CutStep method
+	  if(harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) > MaxChi2Delta_) directing_step = false;
+		if(cut_step || directing_step){
 		  Logger(Logger::Debug) << "Starting CutStep Method"<< std::endl;
 		  TVectorD paraprev_(paraprev); //save copies because para/bprev are changed at the beginning of ApplyLagrangianConstraints
 		  TVectorD parbprev_(parbprev);
 		  TVectorD para_delta(para_0 - paraprev_);
 		  TVectorD parb_delta(parb_0 - parbprev_);
+		  TVectorD para_delta_(para_0 - paraprev_);
+		  TVectorD parb_delta_(parb_0 - parbprev_);
 		  TVectorD harddelta_vecprev_(harddelta_vecprev);
 		  if(Logger::Instance()->Level() == Logger::Debug){
 			Logger(Logger::Debug) << "para_delta: " << std::endl;
@@ -54,10 +63,14 @@ bool LagrangeMultipliersFitter::Fit(){
 		  }
 		  for(unsigned i_CutStep = 1; i_CutStep < nCutStepmax_+1; i_CutStep++){
 			//double corrFactor = 1/pow(2., (double) i_CutStep + 1);
-			double corrFactor = 1-(i_CutStep)/nCutStepmax_;
+			double corrFactor = directing_step ? i_CutStep/nCutStepmax_ : 1-(i_CutStep)/nCutStepmax_;
 			Logger(Logger::Debug) << "corrFactor: " << corrFactor << std::endl;
+			para_delta = para_delta_;
+			parb_delta = parb_delta_;
 			para_delta *= corrFactor;
 			parb_delta *= corrFactor;
+			paraprev = paraprev_;
+			parbprev = parbprev_;
 			para_0 = paraprev_ + para_delta;
 			parb_0 = parbprev_ + parb_delta;
 			  if(Logger::Instance()->Level() == Logger::Debug){
@@ -71,29 +84,46 @@ bool LagrangeMultipliersFitter::Fit(){
 				parb_delta.Print();
 			  }
 			passed = ApplyLagrangianConstraints();
-			if(passed && harddelta_vecprev_.Norm1() > harddelta_vec.Norm1()){
+			if(cut_step && passed && harddelta_vecprev_.Norm1() > harddelta_vec.Norm1()){
+			  Logger(Logger::Debug) << "Stopped CutStep Method after i_CutStep = "<< i_CutStep << " iterations" << std::endl;
+			  break;
+			}
+			if(directing_step && passed && fabs(chi2prev-chi2) < MaxChi2Delta_){
 			  Logger(Logger::Debug) << "Stopped CutStep Method after i_CutStep = "<< i_CutStep << " iterations" << std::endl;
 			  break;
 			}
 		  }
 	  }
 
+	  chi2s(niter,0) = chi2_vec(0);
+	  chi2s(niter,1) = harddelta_vec.Norm1();
+	  chi2s(niter,2) = harddelta_vec(0);
+	  chi2s(niter,3) = harddelta_vec(1);
+
 	if(!passed){
 	  Logger(Logger::Error) << "Did not pass ApplyLagrangianConstraints(). Matrix inversion failed probably." << std::endl;
-	  return false;
-	}
-	if(niter==nitermax_ && delta>=MaxDelta_){
-	  Logger(Logger::Error) << "Reached Maximum number of iterations = " << niter << " and delta = "<< delta << std::endl;
-	  return false;
-	}
-	if(harddelta_vecprev.Norm1()>=1e12) {
-	  Logger(Logger::Error) << "Huge deviations from hard constraints --> overshoot during chi2 min. niter = "<< niter << " and delta = "<< harddelta_vecprev.Norm1() <<std::endl;
 	  return false;
 	}
 
     if(isConverged()){
       break;
     }
+	if(niter==nitermax_-1){
+	  Logger(Logger::Debug) << "Reached Maximum number of iterations = " << niter << std::endl;
+	  if(harddelta_vec.Norm1() > MaxHCDelta_){
+		  Logger(Logger::Debug) << "Deviations from hard constraints = " << harddelta_vec.Norm1() << " greater than max. allowed = " << MaxHCDelta_ << std::endl;
+		  Logger(Logger::Debug) << "Deviations from hard constraints = " << harddelta_vec(0) << " and = " << harddelta_vec(1) << std::endl;
+	  }
+	  if(fabs(chi2prev-chi2) > MaxChi2Delta_){
+		  Logger(Logger::Debug) << "chi2prev-chi2 = " << chi2prev-chi2 << " greater than max. allowed = " << MaxChi2Delta_ << std::endl;
+	  }
+	  //chi2s.Print();
+	  return false;
+	}
+	if(harddelta_vecprev.Norm1()>=1e12) {
+	  Logger(Logger::Debug) << "Huge deviations from hard constraints --> overshoot during chi2 min. niter = "<< niter << " and delta = "<< harddelta_vecprev.Norm1() <<std::endl;
+	  return false;
+	}
 
   }
 
@@ -128,7 +158,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   // TMatrixT<double> delta_alpha_A=alpha_A-alpha_0;
   // Setup initial values II
  
-  TMatrixT<double> y  = convertToMatrix(para_0);
+  TMatrixT<double> y(y_);
   TMatrixT<double> a0 = convertToMatrix(para_0);
   TMatrixT<double> b0 = convertToMatrix(parb_0);
   TMatrixT<double> c0 = convertToMatrix(HardValue(para_0,parb_0));
@@ -226,6 +256,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   // do while loop to see if the convergance criteria are satisfied
   double s(1), stepscale(0.05);
   chi2prev=chi2;
+  chi2_vecprev.ResizeTo(chi2_vec); chi2_vecprev = chi2_vec;
 
   TVectorD Currentchi2_vec = ChiSquareUsingInitalPoint(y,par_a,par_b,lambda,V_f_inv);
   double Curentchi2(Currentchi2_vec(0)), Currentdelta(ConstraintDelta(para,parb));
@@ -286,8 +317,11 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   delta=Currentdelta;
   para = convertToVector(a_s);
   parb = convertToVector(b_s);
+  pardelta=0;
   for(int l=0;l<par_a.GetNrows();l++){
-    pardelta=y(l,0)-a_s(l,0) +  b_s(l,0) - b0(l,0);
+    //pardelta=y(l,0)-a_s(l,0) +  b_s(l,0) - b0(l,0);
+	pardelta+=fabs(a0(l,0) - a_s(l,0));
+	pardelta+=fabs(b0(l,0) - b_s(l,0));
   }
 
   para_0  = convertToVector(a_s);
@@ -393,7 +427,7 @@ TMatrixD LagrangeMultipliersFitter::DerivativeSCb(){ // always evaluated at curr
 bool LagrangeMultipliersFitter::isConverged(){
   if(!useFullRecoil_){
 //	if(pardelta<MaxParDelta_ /*&& harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_  && chi2prev>chi2*/){
-		if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_ /*&& chi2prev>chi2*/){
+		if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& softdelta_vec.Norm1() < MaxSCDelta_ && chi2prev>chi2*/){
 
     //	Logger(Logger::Verbose) << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl;
 	  return true;
@@ -401,7 +435,7 @@ bool LagrangeMultipliersFitter::isConverged(){
   }
   else{
 	//if(pardelta<MaxParDelta_ && harddelta_vec.Norm1() < MaxHCDelta_ && softdelta_vec.Norm1() < MaxSCDelta_){
-	if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_ /*&& chi2prev>chi2*/){
+	if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& chi2prev>chi2*/){
 	  return true;
 	}
 	else{
@@ -711,7 +745,10 @@ TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  c
 	Vfb(2,1) = dgdx*deltaxyb + dgdyb*deltayyb; Vfb(1,2) = Vfb(2,1);
 	Vfb(2,2) = (pow(dgdx,2)*deltaxxb + pow(dgdyb,2)*deltayyb + 2*dgdx*dgdyb*deltaxyb);
 
-
+	if(Logger::Instance()->Level() == Logger::Debug){
+	  Logger(Logger::Debug) << "Vf matrix" << std::endl;
+	  Vf.Print();
+	}
 
 	Vf = Vfa + Vfb;
   }
@@ -745,6 +782,7 @@ TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  c
 	Jacobi(1,4) = 1;
 	Vf = fullcov.Similarity(Jacobi);
 	if(Logger::Instance()->Level() == Logger::Debug){
+	  Logger(Logger::Debug) << "Jacobi and Vf matrix" << std::endl;
 	  Jacobi.Print();
 	  Vf.Print();
 	}
