@@ -142,9 +142,9 @@ LorentzVectorParticle TPTRObject::getA1() const{
 
 double TPTRObject::getRotationSignificance() const{
   if(isvalid_){
-	if(isambiguous_) return RotationSignificance_;
+	if(!isambiguous_) return RotationSignificance_;
 	else{
-	  Logger(Logger::Error) << "TPTRObject has no ambiguity!" << std::endl;
+	  Logger(Logger::Error) << "TPTRObject has an ambiguity and thus no rotation!" << std::endl;
 	  return 0;
 	}
   }
