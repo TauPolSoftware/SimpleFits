@@ -254,7 +254,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
 
   // do while loop to see if the convergance criteria are satisfied
-  double s(1), stepscale(0.05);
+  //double s(1), stepscale(0.05);
   chi2prev=chi2;
   chi2_vecprev.ResizeTo(chi2_vec); chi2_vecprev = chi2_vec;
 
@@ -266,9 +266,9 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   // convergence in 2 step procedure to minimize chi2 within MaxDelta_ of the constriants
   // 1) Get within 5x MaxDelta_
   // 2) converge based on improving chi2 and constrianed delta
-  unsigned int Proc=ConstraintMin;
-  if(ConstraintDelta(para,parb)<5*MaxDelta_)Proc=Chi2AndConstaintMin;
-  int  NIter=(int)(1.0/stepscale);
+  //unsigned int Proc=ConstraintMin;
+  //if(ConstraintDelta(para,parb)<5*MaxDelta_)Proc=Chi2AndConstaintMin;
+  //int  NIter=(int)(1.0/stepscale);
 
 
 

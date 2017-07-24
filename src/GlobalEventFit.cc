@@ -51,7 +51,7 @@ void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVe
 TPTRObject GlobalEventFit::ThreeProngTauReconstruction(){
 	std::vector<LorentzVectorParticle> Taus;
 	std::vector<LorentzVectorParticle> Neutrinos;
-	double RotationSignificance;
+	double RotationSignificance = 0.0;
 	std::vector<bool> recostatus;
 
 	if(A1_.getParMatrix().GetNrows() != LorentzVectorParticle::NLorentzandVertexPar){

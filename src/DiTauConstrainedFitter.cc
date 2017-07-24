@@ -755,11 +755,11 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
    TMatrixT<double>    outpar;
    outpar.ResizeTo(3,3);
    double dxy   =MuTrack.Parameter(TrackParticle::dxy);
-   double kappa =MuTrack.Parameter(TrackParticle::kappa);
+   //double kappa =MuTrack.Parameter(TrackParticle::kappa);
    double phi0  =MuTrack.Parameter(TrackParticle::phi);
    double lam   =MuTrack.Parameter(TrackParticle::lambda);
    double dz    =MuTrack.Parameter(TrackParticle::dz);
-   double c     =MuTrack.Charge();
+   //double c     =MuTrack.Charge();
    TVector3 A1SV = -SV + PV;
    
    double phiAnot  = atan2(A1SV.Y(), A1SV.X());
@@ -770,10 +770,10 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
    double r = sqrt( pow(bAnot/(tan(phiAnot) - aAnot )  ,2) + pow(bAnot*tan(phiAnot)/(tan(phiAnot) - aAnot) ,2));//(bAnot)/(tan(phiAnot) - tan(phi0))/cos(phiAnot);
 
 
-   double bz0 = fabs(dxy) - dz/lam ;
+   //double bz0 = fabs(dxy) - dz/lam ;
    double ZNeu = lam*(r +  dxy)  - dz;
-   double XNeu = r*cos(phiAnot);
-   double YNeu = r*sin(phiAnot);
+   //double XNeu = r*cos(phiAnot);
+   //double YNeu = r*sin(phiAnot);
 
 
    double br = tan(phi0)*cos(phiAnot) - sin(phiAnot);
@@ -792,11 +792,11 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
    double drzdz0 = -2*dxy*sin(phi0)/br/Zc;
    double drzdphi = drdphi*(1 - r*lam/Zc)/Zc;//2*dxy*sin(phi0)*(cos(phiAnot) + tan(phi0)*sin(phiAnot))/ (tan(phi0)*cos(phiAnot) - sin(phiAnot))/(tan(phi0)*cos(phiAnot) - sin(phiAnot));
    double dcosThetadrz = -r/Zc/sqrt(pow(1 + r*r/Zc/Zc,3));
-   double dThetadPhi = -dcosThetadrz*drzdphi/sinTheta;
+   //double dThetadPhi = -dcosThetadrz*drzdphi/sinTheta;
    //-derivaticves
 
    double cosTauTau2 = cos(TauA1.LV().Theta() + acos(cosTheta));
-   double sinTauTau2 = sin(TauA1.LV().Theta() + acos(cosTheta));
+   //double sinTauTau2 = sin(TauA1.LV().Theta() + acos(cosTheta));
 
    TMatrixT<double>  HelixCov;
    HelixCov.ResizeTo(5,5);
@@ -849,7 +849,7 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
    TMatrixT<double> DerivativesHelixToAnglesT=DerivativesHelixToAngles; DerivativesHelixToAnglesT.T();
    TMatrixT<double> CovAngleFrame=DerivativesHelixToAngles*HelixCov*DerivativesHelixToAnglesT;
 
-   double ZMassR = 91.5;
+   //double ZMassR = 91.5;
    double TauA1deltaP = sqrt(   (pow(TauA1.LV().Px(),2)*fabs(TauA1.Covariance(3,3))   +  pow(TauA1.LV().Py(),2)*fabs(TauA1.Covariance(4,4))  +  pow(TauA1.LV().Pz(),2)*fabs(TauA1.Covariance(5,5))    )/TauA1.LV().P()/TauA1.LV().P()  )  ;
    double TauMudeltaP_2 = TauA1deltaP*pow(MassConstraint_/2/TauA1.LV().P(),2)/(1-cosTauTau2);
 
