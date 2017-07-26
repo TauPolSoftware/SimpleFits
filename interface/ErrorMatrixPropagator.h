@@ -8,7 +8,9 @@ class  ErrorMatrixPropagator {
  public:
   ErrorMatrixPropagator(){};
   virtual ~ErrorMatrixPropagator(){};
-  static TMatrixTSym<double> PropagateError(TMatrixT<double> (*f)(TMatrixT<double> &par),TMatrixT<double> inPar,TMatrixTSym<double> inCov, double epsilon=0.001, double errorEpsilonRatio=1000);
+  static TMatrixTSym<double> PropagateError(TMatrixT<double> (*function)(TMatrixT<double> &par),
+                                            TMatrixT<double> inPar,TMatrixTSym<double> inCov,
+                                            double epsilon=0.001, double errorEpsilonRatio=1000);
 };
 #endif
 
