@@ -44,7 +44,7 @@ void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVe
 	TPTRObject_ = ThreeProngTauReconstruction();
 
 	useDefaultMassConstraint_ = true;
-	correctPt_ = true;
+	correctPt_ = false;
 }
 
 // Is called in the constructor and determines whether the hadronic tau decay is ambiguous and calculates the possible four-momenta of the taus.
