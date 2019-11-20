@@ -159,7 +159,7 @@ LorentzVectorParticle TauA1NuConstrainedFitter::GetMother(){
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
   TMatrixT<double> m=ComputeMotherLorentzVectorPar(exppar);
   TMatrixTSym<double> mcov=ErrorMatrixPropagator::PropagateError(&TauA1NuConstrainedFitter::ComputeMotherLorentzVectorPar,exppar,expcov);
-  LorentzVectorParticle mymother= LorentzVectorParticle(m,mcov,(int)(-1.0*fabs(PDGInfo::tau_minus)*c),c,b);
+  LorentzVectorParticle mymother= LorentzVectorParticle(m,mcov,(int)(-1.0*fabs((double)PDGInfo::tau_minus)*c),c,b);
   return mymother;
 }
 
