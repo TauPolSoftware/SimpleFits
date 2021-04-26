@@ -1,11 +1,27 @@
 #include "TauPolSoftware/SimpleFits/interface/LagrangeMultipliersFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/Logger.h"
+#include "TauPolSoftware/SimpleFits/interface/ChiSquareFunctionUpdator.h"
 #include "TDecompBK.h"
+#include "Minuit2/FunctionMinimum.h"
+#include "Minuit2/MnUserParameters.h"
+#include "Minuit2/MnPrint.h"
+#include "Minuit2/MnMigrad.h"
+#include "Minuit2/MnSimplex.h"
+#include "Minuit2/CombinedMinimizer.h"
+#include "Minuit2/MnMinimize.h"
+#include "Minuit2/MnScan.h"
+#include "Minuit2/MnMinos.h"
+#include "Minuit2/MnHesse.h"
+#include "Minuit2/MnContours.h"
+#include "Minuit2/MnPlot.h"
+#include "Minuit2/MinosError.h"
+#include "Minuit2/ContoursError.h"
 #include <iostream>
 
 LagrangeMultipliersFitter::LagrangeMultipliersFitter():
   isconfigured(false),
   isFit(false),
+  fittingMode_(FittingProc::Minuit),
   epsilon_(0.001),
   weight_(1.0),
   MaxDelta_(0.1),
@@ -24,113 +40,229 @@ LagrangeMultipliersFitter::LagrangeMultipliersFitter():
 }
 
 bool LagrangeMultipliersFitter::Fit(){
- 
   if(cov.GetNrows()!=par_0.GetNrows()){
-	cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
-	cov=cov_0;
+    cov.ResizeTo(par_0.GetNrows(),par_0.GetNrows());
+    cov=cov_0;
   }
-  if(!isconfigured) return false;
-  if(isFit)return isConverged();
-  isFit=true;
-  chi2s.ResizeTo((int)nitermax_,4);
-  chi2_vec.ResizeTo(3);
-  harddelta_vec.ResizeTo(NConstraints());
+  if (fittingMode_ == FittingProc::Standard){
+    // Standard Fitting method
+    if(!isconfigured) return false;
+    if(isFit)return isConverged();
+    isFit=true;
+    // chi2s.ResizeTo((int)nitermax_,4);
+    chi2_vec.ResizeTo(3);
+    harddelta_vec.ResizeTo(NConstraints());
 
-  Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints "<< std::endl;
+    Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints "<< std::endl;
 
-  for(niter=0; niter < nitermax_; niter++){
-	Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints iteration no.: " << niter << std::endl;
-	bool passed=ApplyLagrangianConstraints();
+    for(niter=0; niter < nitermax_; niter++){
+      Logger(Logger::Debug) << "Start: ApplyLagrangianConstraints iteration no.: " << niter << std::endl;
+      bool passed=ApplyLagrangianConstraints();
 
-	  bool cut_step(false);
-	  bool directing_step(false);
-	  if(harddelta_vecprev.Norm1() < harddelta_vec.Norm1() && harddelta_vec.Norm1() > MaxHCDelta_) cut_step = true;//CutStep method
-	  if(harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) > MaxChi2Delta_) directing_step = false;
-		if(cut_step || directing_step){
-		  Logger(Logger::Debug) << "Starting CutStep Method"<< std::endl;
-		  TVectorD paraprev_(paraprev); //save copies because para/bprev are changed at the beginning of ApplyLagrangianConstraints
-		  TVectorD parbprev_(parbprev);
-		  TVectorD para_delta(para_0 - paraprev_);
-		  TVectorD parb_delta(parb_0 - parbprev_);
-		  TVectorD para_delta_(para_0 - paraprev_);
-		  TVectorD parb_delta_(parb_0 - parbprev_);
-		  TVectorD harddelta_vecprev_(harddelta_vecprev);
-		  if(Logger::Instance()->Level() == Logger::Debug){
-			Logger(Logger::Debug) << "para_delta: " << std::endl;
-			para_delta.Print();
-			Logger(Logger::Debug) << "parb_delta: " << std::endl;
-			parb_delta.Print();
-		  }
-		  for(unsigned i_CutStep = 1; i_CutStep < nCutStepmax_+1; i_CutStep++){
-			//double corrFactor = 1/pow(2., (double) i_CutStep + 1);
-			double corrFactor = directing_step ? i_CutStep/nCutStepmax_ : 1-(i_CutStep)/nCutStepmax_;
-			Logger(Logger::Debug) << "corrFactor: " << corrFactor << std::endl;
-			para_delta = para_delta_;
-			parb_delta = parb_delta_;
-			para_delta *= corrFactor;
-			parb_delta *= corrFactor;
-			paraprev = paraprev_;
-			parbprev = parbprev_;
-			para_0 = paraprev_ + para_delta;
-			parb_0 = parbprev_ + parb_delta;
-			  if(Logger::Instance()->Level() == Logger::Debug){
-				Logger(Logger::Debug) << "para_0: " << std::endl;
-				para_0.Print();
-				Logger(Logger::Debug) << "para_delta after i = " << i_CutStep << " Cutsteps: " << std::endl;
-				para_delta.Print();
-				Logger(Logger::Debug) << "parb_0: " << std::endl;
-				parb_0.Print();
-				Logger(Logger::Debug) << "parb_delta after i = " << i_CutStep << " Cutsteps: " << std::endl;
-				parb_delta.Print();
-			  }
-			passed = ApplyLagrangianConstraints();
-			if(cut_step && passed && harddelta_vecprev_.Norm1() > harddelta_vec.Norm1()){
-			  Logger(Logger::Debug) << "Stopped CutStep Method after i_CutStep = "<< i_CutStep << " iterations" << std::endl;
-			  break;
-			}
-			if(directing_step && passed && fabs(chi2prev-chi2) < MaxChi2Delta_){
-			  Logger(Logger::Debug) << "Stopped CutStep Method after i_CutStep = "<< i_CutStep << " iterations" << std::endl;
-			  break;
-			}
-		  }
-	  }
+      bool cut_step(false);
+      bool directing_step(false);
+      // if(harddelta_vecprev.Norm1() < harddelta_vec.Norm1() && harddelta_vec.Norm1() > MaxHCDelta_) cut_step = true;//CutStep method
+      if(chi2prev < chi2 && chi2prev > 0 && fabs(chi2prev-chi2) > MaxChi2Delta_) cut_step = true;
+      if(chi2 < 0 && chi2prev > 0) directing_step = false;
+      if(cut_step || directing_step){
+        if(cut_step){
+          Logger(Logger::Debug) << "Starting CutStep Method" << std::endl;
+        }
+        else if(directing_step){
+          Logger(Logger::Debug) << "Starting DirectingStep Method" << std::endl;
+        }
+        TVectorD paraprev_(paraprev); //save copies because para/bprev are changed at the beginning of ApplyLagrangianConstraints
+        TVectorD parbprev_(parbprev);
+        TVectorD para_delta_(para_0 - paraprev_);
+        TVectorD parb_delta_(parb_0 - parbprev_);
+        TVectorD para_delta(para_delta_);
+        TVectorD parb_delta(parb_delta_);
+        TVectorD harddelta_vecprev_(harddelta_vecprev);
+        double chi2CutStep(chi2prev);
+        TVectorD chi2CutStep_vec(chi2_vecprev);
+        // double chi2CutStepprev(chi2prev);
+        if(Logger::Instance()->Level() == Logger::Debug){
+          Logger(Logger::Debug) << "para_delta: " << std::endl;
+          para_delta.Print();
+          Logger(Logger::Debug) << "parb_delta: " << std::endl;
+          parb_delta.Print();
+        }
+        for(unsigned i_CutStep = 0; i_CutStep <= nCutStepmax_; i_CutStep++){
+          //double corrFactor = 1/pow(2., (double) i_CutStep + 1);
+          double corrFactor = (double) i_CutStep/(double) nCutStepmax_;
+          corrFactor = directing_step ? corrFactor : 1-corrFactor;
+          // double corrFactor = directing_step ? i_CutStep/nCutStepmax_ : 1-pow(((double)i_CutStep/nCutStepmax_),2.);
+          Logger(Logger::Debug) << "corrFactor: " << corrFactor << " after " << i_CutStep << " Steps" << std::endl;
+          para_delta = para_delta_;
+          parb_delta = parb_delta_;
+          para_delta *= corrFactor;
+          parb_delta *= corrFactor;
+          paraprev = paraprev_;
+          parbprev = parbprev_;
+          para_0 = paraprev_ + para_delta;
+          parb_0 = parbprev_ + parb_delta;
+          // if(Logger::Instance()->Level() == Logger::Debug){
+          // Logger(Logger::Debug) << "para_0: after i = " << i_CutStep << " Cutsteps: " << std::endl;
+          // para_0.Print();
+          // Logger(Logger::Debug) << "para_delta after i = " << i_CutStep << " Cutsteps: " << std::endl;
+          // para_delta.Print();
+          // Logger(Logger::Debug) << "parb_0: after i = " << i_CutStep << " Cutsteps: " << std::endl;
+          // parb_0.Print();
+          // Logger(Logger::Debug) << "parb_delta after i = " << i_CutStep << " Cutsteps: " << std::endl;
+          // parb_delta.Print();
+          // }
+          passed = ApplyLagrangianConstraints();
+          Logger(Logger::Debug) << "passed: " << passed << ", chi2_vec(0): " << chi2_vec(0) << ", chi2_vec(1): " << chi2_vec(1) << ", chi2_vec(2): " << chi2_vec(2) << std::endl;
+          // if(cut_step && passed && harddelta_vecprev_.Norm1() > harddelta_vec.Norm1()){
+          if(cut_step && passed && chi2 < chi2CutStep && chi2_vec(0) > 0 && chi2_vec(1) > 0 && chi2_vec(2) > -1*MaxHCDelta_){
+            Logger(Logger::Debug) << "Stopped CutStep Method after "<< i_CutStep << " iterations" << std::endl;
+            Logger(Logger::Debug) << "Chi2 before CutStep Method = "<< chi2CutStep << " and Chi2 after = " << chi2 << std::endl;
+            break;
+          }
+          if(directing_step && passed && chi2 < chi2CutStep && chi2_vec(0) > 0 && chi2_vec(1) > 0 && chi2_vec(2) > -1*MaxHCDelta_){
+            Logger(Logger::Debug) << "Stopped DirectingStep Method after " << i_CutStep << " iterations" << std::endl;
+            Logger(Logger::Debug) << "Chi2 before DirectingStep Method = " << chi2CutStep << " and Chi2 after = " << chi2 << std::endl;
+            break;
+          }
+        }
+      }
 
-	  chi2s(niter,0) = chi2_vec(0);
-	  chi2s(niter,1) = harddelta_vec.Norm1();
-	  chi2s(niter,2) = harddelta_vec(0);
-	  chi2s(niter,3) = harddelta_vec(1);
+      // chi2s(niter,0) = chi2_vec(0);
+      // chi2s(niter,1) = harddelta_vec.Norm1();
+      // chi2s(niter,2) = harddelta_vec(0);
+      // chi2s(niter,3) = harddelta_vec(1);
 
-	if(!passed){
-	  Logger(Logger::Error) << "Did not pass ApplyLagrangianConstraints(). Matrix inversion failed probably." << std::endl;
-	  return false;
-	}
+      if(!passed){
+        Logger(Logger::Error) << "Did not pass ApplyLagrangianConstraints(). Matrix inversion failed probably." << std::endl;
+        return false;
+      }
 
-    if(isConverged()){
-      break;
+      // if(isConverged() && !cut_step && !directing_step){
+      if(isConverged()){
+        break;
+      }
+      if(niter==nitermax_-1){
+        Logger(Logger::Debug) << "Reached Maximum number of iterations = " << niter << std::endl;
+        if(harddelta_vec.Norm1() > MaxHCDelta_){
+          Logger(Logger::Debug) << "Deviations from hard constraints = " << harddelta_vec.Norm1() << " greater than max. allowed = " << MaxHCDelta_ << std::endl;
+          Logger(Logger::Debug) << "Deviations from hard constraints = " << harddelta_vec(0) << " and = " << harddelta_vec(1) << std::endl;
+          }
+        if(fabs(chi2prev-chi2) > MaxChi2Delta_){
+          Logger(Logger::Debug) << "chi2prev-chi2 = " << chi2prev-chi2 << " greater than max. allowed = " << MaxChi2Delta_ << std::endl;
+        }
+        //chi2s.Print();
+        return false;
+        }
+        if(harddelta_vecprev.Norm1()>=1e12) {
+          Logger(Logger::Debug) << "Huge deviations from hard constraints --> overshoot during chi2 min. niter = "<< niter << " and delta = "<< harddelta_vecprev.Norm1() <<std::endl;
+          return false;
+        }
     }
-	if(niter==nitermax_-1){
-	  Logger(Logger::Debug) << "Reached Maximum number of iterations = " << niter << std::endl;
-	  if(harddelta_vec.Norm1() > MaxHCDelta_){
-		  Logger(Logger::Debug) << "Deviations from hard constraints = " << harddelta_vec.Norm1() << " greater than max. allowed = " << MaxHCDelta_ << std::endl;
-		  Logger(Logger::Debug) << "Deviations from hard constraints = " << harddelta_vec(0) << " and = " << harddelta_vec(1) << std::endl;
-	  }
-	  if(fabs(chi2prev-chi2) > MaxChi2Delta_){
-		  Logger(Logger::Debug) << "chi2prev-chi2 = " << chi2prev-chi2 << " greater than max. allowed = " << MaxChi2Delta_ << std::endl;
-	  }
-	  //chi2s.Print();
-	  return false;
-	}
-	if(harddelta_vecprev.Norm1()>=1e12) {
-	  Logger(Logger::Debug) << "Huge deviations from hard constraints --> overshoot during chi2 min. niter = "<< niter << " and delta = "<< harddelta_vecprev.Norm1() <<std::endl;
-	  return false;
-	}
 
+    if(Logger::Instance()->Level() == Logger::Debug){
+      Logger(Logger::Debug) << "para_0: " << std::endl;
+      para_0.Print();
+      Logger(Logger::Debug) << "parb_0: " << std::endl;
+      parb_0.Print();
+    }
+
+     // ComputeVariancea();
+     // ComputeVarianceb();
+
+    return true;
   }
+  else if (fittingMode_ == FittingProc::Minuit){
+    // Fitting method Minuit2
+    // TODO: actually implement properly. Only copypasted from Chi2VertexFitter atm
+    if(isFit==true) return true;// do not refit
+    if(!isconfigured) return false; // do not fit if configuration failed
+    unsigned int nPar = para_0.GetNrows() + parb_0.GetNrows();
+    LagrangeMultipliersFitterChiSquareFunctionUpdator updator(this);
+    ROOT::Minuit2::MnUserParameters MnPar;
+    ROOT::Minuit2::MnUserCovariance MnCov(nPar);
+    // Logger(Logger::Info) << "Starting Fit with FittingProc::Minuit" << std::endl;
+    // Logger(Logger::Info) << "Setting up parameters a:" << std::endl;
+    for(int i=0;i<para_0.GetNrows();i++){
+      TString name=ParName(i);
+      // if not limited (vhigh <= vlow)
+      // MnPar.Add(name.Data(),para_0(i,0),sqrt(fabs(cova_0(i,i))),para_0(i,0)-nsigma*sqrt(fabs(cova_0(i,i))),para_0(i,0)+nsigma*sqrt(fabs(cova_0(i,i))));
+      MnPar.Add(name.Data(),para_0(i),sqrt(fabs(cova_0(i,i))));
+      for(int j=0;j<para_0.GetNrows();j++){
+        MnCov(i,j) = cova_0(i,j);
+      }
+      // Logger(Logger::Info) << "\t" << name << std::endl;
+    }
+    // Logger(Logger::Info) << "Setting up parameters b" << std::endl;
+    for(int i=0;i<parb_0.GetNrows();i++){
+      int offset = para_0.GetNrows();
+      TString name=ParName(i+offset);
+      // if not limited (vhigh <= vlow)
+      // MnPar.Add(name.Data(),parb_0(i,0),sqrt(fabs(covb_0(i,i))),parb_0(i,0)-nsigma*sqrt(fabs(covb_0(i,i))),parb_0(i,0)+nsigma*sqrt(fabs(covb_0(i,i))));
+      MnPar.Add(name.Data(),parb_0(i),sqrt(fabs(covb_0(i,i))));
+      for(int j=0;j<parb_0.GetNrows();j++){
+        MnCov(i+offset,j+offset) = covb_0(i,j);
+      }
+      // Logger(Logger::Info) << "\t" << name << std::endl;
+    }
+    // set limits for tau mu pz
+    MnPar.SetLimits(5, -500, 500);
 
-   // ComputeVariancea();
-   // ComputeVarianceb();
- 
-  return true;
+    unsigned int max=10;
+    // int numberofcalls=200+nPar*100+nPar*nPar*5;
+    int numberofcalls=100000;
+    double tolerance(1.0);
+    double edmMin(0.001*updator.Up()*tolerance);
+
+    // ROOT::Minuit2::MnPrint MnLogger;
+    // MnLogger.SetLevel(0);
+    // Logger(Logger::Info) << "Begin minimization" << std::endl;
+    ROOT::Minuit2::MnMinimize minimize(updator, MnPar, MnCov);
+    minimize.Fix(5);
+    // ROOT::Minuit2::FunctionMinimum min= minimize(numberofcalls,tolerance);
+    ROOT::Minuit2::FunctionMinimum min0 = minimize(numberofcalls,tolerance);
+    minimize.Release(5);
+    ROOT::Minuit2::FunctionMinimum min = minimize(numberofcalls,tolerance);
+    // for(unsigned int i=0;i<=max && min.Edm()>edmMin;i++){
+    //   if(i==max) return false;
+    //   min = minimize(i*numberofcalls,tolerance);
+    // }
+    // give return flag based on status
+    if(min.IsAboveMaxEdm()){Logger(Logger::Error) << "Found Solution that is above EDM " << std::endl; return false;}
+    if(!min.IsValid()){
+      Logger(Logger::Error) << "Failed min.IsValid()" << std::endl;
+      if(!min.HasValidParameters()){Logger(Logger::Error) << "Failed min.HasValidParameters()" << std::endl; }
+      if(!min.HasValidCovariance()){Logger(Logger::Error) << "Failed min.HasValidCovariance()" << std::endl; }
+      if(!min.HesseFailed()){Logger(Logger::Error) << "Failed min.HesseFailed()" << std::endl; }
+      if(!min.HasReachedCallLimit()){Logger(Logger::Error) << "Failed min.HasReachedCallLimit()" << std::endl; }
+      return false;
+    }
+    chi2=min.Fval();
+    Logger(Logger::Error) << "minimum: " << min << std::endl;
+    // // Get output parameters
+    // for(int i=0;i<par.GetNrows();i++){ par(i,0)=min.UserParameters().Value(i);}
+    // // Get output covariance
+    // for(int i=0;i<par.GetNrows();i++){
+    //   for(int j=0;j<par.GetNrows();j++){parcov(i,j)=min.UserCovariance()(i,j);}
+    // }
+    // Logger(Logger::Info) << "Saving parameters a" << std::endl;
+    for(int i=0;i<para_0.GetNrows();i++){
+      para(i) = min.UserParameters().Value(i);
+      // for(int j=0;j<para_0.GetNrows();j++){
+      //   cova(i,j) = min.UserCovariance()(i,j);
+      // }
+    }
+    // Logger(Logger::Info) << "Saving parameters b" << std::endl;
+    for(int i=0;i<parb_0.GetNrows();i++){
+      int offset = para_0.GetNrows();
+      parb(i) = min.UserParameters().Value(i+offset);
+      // for(int j=0;j<parb_0.GetNrows();j++){
+      //   covb(i,j) = min.UserCovariance()(i+offset,j+offset);
+      // }
+    }
+    isFit=true;
+    return isFit;
+  }
+  return false;
 }
 
 
@@ -247,6 +379,9 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixT<double> par_a = solutiona(res);
   TMatrixT<double> par_b = solutionb(res);
   TMatrixT<double> lambda=solutionlambda(res);
+
+  lambda_.ResizeTo(NConstraints(),1);
+  lambda_=lambda;
 
 
   para  = convertToVector(par_a);
@@ -601,11 +736,21 @@ TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y
 
   Logger(Logger::Debug) << "chi2 comparison: " << c2 << ", " << chi2.Sum() << std::endl;
   Logger(Logger::Debug) << "chi2 contributions: " << chi2(0) << " (orig) + " << chi2(1) << " (SC) + " << chi2(2) << " (HC) = " << chi2.Sum() << std::endl;
+  Logger(Logger::Debug) << "hard constraints contributions: " << lambdaT(0,0)*HardValue(a_v,b_v)(0) << " (Mass) + " << lambdaT(0,1)*HardValue(a_v,b_v)(1) << " (Theta) = " << chi2(2)/2 << std::endl;
 
   return chi2;
 
 }
 
+double LagrangeMultipliersFitter::UpdateChisquare(TVectorD a,TVectorD b){
+  para_0 = a;
+  parb_0 = b;
+  TMatrixT<double> aM = convertToMatrix(a);
+  TMatrixT<double> bM = convertToMatrix(b);
+  ApplyLagrangianConstraints();
+  TVectorD chi2vec=ChiSquareUsingInitalPoint(y_,aM,bM,lambda_,V_f_inv_);
+  return chi2vec.Sum();
+}
 
 // double LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> alpha,TMatrixT<double> lambda){
 //   if(cov_0.GetNrows()!=V_alpha0_inv.GetNrows()){
@@ -782,8 +927,11 @@ TMatrixTSym<double> LagrangeMultipliersFitter::ComputeV_f(TMatrixTSym<double>  c
 	Jacobi(1,4) = 1;
 	Vf = fullcov.Similarity(Jacobi);
 	if(Logger::Instance()->Level() == Logger::Debug){
-	  Logger(Logger::Debug) << "Jacobi and Vf matrix" << std::endl;
+	  Logger(Logger::Debug) << "Jacobi matrix" << std::endl;
 	  Jacobi.Print();
+	}
+	if(Logger::Instance()->Level() == Logger::Debug){
+	  Logger(Logger::Debug) << "Vf matrix" << std::endl;
 	  Vf.Print();
 	}
   }

@@ -7,6 +7,8 @@
 #include "TVectorT.h"
 #include "TMatrixTSym.h"
 #include "TMatrixDEigen.h"
+#include "Minuit2/FunctionMinimum.h"
+#include "Minuit2/FCNBase.h"
 #include <vector>
 
 class LagrangeMultipliersFitter{
@@ -14,6 +16,7 @@ class LagrangeMultipliersFitter{
   enum Position{pos_x=0,pos_y,pos_z,nposdim};
   enum Parameters{par_vx=0,par_vy,par_vz,par_px,par_py,par_pz,par_m,npardim};
   enum ConvergeProc{ConstraintMin=0,Chi2Min,Chi2AndConstaintMin};
+  enum FittingProc{Standard=0,Minuit};
 
   LagrangeMultipliersFitter();
   virtual ~LagrangeMultipliersFitter(){};
@@ -23,7 +26,7 @@ class LagrangeMultipliersFitter{
   virtual void   SetNIterMax(int Nitermax){nitermax_=Nitermax;}
   virtual void   SetEpsilon(double epsilon){epsilon_=epsilon;}
 
-  virtual bool Fit(); 
+  virtual bool Fit();
   virtual bool isConverged();
   virtual bool isConfigured(){return isconfigured;}
   virtual double ChiSquare(){return chi2;}
@@ -34,6 +37,9 @@ class LagrangeMultipliersFitter{
   virtual double NSoftConstraints()=0;
   virtual double NDF()=0;
   virtual int    NDaughters()=0;
+  virtual TString ParName(int par)=0;
+  virtual int NPara(){return para_0.GetNrows();};
+  virtual int NParb(){return parb_0.GetNrows();};
 
   virtual std::vector<LorentzVectorParticle> GetReFitDaughters()=0;
   virtual LorentzVectorParticle GetMother()=0;
@@ -49,11 +55,12 @@ class LagrangeMultipliersFitter{
    TMatrixT<double> solutionb(TMatrixT<double> M);
    void Print(TMatrixT<double> M);
 
+  double UpdateChisquare(TVectorD a, TVectorD b);
 
  protected:
   virtual TVectorD HardValue(TVectorD &va,TVectorD &vb)=0;
   virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb)=0;
-
+  bool  ApplyLagrangianConstraints();
 
   TVectorD par_0; // parameter values for linearization point
   TVectorD par; // current parameter values
@@ -70,17 +77,26 @@ class LagrangeMultipliersFitter{
 
   TVectorD parb_0; // parameter values for linearization point
   TVectorD parb, parbprev; // current parameter values
-  TMatrixTSym<double> covb_0; //covariance matrix for linearization point (corresponding to par_0) 
-  TMatrixTSym<double> covb; // current covariance matrix (corresponding to par) 
+  TMatrixTSym<double> covb_0; //covariance matrix for linearization point (corresponding to par_0)
+  TMatrixTSym<double> covb; // current covariance matrix (corresponding to par)
+
+  TMatrixT<double> lambda_; // current lagrangian multipliers
 
 
   bool isconfigured;
   bool isFit;
   bool useFullRecoil_;
+  int fittingMode_;
 
+  // Configuration parameters
+  double epsilon_,weight_,MaxDelta_,nitermax_,MaxParDelta_, MaxHCDelta_, MaxSCDelta_, MaxChi2Delta_, nCutStepmax_;
+
+  // Fit variables
+  double chi2,chi2prev,delta,niter,pardelta, pardeltaprev;
+  TVectorD harddelta_vec, harddelta_vecprev, softdelta_vec, softdelta_vecprev, chi2_vec, chi2_vecprev;
+  TMatrixD chi2s;
 
  private:
-  bool  ApplyLagrangianConstraints();
   TMatrixT<double> Derivative();
 
   TMatrixT<double> DerivativeHCa();
@@ -96,28 +112,19 @@ class LagrangeMultipliersFitter{
   TMatrixT<double> ComputeVariancea();
   TMatrixT<double> ComputeVarianceb();
 
-  // Configuration parameters
-  double epsilon_,weight_,MaxDelta_,nitermax_,MaxParDelta_, MaxHCDelta_, MaxSCDelta_, MaxChi2Delta_, nCutStepmax_;
-
-  // Fit variables
-  double chi2,chi2prev,delta,niter,pardelta, pardeltaprev;
-  TVectorD harddelta_vec, harddelta_vecprev, softdelta_vec, softdelta_vecprev, chi2_vec, chi2_vecprev;
-  TMatrixD chi2s;
-
   // covariances and derivatives info
-
   TMatrixT<double> Fa;
   TMatrixT<double> Fb;
   TMatrixT<double> A;
   TMatrixT<double> B;
 
-
   TMatrixTSym<double> V_alpha0_inv;
+  TMatrixTSym<double> V_f_inv_;
   TMatrixT<double> D;
   TMatrixTSym<double> V_D;
   double ScaleFactor;
   TMatrixT<double> V_corr_prev;
 
-  
+
 };
 #endif
