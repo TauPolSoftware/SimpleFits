@@ -259,7 +259,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   chi2_vecprev.ResizeTo(chi2_vec); chi2_vecprev = chi2_vec;
 
   TVectorD Currentchi2_vec = ChiSquareUsingInitalPoint(y,par_a,par_b,lambda,V_f_inv);
-  double Curentchi2(Currentchi2_vec(0)), Currentdelta(ConstraintDelta(para,parb));
+  double Curentchi2(Currentchi2_vec.Sum()), Currentdelta(ConstraintDelta(para,parb));
 
   TMatrixT<double> a_s=par_a;
   TMatrixT<double> b_s=par_b;
