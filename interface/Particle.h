@@ -12,25 +12,25 @@ public:
   Particle(TMatrixT<double> par_, TMatrixTSym<double> cov_, int pdgid_, double charge_, double b_);
   virtual ~Particle(){};
 
-  virtual double Parameter(int i) {
+  virtual double Parameter(int i) const {
     if (0<=i && i<par.GetNrows()) {
       return par(i, 0);
     }
     return 0;
   }
-  
+
   virtual double Covariance(int i, int j) {
     if (0<=i && i<cov.GetNrows() && 0<=j && j<cov.GetNrows()) {
       return cov(i, j);
     }
     return 0;
   }
-  
+
   double BField() const { return b; }
   int PDGID() const { return pdgid; }
   double Charge() const { return charge; }
   double qB() const { return b * charge; }
-  
+
   virtual int NParameters() = 0;
 
   TMatrixTSym<double> getCovMatrix() const {
