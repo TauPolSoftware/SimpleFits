@@ -170,11 +170,14 @@ GEFObject GlobalEventFit::Fit(){
 		}
 
 		InitDaughters.push_back(ptr2DTCF->GetInitialDaughters());
+		InitResonance.push_back(ptr2DTCF->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
 
-		fitstatus.push_back(ptr2DTCF->Fit() && ptr2DTCF->isConverged());
-		if(fitstatus.at(Ambiguity)){
+		fitvalid.push_back(ptr2DTCF->Fit());
+		isValid_ = isValid_ || fitvalid.back();
+		// fitstatus.push_back(fitvalid.back() && ptr2DTCF->isConverged());
+		fitstatus.push_back(fitvalid.back());
+		if(fitvalid.back()){
 			FitResonance.push_back(ptr2DTCF->GetMother());
-			InitResonance.push_back(ptr2DTCF->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
 			RefitDaughters.push_back(ptr2DTCF->GetReFitDaughters());
 			Chi2Vecs.push_back(ptr2DTCF->ChiSquareVector());
 			Chi2s.push_back(ptr2DTCF->ChiSquare());
@@ -184,11 +187,10 @@ GEFObject GlobalEventFit::Fit(){
 			FitCov_.ResizeTo(ptr2DTCF->GetExpcov()); FitCov_ = ptr2DTCF->GetExpcov();
 		}
 		else{
-			fitstatus.push_back(false);
 			std::vector<LorentzVectorParticle> tmp;
 			for(unsigned i=0; i<2; i++) tmp.push_back(LorentzVectorParticle());
 			RefitDaughters.push_back(tmp);
-			InitResonance.push_back(LorentzVectorParticle());
+			// InitResonance.push_back(LorentzVectorParticle());
 			FitResonance.push_back(LorentzVectorParticle());
 			Chi2Vecs.push_back(TVectorD());
 			Chi2s.push_back(-1);
