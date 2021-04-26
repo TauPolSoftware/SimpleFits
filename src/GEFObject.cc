@@ -38,8 +38,8 @@ GEFObject::GEFObject(std::vector< std::vector<LorentzVectorParticle> > InitDaugh
 					 std::vector<LorentzVectorParticle> InitResonance,
 					 std::vector< std::vector<LorentzVectorParticle> > FitDaughters,
 					 std::vector<LorentzVectorParticle> FitResonance,
-					 bool fitconverged, std::vector<TVectorD> chi2, std::vector<double> csum, std::vector<double> Niterations, int Index){
-  isvalid_ = true;
+					 bool fitvalid, bool fitconverged, std::vector<TVectorD> chi2, std::vector<double> csum, std::vector<double> Niterations, int Index){
+  isvalid_ = fitvalid;
   chi2_ = chi2;
   csum_ = csum;
   Niterations_ = Niterations;

@@ -22,7 +22,7 @@ class GEFObject{
 			  std::vector<LorentzVectorParticle> InitResonance,
 			  std::vector< std::vector<LorentzVectorParticle> > FitDaughters,
 			  std::vector<LorentzVectorParticle> FitResonance,
-			  bool fitconverged, std::vector<TVectorD> chi2, std::vector<double> csum, std::vector<double> Niterations, int Index);
+			  bool fitvalid, bool fitconverged, std::vector<TVectorD> chi2, std::vector<double> csum, std::vector<double> Niterations, int Index);
 	virtual ~GEFObject(){}
 	
 	double getChi2() const{return chi2_.at(Index_).Sum();} // returns full "chi2" of the solution picked by the fit
