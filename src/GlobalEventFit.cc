@@ -32,6 +32,7 @@ GlobalEventFit::~GlobalEventFit(){
 void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov){
 	isConfigured_ = false;
 	isFit_ = false;
+	isValid_ = false;
 	Muon_ = Muon;
 	A1_= A1;
 	PV_ = PV;
@@ -45,6 +46,7 @@ void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVe
 
 	useDefaultMassConstraint_ = true;
 	correctPt_ = false;
+	useCollinearityTauMu_ = false;
 }
 
 // Is called in the constructor and determines whether the hadronic tau decay is ambiguous and calculates the possible four-momenta of the taus.
@@ -117,6 +119,7 @@ GEFObject GlobalEventFit::Fit(){
 	std::vector<TVectorD> Chi2Vecs;
 	std::vector<double> Chi2s, Csums, Niterats;
 	std::vector<bool> fitstatus;
+	std::vector<bool> fitvalid;
 	DiTauConstrainedFitter* ptr2DTCF = NULL;
 
 	for(unsigned Ambiguity = 0; Ambiguity<recostatus.size(); Ambiguity ++){
@@ -161,6 +164,9 @@ GEFObject GlobalEventFit::Fit(){
 				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
 				Logger(Logger::Debug) << "Case 4: No Recoil, User MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
 			}
+		}
+		if(useCollinearityTauMu_){
+			ptr2DTCF->SetUseCollinearityTauMu(true);
 		}
 
 		InitDaughters.push_back(ptr2DTCF->GetInitialDaughters());
@@ -211,6 +217,12 @@ GEFObject GlobalEventFit::Fit(){
 	  	Logger(Logger::Verbose) << "Fit failed: Ambiguity was not solvable" << std::endl;
 		return GEFObject();
 	}
+
+	return GEFObject(InitDaughters,
+		InitResonance,
+		RefitDaughters,
+		FitResonance,
+		isValid_, foundSolution, Chi2Vecs, Csums, Niterats, IndexToReturn);
 }
 
 // Solves ambiguity by chi2

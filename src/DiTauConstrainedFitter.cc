@@ -4,6 +4,7 @@
 #include <iostream>
 
 double DiTauConstrainedFitter::MassConstraint_ = 91.5;
+bool DiTauConstrainedFitter::useCollinearityTauMu_ = false;
 
 DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov){
   DiTauConstrainedFitter(TauA1, A1, MuTrack, phiz, PVertex, VertexCov, 91.5);
@@ -995,18 +996,19 @@ TMatrixT<double> DiTauConstrainedFitter::EstimateTauKinematicFullRecoil(TMatrixT
   outpar(0,0) = P4_Tauh.X();
   outpar(1,0) = P4_Tauh.Y();
   outpar(2,0) = P4_Tauh.Z();
-  outpar(3,0) = TauMuPt.Mod()*cos(phitau);
-  outpar(4,0) = TauMuPt.Mod()*sin(phitau);
-  outpar(5,0) = TauMuPt.Mod()/tan(thetatau);
 
-  Logger(Logger::Debug) << "PV: " << inpar(4,0) << ", " << inpar(5,0) << ", " << inpar(6,0) << std::endl;
-  Logger(Logger::Debug) << "dxy, phi0, lam, dz: " << dxy << ", " << phi0 << ", " << lam << ", " << dz << std::endl;
-  Logger(Logger::Debug) << "PointGuess: " << xdoc << ", " << ydoc << ", " << zdoc << std::endl;
-  Logger(Logger::Debug) << "DirGuess: " << TauMuDir.X() << ", " << TauMuDir.Y() << ", " << TauMuDir.Z() << std::endl;
-  Logger(Logger::Debug) << "a, b, t: " << a << ", " << b << ", " << tmu <<  std::endl;
-  Logger(Logger::Debug) << "TauH X, Y: " << inpar(7,0) << ", " << inpar(8,0) << std::endl;
-  Logger(Logger::Debug) << "TauMuDir.Phi(): " << TauMuDir.Phi() << " TauH phi: " << atan2(inpar(8,0), inpar(7,0)) << std::endl;
-  Logger(Logger::Debug) << "dPhi: " << TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)) << "/pi= " << (TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)))/TMath::Pi() << std::endl;
+  if(useCollinearityTauMu_){
+    outpar(3,0) = TauMuPt.X();
+    outpar(4,0) = TauMuPt.Y();
+    P_Taumu.SetZ(TauMuPt.Mod()*tan(lam));
+    outpar(5,0) = P_Taumu.Z();
+  }
+  else{
+    outpar(3,0) = TauMuPt.X();
+    outpar(4,0) = TauMuPt.Y();
+    P_Taumu.SetZ(TauMuPt.Mod()/tan(thetatau));
+    outpar(5,0) = P_Taumu.Z();
+  }
 
   return outpar;
 }
@@ -1063,5 +1065,10 @@ double DiTauConstrainedFitter::CosThetaTauMu(TLorentzVector TauMu){
   TVector3 PointGuess(xdoc, ydoc, zdoc);
   TVector3 TauMuDir = PointGuess - PV_;
 
-  return TauMuDir.CosTheta();
+  if(useCollinearityTauMu_){
+    return sin(lam);
+  }
+  else{
+    return TauMuDir.CosTheta();
+  }
 }

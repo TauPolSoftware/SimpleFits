@@ -39,6 +39,10 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   void SetMassConstraint(double MassConstraint) const{MassConstraint_ = MassConstraint;};
   static double MassConstraint_;
 
+  bool GetUseCollinearityTauMu() const{return useCollinearityTauMu_;};
+  void SetUseCollinearityTauMu(const bool UseCollinearityTauMu) const{useCollinearityTauMu_ = UseCollinearityTauMu;};
+  static bool useCollinearityTauMu_;
+
   TMatrixD GetExppar() const{return exppar;}
   TMatrixDSym GetExpcov() const{return expcov;}
 

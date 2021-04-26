@@ -44,6 +44,7 @@ class GlobalEventFit{
 	  useDefaultMassConstraint_ = false;
 	}
 	void SetCorrectPt(bool correct){correctPt_ = correct;}  //default is set to true. Can be set to false inside your analysis to prevent the corrections of the reconstructed pt of both taus to preserve the hard constraints imposed on the fit resonance
+	void setUseCollinearityTauMu(bool useCollinearityTauMu){useCollinearityTauMu_ = useCollinearityTauMu;}
 
   protected:
 	void Configure(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov);
@@ -56,6 +57,7 @@ class GlobalEventFit{
   private:
 	bool isConfigured_;
 	bool isFit_;
+	bool isValid_;
 	TPTRObject TPTRObject_;
 	GEFObject GEFObject_;
 	TrackParticle Muon_;
@@ -73,7 +75,7 @@ class GlobalEventFit{
 	int MaxIterations_;
 	double MaxDelta_;
 	double Epsilon_;
-	bool useDefaultMassConstraint_, useFullRecoil_, correctPt_;
+	bool useDefaultMassConstraint_, useFullRecoil_, correctPt_, useCollinearityTauMu_;
 };
 
 
