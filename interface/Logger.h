@@ -3,7 +3,7 @@
 
 #include <string.h>
 #include <cstdio>
-#include <iostream> 
+#include <iostream>
 #include <ostream>
 
 class Logger {
@@ -11,7 +11,7 @@ class Logger {
    enum level{Fatal=0,Error=1,Warning=2,Info=3,Verbose=4,Debug=5};
   static Logger* Instance(){if(instance==NULL) instance=new Logger(); return instance;}
 
-  // set output stream 
+  // set output stream
   void Set_cout(){s=&std::cout;}
   void Set_cerr(){s=&std::cerr;}
   void Set_stream(std::ostream *stream){s=stream;}
@@ -34,15 +34,17 @@ class Logger {
  private:
   Logger():l(Verbose){Set_cout();}
   virtual ~Logger(){};
-  
+
   static Logger *instance;
   level l;
   std::ostream *s;
 };
 
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
 #define Logger(level) \
   if(Logger::Instance()->Level()>=level) \
-    Logger::Instance()->Stream() << "\033[1;" << Logger::levelColor(level) << "m" << #level << "\033[0m" << "[" << __FILE__ << " " <<  __func__ << "(..) l. " << __LINE__ << "] - "
+    Logger::Instance()->Stream() << "\033[1;" << Logger::levelColor(level) << "m" << #level << "\033[0m" << "[" << __FILENAME__ << " " <<  __func__ << "(..) l. " << __LINE__ << "] - "
 
 #endif
 
