@@ -143,22 +143,22 @@ GEFObject GlobalEventFit::Fit(){
 			METMinusNeutrino.push_back(ZPtEst);
 			//METMinusNeutrino.push_back(SubtractNeutrinoFromMET(Ambiguity));
 			if(useDefaultMassConstraint_){
-				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
+				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
 				Logger(Logger::Debug) << "Case 1: With Recoil, Default MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
 			}
 			else{
-			  ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
+			  ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
 				Logger(Logger::Debug) << "Case 2: With Recoil, User MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
 			}
 		}
 		else{
 			METMinusNeutrino.push_back(PTObject());
 			if(useDefaultMassConstraint_){
-				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, Phi_Res_, PV_, PVCov_, 91.5);
+				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, 91.5);
 				Logger(Logger::Debug) << "Case 3: No Recoil, Default MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
 			}
 			else{
-				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
+				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
 				Logger(Logger::Debug) << "Case 4: No Recoil, User MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
 			}
 		}

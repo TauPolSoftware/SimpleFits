@@ -13,12 +13,12 @@
 
 class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
  public:
-  DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov);
-  DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
-  DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
+  DiTauConstrainedFitter(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov);
+  DiTauConstrainedFitter(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
+  DiTauConstrainedFitter(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
   virtual ~DiTauConstrainedFitter(){};
 
-  void Configure(LorentzVectorParticle TauA1,TrackParticle MuTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov);
+  void Configure(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov);
 
   enum Pars{taua1_px=0,taua1_py,taua1_pz,taumu_px,taumu_py,taumu_pz,npar};
   enum ExpandedPars{z_vx=6,z_vy,z_vz,nexpandedpar};
@@ -90,6 +90,7 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
   LorentzVectorParticle Init_Resonance_;
   TrackParticle MuTrack_;
+  LorentzVectorParticle A1_;
   TVector3 PV_;
   double ThetaForConstrTemporaryImplementation_;
   double phiz_;

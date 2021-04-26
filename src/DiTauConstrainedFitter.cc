@@ -5,11 +5,11 @@
 
 double DiTauConstrainedFitter::MassConstraint_ = 91.5;
 
-DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov){
-  DiTauConstrainedFitter(TauA1, MuTrack, phiz, PVertex, VertexCov, 91.5);
+DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov){
+  DiTauConstrainedFitter(TauA1, A1, MuTrack, phiz, PVertex, VertexCov, 91.5);
 }
 
-DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
+DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
   LagrangeMultipliersFitter()
 {
   debug = false;
@@ -21,10 +21,10 @@ DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,Track
   useFullRecoil_ = false;
   MassConstraint_ = MassConstraint;
 
-  Configure(TauA1, MuTrack, PVertex, VertexCov);
+  Configure(TauA1, A1, MuTrack, PVertex, VertexCov);
 }
 
-DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,TrackParticle MuTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
+DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
   LagrangeMultipliersFitter()
 {
   debug = false;
@@ -37,13 +37,14 @@ DiTauConstrainedFitter::DiTauConstrainedFitter(LorentzVectorParticle TauA1,Track
   useFullRecoil_ = true;
   MassConstraint_ = MassConstraint;
 
-  Configure(TauA1, MuTrack, PVertex, VertexCov);
+  Configure(TauA1, A1, MuTrack, PVertex, VertexCov);
 }
 
-void DiTauConstrainedFitter::Configure(LorentzVectorParticle TauA1,TrackParticle MuTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov){
+void DiTauConstrainedFitter::Configure(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov){
   debug = false;
   AnalyticalCovariance =false;
   MuTrack_ = MuTrack;
+  A1_ = A1;
   PV_ = PVertex;
 
   LorentzVectorParticle  TauMuGuess;
