@@ -21,14 +21,16 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   void Configure(LorentzVectorParticle TauA1, LorentzVectorParticle A1, TrackParticle MuTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov);
 
   enum Pars{taua1_px=0,taua1_py,taua1_pz,taumu_px,taumu_py,taumu_pz,npar};
-  enum ExpandedPars{z_vx=6,z_vy,z_vz,nexpandedpar};
+  enum ExpandedPars{z_vx=npar,z_vy,z_vz,nexpandedpar};
+  enum Lambdas{lambda_1=nexpandedpar,lambda_2,nexpandedparpluslambdas};
 
   enum ParsTrunc{tau_px=0,tau_py,tau_pz,npartr};
 
   virtual double NConstraints(){ return 2;}
   virtual double NSoftConstraints(){if(!useFullRecoil_) return 3; return 2;}
-  virtual double NDF(){return 1;}
+  virtual double NDF(){if(!useFullRecoil_) return 2; return 1;}
   virtual int    NDaughters(){return 2;}
+  virtual TString ParName(int par);
   void DebugFit();
   std::vector<LorentzVectorParticle> GetReFitDaughters();
   std::vector<LorentzVectorParticle> GetInitialDaughters(){return particles0_;};
@@ -45,6 +47,10 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
 
   TMatrixD GetExppar() const{return exppar;}
   TMatrixDSym GetExpcov() const{return expcov;}
+
+
+  bool isConverged() override;
+  bool Fit() override;
 
  protected:
   virtual TVectorD HardValue(TVectorD &va,TVectorD &vb);

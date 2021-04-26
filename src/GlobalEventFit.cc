@@ -198,24 +198,18 @@ GEFObject GlobalEventFit::Fit(){
 		delete ptr2DTCF;
 	}
 	fitstatuses_ = fitstatus;
-	int IndexToReturn(-1);
-	if(AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn)){
+	int IndexToReturn(0);
+	// bool foundSolution = AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn);
+	bool foundSolution = AmbiguitySolverByChi2Minuit(recostatus, fitstatus, Chi2s, IndexToReturn);
 
-	  std::vector<LorentzVectorParticle> CorrFitDaughters = FitDaughtersCorr(RefitDaughters.at(IndexToReturn));
-	  RefitDaughters.at(IndexToReturn).at(0) = CorrFitDaughters.at(0);
-	  RefitDaughters.at(IndexToReturn).at(1) = CorrFitDaughters.at(1);
-	  GEFObject Results = GEFObject(InitDaughters,
-					InitResonance,
-					RefitDaughters,
-					FitResonance,
-					true, Chi2Vecs, Csums, Niterats, IndexToReturn);
-
+	if(foundSolution){
+		std::vector<LorentzVectorParticle> CorrFitDaughters = FitDaughtersCorr(RefitDaughters.at(IndexToReturn));
+		RefitDaughters.at(IndexToReturn).at(0) = CorrFitDaughters.at(0);
+		RefitDaughters.at(IndexToReturn).at(1) = CorrFitDaughters.at(1);
 		isFit_ = true;
-		return Results;
 	}
 	else{
-	  	Logger(Logger::Verbose) << "Fit failed: Ambiguity was not solvable" << std::endl;
-		return GEFObject();
+		Logger(Logger::Verbose) << "AmbiguitySolver failed: Fit did not converge." << std::endl;
 	}
 
 	return GEFObject(InitDaughters,
@@ -245,9 +239,54 @@ bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<
 	    if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return true;}
 	    if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return true;}
 	}
+	// if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == false && EventFit.at(2) == false)){
+	//     if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return false;}
+	//     if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return false;}
+	// }
 	return false;
 }
- 
+
+// Solves ambiguity by chi2 for Minuit based minimization
+bool GlobalEventFit::AmbiguitySolverByChi2Minuit(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn){
+	// Logger(Logger::Info) << "A1Fit.at(0): " << A1Fit.at(0) << std::endl;
+	// Logger(Logger::Info) << "A1Fit.at(1): " << A1Fit.at(1) << std::endl;
+	// Logger(Logger::Info) << "A1Fit.at(2): " << A1Fit.at(2) << std::endl;
+	//
+	// Logger(Logger::Info) << "EventFit.at(0): " << EventFit.at(0) << std::endl;
+	// Logger(Logger::Info) << "EventFit.at(1): " << EventFit.at(1) << std::endl;
+	// Logger(Logger::Info) << "EventFit.at(2): " << EventFit.at(2) << std::endl;
+	if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false){
+		IndexToReturn = 0;
+		return true;
+	}
+	else if(EventFit.at(1) == true && EventFit.at(2) == false){
+		IndexToReturn = 1;
+		return true;
+	}
+	else if(EventFit.at(1) == false && EventFit.at(2) == true){
+		IndexToReturn = 2;
+		return true;
+	}
+	else if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == true && EventFit.at(2) == true)){
+	  /*
+	  if(Chi2s.at(1) >= 0 && Chi2s.at(2) < 0){ IndexToReturn = 1;return true;}
+	  else if(Chi2s.at(1) < 0 && Chi2s.at(2) >= 0){ IndexToReturn = 2;return true;}
+	  else if(Chi2s.at(1) >= 0 && Chi2s.at(2) >= 0){
+	    if(Chi2s.at(1) < Chi2s.at(2)){ IndexToReturn = 1;return true;}
+	    if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
+	  }
+	  */
+		// Logger(Logger::Info) << "Chi2s.at(1): " << Chi2s.at(1) << std::endl;
+		// Logger(Logger::Info) << "Chi2s.at(2): " << Chi2s.at(2) << std::endl;
+		if(Chi2s.at(1) < Chi2s.at(2)){ IndexToReturn = 1;return true;}
+		if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
+	}
+	// if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == false && EventFit.at(2) == false)){
+	//     if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return false;}
+	//     if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return false;}
+	// }
+	return false;
+}
 
 
 std::vector<LorentzVectorParticle> GlobalEventFit::FitDaughtersCorr(std::vector<LorentzVectorParticle> FitDaughters){
