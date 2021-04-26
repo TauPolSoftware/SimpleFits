@@ -33,7 +33,8 @@ TauA1NuConstrainedFitter::TauA1NuConstrainedFitter(unsigned int ambiguity,Lorent
   int Nuoffset=LorentzVectorParticle::NLorentzandVertexPar+LorentzVectorParticle::NVertex;
   for(int i=0; i<LorentzVectorParticle::NLorentzandVertexPar;i++){
     inpar(i+A1offset,0)=A1.Parameter(i);
-    inpar(i+Nuoffset,0)=Nu.Parameter(i)+1.0;// offset by 1 GeV to prevent convergence on first iteration
+    // inpar(i+Nuoffset,0)=Nu.Parameter(i)+1.0;// offset by 1 GeV to prevent convergence on first iteration // TODO: check if this changes outputs
+    inpar(i+Nuoffset,0)=Nu.Parameter(i);
     for(int j=0; j<LorentzVectorParticle::NLorentzandVertexPar;j++){
       incov(i+A1offset,j+A1offset)=A1.Covariance(i,j);
       incov(i+Nuoffset,j+Nuoffset)=Nu.Covariance(i,j);
