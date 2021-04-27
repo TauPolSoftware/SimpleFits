@@ -1221,6 +1221,7 @@ TMatrixT<double> DiTauConstrainedFitter::EstimateTauKinematicFullRecoil(TMatrixT
   TVector3 P_Tauh(inpar(7,0), inpar(8,0), inpar(9,0));
   TLorentzVector P4_Tauh; P4_Tauh.SetXYZM(P_Tauh.X(),P_Tauh.Y(),P_Tauh.Z(),PDGInfo::tau_mass());
   TVector2 TauMuPt(inpar(10,0) - P_Tauh.X(), inpar(11,0) - P_Tauh.Y());
+  TVector3 P_Taumu(inpar(10,0) - P_Tauh.X(), inpar(11,0) - P_Tauh.Y(), 0);
 
   double tanphi_tau = TauMuPt.Y()/TauMuPt.X();
   double a = tanphi_tau;
