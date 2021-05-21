@@ -345,7 +345,9 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
        std::cout << "Fit failed: unable to invert, matrix is singular " << detVf << " \n" << std::endl;
        return false;
   } V_f_inv.Invert();
- 
+  V_f_inv_.ResizeTo(V_f_inv);
+  V_f_inv_ = V_f_inv;
+
   TMatrixT<double> M11 = V_a_inv + FaT*V_f_inv*Fa;
   TMatrixT<double> M12 = FaT*V_f_inv*Fb;
   TMatrixT<double> M21 = FbT*V_f_inv*Fa;
