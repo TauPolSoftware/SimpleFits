@@ -24,10 +24,12 @@ class PTObject{
   double Pt(){return sqrt(pow(X(),2.) + pow(Y(),2.));}
   TMatrixT<double> Par() const{return par_;}
   TMatrixTSym<double> Cov() const{return cov_;}
+  bool isValid() const{return isValid_};
 
  private:
   TMatrixT<double> par_;
   TMatrixTSym<double> cov_;
+  bool isValid_;
 
 };
 #endif /* PTObject_H_ */
