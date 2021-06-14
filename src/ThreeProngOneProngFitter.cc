@@ -18,33 +18,20 @@
 #include "Minuit2/ContoursError.h"
 #include <iostream>
 
-double ThreeProngOneProngFitter::MassConstraint_ = 91.5;
+double ThreeProngOneProngFitter::MassConstraint_ = 125.2;
 bool ThreeProngOneProngFitter::useCollinearityTauOneProng_ = false;
 
-ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov){
-  ThreeProngOneProngFitter(TauThreeProng, ThreeProng, OneProngTrack, phiz, PVertex, VertexCov, 91.5);
+ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov):
+  LagrangeMultipliersFitter()
+{
+  ThreeProngOneProngFitter(TauThreeProng, ThreeProng, OneProng, OneProngTrack, ResPtEstimate, PVertex, VertexCov, ThreeProngOneProngFitter::MassConstraint_);
 }
 
-ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
+ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
   LagrangeMultipliersFitter()
 {
   debug = false;
-  AnalyticalCovariance =false;
-
-  phiz_ = phiz;
-  RecoilX_ = 0; //not used in this version
-  RecoilY_ = 0; //not used in this version
-  useFullRecoil_ = false;
-  MassConstraint_ = MassConstraint;
-
-  Configure(TauThreeProng, ThreeProng, OneProngTrack, PVertex, VertexCov);
-}
-
-ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
-  LagrangeMultipliersFitter()
-{
-  debug = false;
-  AnalyticalCovariance =false;
+  AnalyticalCovariance_ =false;
 
   ResPtEstimate_ = ResPtEstimate;
   phiz_ = 0; //not used in this version
@@ -53,12 +40,12 @@ ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThre
   useFullRecoil_ = true;
   MassConstraint_ = MassConstraint;
 
-  Configure(TauThreeProng, ThreeProng, OneProngTrack, PVertex, VertexCov);
+  Configure(TauThreeProng, ThreeProng, OneProng, OneProngTrack, PVertex, VertexCov);
 }
 
-void ThreeProngOneProngFitter::Configure(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov){
+void ThreeProngOneProngFitter::Configure(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov){
   debug = false;
-  AnalyticalCovariance =false;
+  AnalyticalCovariance_ =false;
   OneProngTrack_ = OneProngTrack;
   ThreeProng_ = ThreeProng;
   PV_ = PVertex;
@@ -681,7 +668,7 @@ LorentzVectorParticle ThreeProngOneProngFitter::TauOneProngStartingPoint(TrackPa
 
    for(int i=0; i<LorentzVectorParticle::NVertex; i++){
      for(int j=0; j<LorentzVectorParticle::NVertex; j++){
-       if(AnalyticalCovariance){Cov(i+3,j+3)=TauKinErrorAnalytical(i,j);}
+       if(AnalyticalCovariance_){Cov(i+3,j+3)=TauKinErrorAnalytical(i,j);}
        else{Cov(i+3,j+3)=TauKinErrorNumerical(i,j);}
      }
    }
@@ -1057,7 +1044,6 @@ TMatrixT<double> ThreeProngOneProngFitter::ComputeAngleCovarianceAnalytically(Tr
   HelixCov(4,2) = 0;
   HelixCov(4,3) = 0;
   HelixCov(4,4) = phiAngle.second;//sqrt(TauDirError.Y()*TauDirError.Y()/ThreeProngSV.X()/ThreeProngSV.X()   + TauDirError.X()*TauDirError.X()*ThreeProngSV.Y()*ThreeProngSV.Y()/ThreeProngSV.X()/ThreeProngSV.X()/ThreeProngSV.X()/ThreeProngSV.X() ) *cos(phiAnot)*cos(phiAnot);
-PVCov
   TMatrixT<double>  DerivativesHelixToAngles;
   DerivativesHelixToAngles.ResizeTo(2,5);
 
@@ -1076,7 +1062,7 @@ PVCov
   TMatrixT<double> DerivativesHelixToAnglesT=DerivativesHelixToAngles; DerivativesHelixToAnglesT.T();
   TMatrixT<double> CovAngleFrame=DerivativesHelixToAngles*HelixCov*DerivativesHelixToAnglesT;
 
-  //double ZMassR = 91.5;
+  //double ZMassR = 125.2;
   double TauThreeProngdeltaP = sqrt(   (pow(TauThreeProng.LV().Px(),2)*fabs(TauThreeProng.Covariance(3,3))   +  pow(TauThreeProng.LV().Py(),2)*fabs(TauThreeProng.Covariance(4,4))  +  pow(TauThreeProng.LV().Pz(),2)*fabs(TauThreeProng.Covariance(5,5))    )/TauThreeProng.LV().P()/TauThreeProng.LV().P()  )  ;
   double TauOneProngdeltaP_2 = TauThreeProngdeltaP*pow(MassConstraint_/2/TauThreeProng.LV().P(),2)/(1-cosTauTau2);
 
@@ -1213,7 +1199,7 @@ TMatrixT<double> ThreeProngOneProngFitter::EstimateTauKinematicFullRecoil(TMatri
   TVector3 PointGuess(xdoc, ydoc, zdoc);
   TVector3 TauOneProngDir = PointGuess - PV;
 
-  double phitau = TauOneProngDir.Phi();
+  // double phitau = TauOneProngDir.Phi();
   double thetatau = TauOneProngDir.Theta();
 
   outpar(0,0) = P4_Tauh.X();

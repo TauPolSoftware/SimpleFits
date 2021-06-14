@@ -22,26 +22,26 @@ double ThreeProngThreeProngFitter::MassConstraint_ = 125.2;
 bool ThreeProngThreeProngFitter::useCollinearityTauMu_ = false;
 
 ThreeProngThreeProngFitter::ThreeProngThreeProngFitter(std::vector< LorentzVectorParticle > TauThreeProngs, std::vector< LorentzVectorParticle > ThreeProngs, TVector3 PVertex, TMatrixTSym<double> VertexCov){
-  ThreeProngThreeProngFitter(TauThreeProngs, ThreeProngs, PTObject(), PVertex, VertexCov, 125.2);
+  ThreeProngThreeProngFitter(TauThreeProngs, ThreeProngs, PTObject(), PVertex, VertexCov, ThreeProngThreeProngFitter::MassConstraint_);
 }
 
-ThreeProngThreeProngFitter::ThreeProngThreeProngFitter(std::vector< LorentzVectorParticle > TauThreeProngs, std::vector< LorentzVectorParticle > ThreeProngs, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint){
-  ThreeProngThreeProngFitter(TauThreeProngs, ThreeProngs, ResPtEstimate, PVertex, VertexCov, 125.2);
+ThreeProngThreeProngFitter::ThreeProngThreeProngFitter(std::vector< LorentzVectorParticle > TauThreeProngs, std::vector< LorentzVectorParticle > ThreeProngs, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov){
+  ThreeProngThreeProngFitter(TauThreeProngs, ThreeProngs, ResPtEstimate, PVertex, VertexCov, ThreeProngThreeProngFitter::MassConstraint_);
 }
 
 ThreeProngThreeProngFitter::ThreeProngThreeProngFitter(std::vector< LorentzVectorParticle > TauThreeProngs, std::vector< LorentzVectorParticle > ThreeProngs, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
   LagrangeMultipliersFitter(),
-  debug_(false),
-  AnalyticalCovariance_(false),
-  ResPtEstimate_(ResPtEstimate),
-  RecoilX_(ResPtEstimate.Par()(0,0)),
-  RecoilY_(ResPtEstimate.Par()(1,0)),
-  MassConstraint_(MassConstraint),
+  particles_ (ThreeProngs),
+  particles0_(ThreeProngs),
   PV_(PVertex),
   PVCov_(VertexCov),
-  particles_ (ThreeProngs),
-  particles0_(ThreeProngs)
+  RecoilX_(ResPtEstimate.Par()(0,0)),
+  RecoilY_(ResPtEstimate.Par()(1,0)),
+  ResPtEstimate_(ResPtEstimate),
+  debug_(false),
+  AnalyticalCovariance_(false)
 {
+  MassConstraint_ = MassConstraint;
   if(ResPtEstimate.isValid()) useFullRecoil_ = true;
   Configure(TauThreeProngs, ThreeProngs, VertexCov);
 }
@@ -90,18 +90,18 @@ void ThreeProngThreeProngFitter::Configure(std::vector< LorentzVectorParticle > 
   }
 
   // store expanded par for computation of final par (assumes fit has neglegible impact on a1 correlations with vertex uncertainties)
-  exppar.ResizeTo(size,1);
-  expcov.ResizeTo(size,size);
-  exppar=ComputeInitalExpPar(inpar);
-  expcov=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeInitalExpPar,inpar,incov);
+  exppar_.ResizeTo(size,1);
+  expcov_.ResizeTo(size,size);
+  exppar_=ComputeInitalExpPar(inpar);
+  expcov_=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeInitalExpPar,inpar,incov);
 
   // store linearization point
   TMatrixT<double> PAR_0(size,1);
   par_0.ResizeTo(size);
   cov_0.ResizeTo(size,size);
-  PAR_0=ComputeExpParToPar(exppar);
+  PAR_0=ComputeExpParToPar(exppar_);
   for(int i=0; i<npar;i++)par_0(i)=PAR_0(i,0);
-  cov_0=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeExpParToPar,exppar,expcov);
+  cov_0=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeExpParToPar,exppar_,expcov_);
 
   // set up inital point for fit (cov handled in Fit() function)
   par.ResizeTo(npar);
@@ -110,31 +110,31 @@ void ThreeProngThreeProngFitter::Configure(std::vector< LorentzVectorParticle > 
   TMatrixT<double> PARa_0(sizeTrunc,1);
   para_0.ResizeTo(sizeTrunc);
   cova_0.ResizeTo(sizeTrunc,sizeTrunc);
-  PARa_0=ComputeExpParToPara(exppar);
+  PARa_0=ComputeExpParToPara(exppar_);
   for( int i = 0; i<npartr; i++ )
     para_0(i) = PARa_0(i,0);
 
-  cova_0=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeExpParToPara,exppar,expcov);
+  cova_0=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeExpParToPara,exppar_,expcov_);
 
   para.ResizeTo(npartr);
   para=para_0;
   TMatrixT<double> PARb_0(sizeTrunc,1);
   parb_0.ResizeTo(sizeTrunc);
   covb_0.ResizeTo(sizeTrunc,sizeTrunc);
-  PARb_0=ComputeExpParToParb(exppar);
+  PARb_0=ComputeExpParToParb(exppar_);
   for(int i=0; i<npartr;i++)parb_0(i)=PARb_0(i,0);
   y_.ResizeTo(npartr,1); y_ = convertToMatrix(para_0);
 
-  covb_0=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeExpParToParb,exppar,expcov);
+  covb_0=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeExpParToParb,exppar_,expcov_);
   parb.ResizeTo(npartr);
   parb=parb_0;
 
   isconfigured=true;
   Init_Resonance_ = GetMother();
 
-  Logger(Logger::Debug) << "exppar covariance: " << std::endl;
+  Logger(Logger::Debug) << "exppar_ covariance: " << std::endl;
   if(Logger::Instance()->Level() == Logger::Debug){
-    expcov.Print();
+    expcov_.Print();
   }
   Logger(Logger::Debug) << "para_0 covariance: " << std::endl;
   if(Logger::Instance()->Level() == Logger::Debug){
@@ -329,7 +329,7 @@ bool ThreeProngThreeProngFitter::Fit(){
       // Logger(Logger::Info) << "\t" << name << std::endl;
     }
     // set limits for tau mu pz
-    MnPar.SetLimits(5, -5.0*MuTrack_.P(), 5.0*MuTrack_.P());
+    // MnPar.SetLimits(5, -5.0*MuTrack_.P(), 5.0*MuTrack_.P());
 
     unsigned int max=10;
     // int numberofcalls=200+nPar*100+nPar*nPar*5;
@@ -411,7 +411,7 @@ TMatrixT<double> ThreeProngThreeProngFitter::ComputeExpParToParb(TMatrixT<double
   return outpar;
 }
 
-TMatrixT<double> ThreeProngThreeProngFitter::ComputeTauMuLorentzVectorPar(TMatrixT<double> &inpar){
+TMatrixT<double> ThreeProngThreeProngFitter::ComputeTau2LorentzVectorPar(TMatrixT<double> &inpar){
   //  start with index 3 to fill only momenta part
   TMatrixT<double> outpar(7,1);
   outpar(LorentzVectorParticle::vx,0)=0;
@@ -426,7 +426,7 @@ TMatrixT<double> ThreeProngThreeProngFitter::ComputeTauMuLorentzVectorPar(TMatri
   return outpar;
 }
 
-TMatrixT<double> ThreeProngThreeProngFitter::ComputeTauA1LorentzVectorPar(TMatrixT<double> &inpar){
+TMatrixT<double> ThreeProngThreeProngFitter::ComputeTau1LorentzVectorPar(TMatrixT<double> &inpar){
   //  start with index 3 to fill only momenta part
   TMatrixT<double> outpar(7,1);
   outpar(LorentzVectorParticle::vx,0)=0;
@@ -443,8 +443,8 @@ TMatrixT<double> ThreeProngThreeProngFitter::ComputeTauA1LorentzVectorPar(TMatri
 TMatrixT<double> ThreeProngThreeProngFitter::ComputeMotherLorentzVectorPar(TMatrixT<double> &inpar){
 
   TMatrixT<double> outpar(7,1);
-  TMatrixT<double> Taumupar=ComputeTauMuLorentzVectorPar(inpar);
-  TMatrixT<double> Taua1par=ComputeTauA1LorentzVectorPar(inpar);
+  TMatrixT<double> Taumupar=ComputeTau2LorentzVectorPar(inpar);
+  TMatrixT<double> Taua1par=ComputeTau1LorentzVectorPar(inpar);
   outpar(LorentzVectorParticle::px,0)=Taumupar(LorentzVectorParticle::px,0)+Taua1par(LorentzVectorParticle::px,0);
   outpar(LorentzVectorParticle::py,0)=Taumupar(LorentzVectorParticle::py,0)+Taua1par(LorentzVectorParticle::py,0);
   outpar(LorentzVectorParticle::pz,0)=Taumupar(LorentzVectorParticle::pz,0)+Taua1par(LorentzVectorParticle::pz,0);
@@ -459,13 +459,13 @@ TMatrixT<double> ThreeProngThreeProngFitter::ComputeMotherLorentzVectorPar(TMatr
 
 void ThreeProngThreeProngFitter::UpdateExpandedPar(){
   for(int i=0; i<npartr;i++){
-    exppar(i,0)=para(i);
-    for(int j=0; j<npartr;j++){expcov(i,j)=cova_0(i,j);}
+    exppar_(i,0)=para(i);
+    for(int j=0; j<npartr;j++){expcov_(i,j)=cova_0(i,j);}
   }
   int offset = npartr;
   for(int i=0; i<npartr;i++){
-    exppar(i+offset,0)=parb(i);
-    for(int j=0; j<npartr;j++){expcov(i+offset,j+offset)=covb_0(i,j);}
+    exppar_(i+offset,0)=parb(i);
+    for(int j=0; j<npartr;j++){expcov_(i+offset,j+offset)=covb_0(i,j);}
   }
 
 }
@@ -476,8 +476,8 @@ std::vector<LorentzVectorParticle> ThreeProngThreeProngFitter::GetReFitDaughters
 
   double c(0),b(0);
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
-  TMatrixT<double> a1=ComputeTauA1LorentzVectorPar(exppar);
-  TMatrixTSym<double> a1cov=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeTauA1LorentzVectorPar,exppar,expcov);
+  TMatrixT<double> a1=ComputeTau1LorentzVectorPar(exppar_);
+  TMatrixTSym<double> a1cov=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeTau1LorentzVectorPar,exppar_,expcov_);
 
    for(int i=0; i<LorentzVectorParticle::NVertex; i++){
      for(int j=0; j<LorentzVectorParticle::NVertex; j++){
@@ -487,12 +487,12 @@ std::vector<LorentzVectorParticle> ThreeProngThreeProngFitter::GetReFitDaughters
 
     refitParticles.push_back(LorentzVectorParticle(a1,a1cov,PDGInfo::tau_plus,c,b));
 
-    TMatrixT<double> mu=ComputeTauMuLorentzVectorPar(exppar);
+    TMatrixT<double> mu=ComputeTau2LorentzVectorPar(exppar_);
     mu(0,0)= particles_.at(1).Parameter(LorentzVectorParticle::vx);
     mu(1,0)= particles_.at(1).Parameter(LorentzVectorParticle::vy);
     mu(2,0)= particles_.at(1).Parameter(LorentzVectorParticle::vz);
 
-    TMatrixTSym<double> mucov=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeTauMuLorentzVectorPar,exppar,expcov);
+    TMatrixTSym<double> mucov=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeTau2LorentzVectorPar,exppar_,expcov_);
     for(int i=0; i<LorentzVectorParticle::NVertex; i++){
       for(int j=0; j<LorentzVectorParticle::NVertex; j++){
         mucov(i,j)=particles_.at(1).VertexCov()(i,j);
@@ -509,47 +509,43 @@ ThreeProngThreeProngFitter::GetMother(){
   UpdateExpandedPar();
   double c(0),b(0);
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
-  TMatrixT<double> m=ComputeMotherLorentzVectorPar(exppar);
-  TMatrixTSym<double> mcov=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeMotherLorentzVectorPar,exppar,expcov);
+  TMatrixT<double> m=ComputeMotherLorentzVectorPar(exppar_);
+  TMatrixTSym<double> mcov=ErrorMatrixPropagator::PropagateError(&ThreeProngThreeProngFitter::ComputeMotherLorentzVectorPar,exppar_,expcov_);
 
   return LorentzVectorParticle(m,mcov,PDGInfo::Z0,c,b);
 }
 
 TVectorD
 ThreeProngThreeProngFitter::HardValue(TVectorD &va,TVectorD &vb){
-  TLorentzVector Taua1,Taumu;
-  double ZMass;
-  CovertParToObjects(va,vb,Taua1,Taumu,ZMass);
+  TLorentzVector Tau1,Tau2;
+  CovertParToObjects(va,vb,Tau1,Tau2);
 
-  TLorentzVector z=Taua1+Taumu;
+  TLorentzVector z=Tau1+Tau2;
   TVectorD d(NConstraints());
 
-	//d(0) = pow(Taua1.E() + Taumu.E(), 2.) - (Taua1.Vect() + Taumu.Vect()).Mag2()- pow(MassConstraint_,2.);
-	//d(1) = Taumu.Pz() - CosThetaTauMu(Taumu)*Taumu.P();
-	d(0) = z.M() - MassConstraint_;
-	d(1) = Taumu.Pz() - CosThetaTauMu(Taumu)*Taumu.P();
+  //d(0) = pow(Tau1.E() + Tau2.E(), 2.) - (Tau1.Vect() + Tau2.Vect()).Mag2()- pow(MassConstraint_,2.);
+  d(0) = z.M() - MassConstraint_;
   return d;
 }
 
 TVectorD
 ThreeProngThreeProngFitter::SoftValue(TVectorD &va,TVectorD &vb){
-  TLorentzVector Taua1,Taumu;
-  double ZMass;
-  CovertParToObjects(va,vb,Taua1,Taumu,ZMass);
+  TLorentzVector Tau1,Tau2;
+  CovertParToObjects(va,vb,Tau1,Tau2);
   TVectorD d(NSoftConstraints());
 
-  d(0) = Taua1.Px() + Taumu.Px() - RecoilX_;
-  d(1) = Taua1.Py() + Taumu.Py() - RecoilY_;
+  d(0) = Tau1.Px() + Tau2.Px() - RecoilX_;
+  d(1) = Tau1.Py() + Tau2.Py() - RecoilY_;
   Logger(Logger::Debug) << "SCVec: " << d(0) << ", " << d(1) << std::endl;
   Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
   return d;
 } 
 
-void ThreeProngThreeProngFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLorentzVector &Taua1,TLorentzVector &Taumu){
-  // Taua1=particles_.at(0).LV();//TLorentzVector(v(tau1_px),v(tau1_py),v(tau1_pz),sqrt(1.777*1.777+v(tau1_px)*v(tau1_px)+v(tau1_py)*v(tau1_py)+v(tau1_pz)*v(tau1_pz)));
-  // Taumu=TLorentzVector(v(tau1_px),v(tau1_py),v(tau1_pz),sqrt(1.777*1.777+v(tau1_px)*v(tau1_px)+v(tau1_py)*v(tau1_py)+v(tau1_pz)*v(tau1_pz)));
-  Taua1=TLorentzVector(va(tau_px),va(tau_py),va(tau_pz),sqrt(PDGInfo::tau_mass()*PDGInfo::tau_mass()+va(tau_px)*va(tau_px)+va(tau_py)*va(tau_py)+va(tau_pz)*va(tau_pz)));
-  Taumu=TLorentzVector(vb(tau_px),vb(tau_py),vb(tau_pz),sqrt(PDGInfo::tau_mass()*PDGInfo::tau_mass()+vb(tau_px)*vb(tau_px)+vb(tau_py)*vb(tau_py)+vb(tau_pz)*vb(tau_pz)));
+void ThreeProngThreeProngFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLorentzVector &Tau1,TLorentzVector &Tau2){
+  // Tau1=particles_.at(0).LV();//TLorentzVector(v(tau1_px),v(tau1_py),v(tau1_pz),sqrt(1.777*1.777+v(tau1_px)*v(tau1_px)+v(tau1_py)*v(tau1_py)+v(tau1_pz)*v(tau1_pz)));
+  // Tau2=TLorentzVector(v(tau1_px),v(tau1_py),v(tau1_pz),sqrt(1.777*1.777+v(tau1_px)*v(tau1_px)+v(tau1_py)*v(tau1_py)+v(tau1_pz)*v(tau1_pz)));
+  Tau1=TLorentzVector(va(tau_px),va(tau_py),va(tau_pz),sqrt(PDGInfo::tau_mass()*PDGInfo::tau_mass()+va(tau_px)*va(tau_px)+va(tau_py)*va(tau_py)+va(tau_pz)*va(tau_pz)));
+  Tau2=TLorentzVector(vb(tau_px),vb(tau_py),vb(tau_pz),sqrt(PDGInfo::tau_mass()*PDGInfo::tau_mass()+vb(tau_px)*vb(tau_px)+vb(tau_py)*vb(tau_py)+vb(tau_pz)*vb(tau_pz)));
 }
 
 TMatrixT<double> ThreeProngThreeProngFitter::EstimateTauKinematic(TMatrixT<double> &inpar){
@@ -646,8 +642,8 @@ ThreeProngThreeProngFitter::ConfigureInitialAdvancedParameters(TrackParticle MuT
    outpar(4,0)  = PV.X();
    outpar(5,0)  = PV.Y();
    outpar(6,0)  = PV.Z();
-   outpar(7,0) = TauA1.LV().X();
-   outpar(8,0) = TauA1.LV().Y();
+   outpar(7,0) = particles_.at(0).LV().X();
+   outpar(8,0) = particles_.at(0).LV().Y();
 
    return outpar;
  }
@@ -658,13 +654,13 @@ ThreeProngThreeProngFitter::ConfigureKinematicParameters(TMatrixT<double>  TauMu
   outpar.ResizeTo(5,1);
   outpar(0,0)  = TauMuDir(0,0);
   outpar(1,0)  = TauMuDir(1,0);
-  outpar(2,0)  = TauA1.LV().Px();
-  outpar(3,0)  = TauA1.LV().Py();
-  outpar(4,0)  = TauA1.LV().Pz();
+  outpar(2,0)  = particles_.at(0).LV().Px();
+  outpar(3,0)  = particles_.at(0).LV().Py();
+  outpar(4,0)  = particles_.at(0).LV().Pz();
 
 
   if(debug_){
-    std::cout<<"EstimateTauKinematic  TauA1  "<<TauA1.LV().Px()<<"  "<<TauA1.LV().Py()<<"  "<<TauA1.LV().Pz()<<std::endl;
+    std::cout<<"EstimateTauKinematic  TauA1  "<<particles_.at(0).LV().Px()<<"  "<<particles_.at(0).LV().Py()<<"  "<<particles_.at(0).LV().Pz()<<std::endl;
     std::cout<<"ConfigureKinematicParameters:  outpar(0,0)  "<<outpar(0,0) <<std::endl;
     std::cout<<"ConfigureKinematicParameters:  outpar(1,0)  "<<outpar(1,0) <<std::endl;
     std::cout<<"ConfigureKinematicParameters:  outpar(2,0)  "<<outpar(2,0) <<std::endl;
@@ -685,7 +681,7 @@ ThreeProngThreeProngFitter::ConfigureKinematicParameterErrors(TMatrixTSym<double
       if(i<2 && j < 2){
 	outpar(i,j)=TauMuDirError(i,j);
       }else{
-	outpar(i,j)=TauA1.Covariance(i+1,j+1);
+	outpar(i,j)=particles_.at(0).Covariance(i+1,j+1);
       }
     }
   }
@@ -703,71 +699,12 @@ ThreeProngThreeProngFitter::EstimatePhiAngle( TVector3 dir, TVector3 dirE){
   return outpar;
 }
 
-
-TMatrixT<double> ThreeProngThreeProngFitter::ConfigureKinematicParametersFullRecoil(TrackParticle MuTrack, TVector3 PV, std::vector< LorentzVectorParticle > TauThreeProngs, PTObject METMinusNeutrino){
-  TMatrixT<double> outpar;
-  outpar.ResizeTo(12,1);
-
-  outpar(0,0)  = MuTrack.Parameter(TrackParticle::dxy);
-  outpar(1,0)  = MuTrack.Parameter(TrackParticle::phi);
-  outpar(2,0)  = MuTrack.Parameter(TrackParticle::lambda);
-  outpar(3,0)  = MuTrack.Parameter(TrackParticle::dz);
-  outpar(4,0)  = PV.X();
-  outpar(5,0)  = PV.Y();
-  outpar(6,0)  = PV.Z();
-  outpar(7,0)  = TauA1.LV().X();
-  outpar(8,0)  = TauA1.LV().Y();
-  outpar(9,0)  = TauA1.LV().Z();
-  outpar(10,0) = METMinusNeutrino.Par()(0,0);
-  outpar(11,0) = METMinusNeutrino.Par()(1,0);
-
-  return outpar;
-}
-
-TMatrixTSym<double> ThreeProngThreeProngFitter::ConfigureKinematicParameterErrorsFullRecoil(TrackParticle MuTrack, TMatrixTSym<double> PVCov, std::vector< LorentzVectorParticle > TauThreeProngs, PTObject METMinusNeutrino){
-  TMatrixTSym<double>  Cov;
-    Cov.ResizeTo(12,12);
-
-    Cov(0,0) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dxy);
-    Cov(0,1) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::phi);
-    Cov(0,2) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dz);
-    Cov(0,3) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::lambda);
-
-    Cov(1,0) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::dxy);
-    Cov(1,1) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::phi);
-    Cov(1,2) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::dz);
-    Cov(1,3) = MuTrack.Covariance(TrackParticle::phi,TrackParticle::lambda);
-
-    Cov(2,0) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::dxy);
-    Cov(2,1) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::phi);
-    Cov(2,2) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::dz);
-    Cov(2,3) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::lambda);
-
-    Cov(3,0) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::dxy);
-    Cov(3,1) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::phi);
-    Cov(3,2) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::dz);
-    Cov(3,3) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::lambda);
-
-    for(int i=0; i<3; i++){
-      for(int j=0; j<3; j++){
-        Cov(i+4,j+4)=PVCov(i,j);
-        Cov(i+7,j+7)=TauA1.Covariance(i+4,j+4);
-      }
-    }
-    for(int i=0; i<2; i++){
-      for(int j=0; j<2; j++){
-        Cov(i+10,j+10)=METMinusNeutrino.Cov()(i,j);
-      }
-    }
-    return Cov;
-}
-
 bool ThreeProngThreeProngFitter::isConverged(){
   if(!useFullRecoil_){
 //	if(pardelta<MaxParDelta_ /*&& harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_  && chi2prev>chi2*/){
 		if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& softdelta_vec.Norm1() < MaxSCDelta_ && chi2prev>chi2*/
-      && (pow(para(0), 2.0) + pow(para(1), 2.0)) > A1_.LV().Perp2()
-      && (pow(parb(0), 2.0) + pow(parb(1), 2.0)) > pow(MuTrack_.Pt(), 2.0)
+      && (pow(para(0), 2.0) + pow(para(1), 2.0)) > ThreeProngs_.at(0).LV().Perp2()
+      && (pow(parb(0), 2.0) + pow(parb(1), 2.0)) > ThreeProngs_.at(1).LV().Perp2()
     ){
     //	Logger(Logger::Verbose) << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl;
 	  return true;
@@ -777,8 +714,8 @@ bool ThreeProngThreeProngFitter::isConverged(){
 	//if(pardelta<MaxParDelta_ && harddelta_vec.Norm1() < MaxHCDelta_ && softdelta_vec.Norm1() < MaxSCDelta_){
 	// if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& chi2prev>chi2*/){
 	if(/*pardelta<MaxParDelta_ && harddelta_vec.Norm1() < MaxHCDelta_ && */fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& chi2prev>chi2*/
-      && (pow(para(0), 2.0) + pow(para(1), 2.0)) > A1_.LV().Perp2()
-      && (pow(parb(0), 2.0) + pow(parb(1), 2.0)) > pow(MuTrack_.Pt(), 2.0)
+      && (pow(para(0), 2.0) + pow(para(1), 2.0)) > ThreeProngs_.at(0).LV().Perp2()
+      && (pow(parb(0), 2.0) + pow(parb(1), 2.0)) > ThreeProngs_.at(1).LV().Perp2()
     ){
 	  return true;
 	}

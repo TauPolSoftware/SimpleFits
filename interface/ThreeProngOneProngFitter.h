@@ -1,5 +1,5 @@
-#ifndef DiTauConstrainedFitter_H
-#define DiTauConstrainedFitter_H
+#ifndef ThreeProngOneProngFitter_H
+#define ThreeProngOneProngFitter_H
 
 #include "TauPolSoftware/SimpleFits/interface/LagrangeMultipliersFitter.h"
 #include "TVector3.h"
@@ -13,8 +13,7 @@
 
 class ThreeProngOneProngFitter : public LagrangeMultipliersFitter{
  public:
-  ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov);
-  ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, double phiz, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
+  ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov);
   ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
   virtual ~ThreeProngOneProngFitter(){};
 
@@ -56,8 +55,8 @@ class ThreeProngOneProngFitter : public LagrangeMultipliersFitter{
   void SetUseCollinearityTauOneProng(const bool UseCollinearityTauOneProng) const{useCollinearityTauOneProng_ = UseCollinearityTauOneProng;};
   static bool useCollinearityTauOneProng_;
 
-  TMatrixD GetExppar() const{return exppar;}
-  TMatrixDSym GetExpcov() const{return expcov;}
+  TMatrixD GetExppar() const{return exppar_;}
+  TMatrixDSym GetExpcov() const{return expcov_;}
 
   bool isConverged() override;
   bool Fit() override;
