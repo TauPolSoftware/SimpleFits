@@ -48,9 +48,9 @@ class GEFObject{
 	LorentzVectorParticle getTauMu() const{ return TauMu_;}
 	
 	// return the fit particles for all possible ambiguities
-	std::vector<LorentzVectorParticle> getResonances() const{ return InitResonances_;}
-	std::vector<LorentzVectorParticle> getTauHs() const{ return InitTauHs_;}
-	std::vector<LorentzVectorParticle> getTauMus() const{ return InitTauMus_;}
+	std::vector<LorentzVectorParticle> getResonances() const{ return Resonances_;}
+	std::vector<LorentzVectorParticle> getTauHs() const{ return TauHs_;}
+	std::vector<LorentzVectorParticle> getTauMus() const{ return TauMus_;}
 
 	bool isValid() const{ return isvalid_;}
 	double getNiterations() const{ return Niterations_.at(Index_);}
