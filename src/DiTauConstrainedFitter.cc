@@ -342,7 +342,7 @@ bool DiTauConstrainedFitter::Fit(){
       TString name=ParName(i);
       // if not limited (vhigh <= vlow)
       // MnPar.Add(name.Data(),para_0(i,0),sqrt(fabs(cova_0(i,i))),para_0(i,0)-nsigma*sqrt(fabs(cova_0(i,i))),para_0(i,0)+nsigma*sqrt(fabs(cova_0(i,i))));
-      MnPar.Add(name.Data(),para_0(i),sqrt(fabs(cova_0(i,i))));
+      MnPar.Add(name.Data(),para_0(i));//,sqrt(fabs(cova_0(i,i))));
       for(int j=0;j<para_0.GetNrows();j++){
         MnCov(i,j) = cova_0(i,j);
       }
@@ -354,7 +354,7 @@ bool DiTauConstrainedFitter::Fit(){
       TString name=ParName(i+offset);
       // if not limited (vhigh <= vlow)
       // MnPar.Add(name.Data(),parb_0(i,0),sqrt(fabs(covb_0(i,i))),parb_0(i,0)-nsigma*sqrt(fabs(covb_0(i,i))),parb_0(i,0)+nsigma*sqrt(fabs(covb_0(i,i))));
-      MnPar.Add(name.Data(),parb_0(i),sqrt(fabs(covb_0(i,i))));
+      MnPar.Add(name.Data(),parb_0(i)); //,sqrt(fabs(covb_0(i,i))));
       for(int j=0;j<parb_0.GetNrows();j++){
         MnCov(i+offset,j+offset) = covb_0(i,j);
       }

@@ -395,7 +395,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   chi2prev=chi2;
   chi2_vecprev.ResizeTo(chi2_vec); chi2_vecprev = chi2_vec;
 
-  TVectorD Currentchi2_vec = ChiSquareUsingInitalPoint(y,par_a,par_b,lambda,V_f_inv);
+  TVectorD Currentchi2_vec = ChiSquareUsingInitalPoint(par_a,par_b,lambda,V_f_inv);
   double Curentchi2(Currentchi2_vec.Sum()), Currentdelta(ConstraintDelta(para,parb));
 
   TMatrixT<double> a_s=par_a;
@@ -692,23 +692,24 @@ double LagrangeMultipliersFitter::ChiSquare(TMatrixT<double> delta_alpha,TMatrix
   double c2=chisquare(0,0);
   return c2;
 }
-TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
+TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
   // if(cova_0.GetNrows()!=V_alpha0_inv.GetNrows()){
   TMatrixTSym<double> V_alpha0=cova_0;
+  TMatrixTSym<double> V_alpha0_inv=cova_0;
   V_alpha0_inv.ResizeTo(cova_0.GetNrows(),cova_0.GetNrows());
-    TDecompBK Inverter(V_alpha0);
-   if(!Inverter.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
-      std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
-      for(int j=0;j<par.GetNrows();j++){
-        for(int i=0;i<par.GetNrows();i++){
-    	if(i==j) V_alpha0_inv(i,j)=1.0/V_alpha0(i,j);
-    	else V_alpha0_inv(i,j)=0.0;
-        }
+  TDecompBK Inverter(V_alpha0);
+  if(!Inverter.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
+    std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
+    for(int j=0;j<par.GetNrows();j++){
+      for(int i=0;i<par.GetNrows();i++){
+        if(i==j) V_alpha0_inv(i,j)=1.0/V_alpha0(i,j);
+        else V_alpha0_inv(i,j)=0.0;
       }
     }
-    else{
-      V_alpha0_inv=Inverter.Invert();
-    }
+  }
+  else{
+    V_alpha0_inv=Inverter.Invert();
+  }
   // V_alpha0_inv=V_alpha0;V_alpha0_inv.Invert();
 
   // std::cout<<"V_alpha0  "<<std::endl;V_alpha0.Print();
@@ -716,8 +717,7 @@ TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> y
   TMatrixT<double> lambdaT=lambda; lambdaT.T();
   TMatrixT<double> a0=convertToMatrix(para_0);
   TMatrixT<double> b0=convertToMatrix(parb_0);
-  TMatrixT<double> da=y-a;
-  
+  TMatrixT<double> da=y_-a;
 
   TMatrixT<double> daT=da;  daT.T();
   TMatrixT<double> chisquare_var=daT*(V_alpha0_inv*da);
@@ -751,7 +751,12 @@ double LagrangeMultipliersFitter::UpdateChisquare(TVectorD a,TVectorD b){
   TMatrixT<double> aM = convertToMatrix(a);
   TMatrixT<double> bM = convertToMatrix(b);
   ApplyLagrangianConstraints();
-  TVectorD chi2vec=ChiSquareUsingInitalPoint(y_,aM,bM,lambda_,V_f_inv_);
+  // Logger(Logger::Info) << "y_.GetNrows(): " << y_.GetNrows() << " y_.GetNcols(): " << y_.GetNcols() << std::endl;
+  // Logger(Logger::Info) << "aM.GetNrows(): " << aM.GetNrows() << " aM.GetNcols(): " << aM.GetNcols() << std::endl;
+  // Logger(Logger::Info) << "bM.GetNrows(): " << bM.GetNrows() << " bM.GetNcols(): " << bM.GetNcols() << std::endl;
+  // Logger(Logger::Info) << "lambda_.GetNrows(): " << lambda_.GetNrows() << " lambda_.GetNcols(): " << lambda_.GetNcols() << std::endl;
+  // Logger(Logger::Info) << "V_f_inv_.GetNrows(): " << V_f_inv_.GetNrows() << " V_f_inv_.GetNcols(): " << V_f_inv_.GetNcols() << std::endl;
+  TVectorD chi2vec=ChiSquareUsingInitalPoint(aM,bM,lambda_,V_f_inv_);
   return chi2vec.Sum();
 }
 

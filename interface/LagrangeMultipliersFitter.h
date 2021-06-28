@@ -48,32 +48,40 @@ class LagrangeMultipliersFitter{
   static TMatrixT<double> convertToMatrix(TVectorT<double> V);
 
 
-   TMatrixT<double> MakeFullMatrix(TMatrixT<double> M11,TMatrixT<double> M12,TMatrixT<double> M21,TMatrixT<double> M22,TMatrixT<double> A,TMatrixT<double> B);
-   TMatrixT<double> MakeFullVector(TMatrixT<double> V1,TMatrixT<double> V2,TMatrixT<double> V3);
-   TMatrixT<double> solutionlambda(TMatrixT<double> M);
-   TMatrixT<double> solutiona(TMatrixT<double> M);
-   TMatrixT<double> solutionb(TMatrixT<double> M);
-   void Print(TMatrixT<double> M);
+  virtual TMatrixT<double> MakeFullMatrix(TMatrixT<double> M11,TMatrixT<double> M12,TMatrixT<double> M21,TMatrixT<double> M22,TMatrixT<double> A,TMatrixT<double> B);
+  virtual TMatrixT<double> MakeFullVector(TMatrixT<double> V1,TMatrixT<double> V2,TMatrixT<double> V3);
+  TMatrixT<double> solutionlambda(TMatrixT<double> M);
+  TMatrixT<double> solutiona(TMatrixT<double> M);
+  TMatrixT<double> solutionb(TMatrixT<double> M);
+  void Print(TMatrixT<double> M);
 
   double UpdateChisquare(TVectorD a, TVectorD b);
 
  protected:
   virtual TVectorD HardValue(TVectorD &va,TVectorD &vb)=0;
   virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb)=0;
-  bool  ApplyLagrangianConstraints();
+  virtual bool  ApplyLagrangianConstraints();
+  virtual TVectorD ChiSquareUsingInitalPoint(TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv);
+
+  TMatrixTSym<double> ComputeV_f(TMatrixTSym<double>  ca,TMatrixTSym<double>  cb,TVectorD pa,TVectorD pb);
+  TMatrixT<double> DerivativeHCa();
+  TMatrixT<double> DerivativeHCb();
+  TMatrixT<double> DerivativeSCa();
+  TMatrixT<double> DerivativeSCb();
+  double ConstraintDelta(TVectorT<double> a,TVectorT<double>  b);
 
   TVectorD par_0; // parameter values for linearization point
   TVectorD par; // current parameter values
-  TMatrixTSym<double> cov_0; //covariance matrix for linearization point (corresponding to par_0) 
-  TMatrixTSym<double> cov; // current covariance matrix (corresponding to par) 
+  TMatrixTSym<double> cov_0; //covariance matrix for linearization point (corresponding to par_0)
+  TMatrixTSym<double> cov; // current covariance matrix (corresponding to par)
 
   TMatrixT<double> y_;
 
   //  a and b denotes taua1 and taumu parameters correspondingly
   TVectorD para_0; // parameter values for linearization point
   TVectorD para, paraprev; // current parameter values
-  TMatrixTSym<double> cova_0; //covariance matrix for linearization point (corresponding to par_0) 
-  TMatrixTSym<double> cova; // current covariance matrix (corresponding to par) 
+  TMatrixTSym<double> cova_0; //covariance matrix for linearization point (corresponding to par_0)
+  TMatrixTSym<double> cova; // current covariance matrix (corresponding to par)
 
   TVectorD parb_0; // parameter values for linearization point
   TVectorD parb, parbprev; // current parameter values
@@ -82,6 +90,12 @@ class LagrangeMultipliersFitter{
 
   TMatrixT<double> lambda_; // current lagrangian multipliers
 
+  // covariances and derivatives info
+  TMatrixT<double> Fa;
+  TMatrixT<double> Fb;
+  TMatrixT<double> A;
+  TMatrixT<double> B;
+  TMatrixTSym<double> V_f_inv_;
 
   bool isconfigured;
   bool isFit;
@@ -98,33 +112,16 @@ class LagrangeMultipliersFitter{
 
  private:
   TMatrixT<double> Derivative();
-
-  TMatrixT<double> DerivativeHCa();
-  TMatrixT<double> DerivativeHCb();
-  TMatrixT<double> DerivativeSCa();
-  TMatrixT<double> DerivativeSCb();
-  TMatrixTSym<double> ComputeV_f(TMatrixTSym<double>  ca,TMatrixTSym<double>  cb,TVectorD pa,TVectorD pb);
   TMatrixTSym<double> ScaleMatrix(TMatrixTSym<double>  M, double scale);
   double ChiSquare(TMatrixT<double> delta_alpha,TMatrixT<double> lambda,TMatrixT<double> D,TMatrixT<double> d);
-  TVectorD ChiSquareUsingInitalPoint(TMatrixT<double> y, TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv);
-  double ConstraintDelta(TVectorT<double> a,TVectorT<double>  b);
   TMatrixT<double> ComputeVariance();
   TMatrixT<double> ComputeVariancea();
   TMatrixT<double> ComputeVarianceb();
 
-  // covariances and derivatives info
-  TMatrixT<double> Fa;
-  TMatrixT<double> Fb;
-  TMatrixT<double> A;
-  TMatrixT<double> B;
-
-  TMatrixTSym<double> V_alpha0_inv;
-  TMatrixTSym<double> V_f_inv_;
   TMatrixT<double> D;
   TMatrixTSym<double> V_D;
   double ScaleFactor;
   TMatrixT<double> V_corr_prev;
-
 
 };
 #endif

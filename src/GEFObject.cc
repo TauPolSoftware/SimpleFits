@@ -38,25 +38,52 @@ GEFObject::GEFObject(std::vector< std::vector<LorentzVectorParticle> > InitDaugh
 					 std::vector<LorentzVectorParticle> InitResonance,
 					 std::vector< std::vector<LorentzVectorParticle> > FitDaughters,
 					 std::vector<LorentzVectorParticle> FitResonance,
-					 bool fitvalid, bool fitconverged, std::vector<TVectorD> chi2, std::vector<double> csum, std::vector<double> Niterations, int Index){
+					 bool fitvalid, bool fitconverged, std::vector<TVectorD> chi2, std::vector<double> csum, std::vector<double> Niterations, int Index)
+{
+  for(unsigned i=0; i<InitDaughters.size(); i++){
+    InitTauHs_.push_back(InitDaughters.at(i).at(0));
+    InitTauMus_.push_back(InitDaughters.at(i).at(1));
+    InitResonances_.push_back(InitResonance.at(i));
+  }
   isvalid_ = fitvalid;
   chi2_ = chi2;
   csum_ = csum;
   Niterations_ = Niterations;
   fitconverged_ = fitconverged;
-  Index_ = Index;
-  InitTauH_ = InitDaughters.at(Index).at(0);
-  InitTauMu_ = InitDaughters.at(Index).at(1);
-  InitResonance_ = InitResonance.at(Index);
-  TauH_ = FitDaughters.at(Index).at(0);
-  TauMu_ = FitDaughters.at(Index).at(1);
-  Resonance_ = FitResonance.at(Index);
-  for(unsigned i=0; i<3; i++){
-	InitTauHs_.push_back(InitDaughters.at(i).at(0));
-	InitTauMus_.push_back(InitDaughters.at(i).at(1));
-	InitResonances_.push_back(InitResonance.at(i));
-	TauHs_.push_back(FitDaughters.at(i).at(0));
-	TauMus_.push_back(FitDaughters.at(i).at(1));
-	Resonances_.push_back(FitResonance.at(i));
+  // std::cout << "isvalid_: " << isvalid_ << "\n";
+  // std::cout << "fitconverged_: " << fitconverged_ << "\n";
+  // std::cout << "Index: " << Index << "\n";
+  if(fitconverged){
+    Index_ = Index;
+    InitTauH_ = InitDaughters.at(Index_).at(0);
+    InitTauMu_ = InitDaughters.at(Index_).at(1);
+    InitResonance_ = InitResonance.at(Index_);
+    TauH_ = FitDaughters.at(Index_).at(0);
+    TauMu_ = FitDaughters.at(Index_).at(1);
+    Taus_.push_back(TauH_);
+    Taus_.push_back(TauMu_);
+    Resonance_ = FitResonance.at(Index_);
+    for(unsigned i=0; i<InitDaughters.size(); i++){
+      TauHs_.push_back(FitDaughters.at(i).at(0));
+      TauMus_.push_back(FitDaughters.at(i).at(1));
+      Resonances_.push_back(FitResonance.at(i));
+    }
   }
-};
+  else
+  {
+    Index_ = 0;
+    InitTauH_ = LorentzVectorParticle();
+    InitTauMu_ = LorentzVectorParticle();
+    InitResonance_ = LorentzVectorParticle();
+    TauH_ = LorentzVectorParticle();
+    TauMu_ = LorentzVectorParticle();
+    Taus_.push_back(TauH_);
+    Taus_.push_back(TauMu_);
+    Resonance_ = LorentzVectorParticle();
+    for(unsigned i=0; i<InitDaughters.size(); i++){
+      TauHs_.emplace_back(LorentzVectorParticle());
+      TauMus_.emplace_back(LorentzVectorParticle());
+      Resonances_.emplace_back(LorentzVectorParticle());
+    }
+  }
+}

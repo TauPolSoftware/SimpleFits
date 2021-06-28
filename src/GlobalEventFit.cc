@@ -12,6 +12,7 @@
 #include "TauPolSoftware/SimpleFits/interface/GlobalEventFit.h"
 #include "TauPolSoftware/SimpleFits/interface/TauA1NuConstrainedFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/DiTauConstrainedFitter.h"
+#include "TauPolSoftware/SimpleFits/interface/ThreeProngThreeProngFitter.h"
 
 GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov){
 	Configure(Muon, A1, PV, PVCov);
@@ -21,6 +22,12 @@ GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, dou
 
 GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, PTObject MET, TVector3 PV, TMatrixTSym<double> PVCov){
 	Configure(Muon, A1, PV, PVCov);
+	MET_ = MET;
+	useFullRecoil_ = true;
+}
+
+GlobalEventFit::GlobalEventFit(std::vector<LorentzVectorParticle> A1s, PTObject MET, TVector3 PV, TMatrixTSym<double> PVCov){
+	Configure(A1s, PV, PVCov);
 	MET_ = MET;
 	useFullRecoil_ = true;
 }
@@ -35,64 +42,102 @@ void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVe
 	isValid_ = false;
 	Muon_ = Muon;
 	A1_= A1;
+	A1s_.push_back(A1);
 	PV_ = PV;
 	PVCov_.ResizeTo(PVCov);
 	PVCov_= PVCov;
 	SV_ = A1.Vertex();
 	SVCov_.ResizeTo(A1.VertexCov());
 	SVCov_ = A1.VertexCov();
+	SVs_.push_back(A1.Vertex());
+	SVCovs_.push_back(A1.VertexCov());
 
-	TPTRObject_ = ThreeProngTauReconstruction();
+	// Logger::Instance()->SetLevel(Logger::level::Debug);
+
+	ThreeProngTauReconstruction();
+	if (isConfigured_) TPTRObject_ = TPTRObjects_.at(0);
 
 	useDefaultMassConstraint_ = true;
 	correctPt_ = false;
 	useCollinearityTauMu_ = false;
 }
 
+void GlobalEventFit::Configure(std::vector<LorentzVectorParticle> A1s, TVector3 PV, TMatrixTSym<double> PVCov){
+	isConfigured_ = false;
+	isFit_ = false;
+	isValid_ = false;
+	A1_= A1s.at(0); // for backwards compatibility
+	A1s_= A1s;
+	PV_ = PV;
+	PVCov_.ResizeTo(PVCov);
+	PVCov_= PVCov;
+	SV_ = A1s.at(0).Vertex();  // for backwards compatibility
+	SVCov_.ResizeTo(A1s.at(0).VertexCov());
+	SVCov_ = A1s.at(0).VertexCov();  // for backwards compatibility
+
+	for(unsigned i=0; i<A1s_.size(); i++){
+		SVs_.push_back(A1s.at(i).Vertex());
+		TMatrixTSym<double> SVCov;
+		SVCov.ResizeTo(A1s.at(i).VertexCov());
+		SVCovs_.push_back(SVCov);
+	}
+	// Logger::Instance()->SetLevel(Logger::level::Debug);
+
+	ThreeProngTauReconstruction();
+	if (isConfigured_) TPTRObject_ = TPTRObjects_.at(0);
+
+	useDefaultMassConstraint_ = true;
+	correctPt_ = false;
+	useCollinearityTauMu_ = false;
+}
+
+
 // Is called in the constructor and determines whether the hadronic tau decay is ambiguous and calculates the possible four-momenta of the taus.
-TPTRObject GlobalEventFit::ThreeProngTauReconstruction(){
-	std::vector<LorentzVectorParticle> Taus;
-	std::vector<LorentzVectorParticle> Neutrinos;
-	double RotationSignificance = 0.0;
-	std::vector<bool> recostatus;
+void GlobalEventFit::ThreeProngTauReconstruction(){
+	for(unsigned i=0; i<A1s_.size(); i++){
+		std::vector<LorentzVectorParticle> Taus;
+		std::vector<LorentzVectorParticle> Neutrinos;
+		double RotationSignificance = 0.0;
+		std::vector<bool> recostatus;
 
-	if(A1_.getParMatrix().GetNrows() != LorentzVectorParticle::NLorentzandVertexPar){
-	  Logger(Logger::Error) << "A1 is not a valid LorentzVectorParticle." << std::endl;
-	  return TPTRObject();
-	}
+		if(A1s_.at(i).getParMatrix().GetNrows() != LorentzVectorParticle::NLorentzandVertexPar){
+			Logger(Logger::Error) << "A1 is not a valid LorentzVectorParticle." << std::endl;
+			TPTRObjects_.emplace_back(TPTRObject());
+			return;
+		}
 
-	for(unsigned int Ambiguity = 0; Ambiguity<3; Ambiguity++){
-		TauA1NuConstrainedFitter TauA1NU(Ambiguity,A1_,PV_,PVCov_);
-		recostatus.push_back(TauA1NU.Fit());
-		if(recostatus.at(Ambiguity)){
-			Taus.push_back(TauA1NU.GetMother());
-			LorentzVectorParticle Nu = TauA1NU.GetReFitDaughters().at(1);
-			Neutrinos.push_back(Nu);
-			if(Ambiguity == MultiProngTauSolver::zero){
-			  RotationSignificance = TauA1NU.GetTauRotationSignificance();
+		for(unsigned int Ambiguity = 0; Ambiguity<3; Ambiguity++){
+			TauA1NuConstrainedFitter TauA1NU(Ambiguity,A1s_.at(i),PV_,PVCov_);
+			recostatus.push_back(TauA1NU.Fit());
+			if(recostatus.at(Ambiguity)){
+				Logger(Logger::Debug) << "Ambiguity: " << Ambiguity << std::endl;
+				Taus.push_back(TauA1NU.GetMother());
+				LorentzVectorParticle Nu = TauA1NU.GetReFitDaughters().at(1);
+				Neutrinos.push_back(Nu);
+				if(Ambiguity == MultiProngTauSolver::zero){
+				  RotationSignificance = TauA1NU.GetTauRotationSignificance();
+					Logger(Logger::Debug) << "RotationSignificance: " << RotationSignificance << std::endl;
+				}
+				Logger(Logger::Debug) << "Tau par and covariance: " << std::endl;
+				if(Logger::Instance()->Level() == Logger::Debug){
+				  Taus.at(Ambiguity).getParMatrix().Print();
+				  Taus.at(Ambiguity).getCovMatrix().Print();
+				}
+				Logger(Logger::Debug) << "Neutrino par and covariance: " << std::endl;
+				if(Logger::Instance()->Level() == Logger::Debug){
+				  Neutrinos.at(Ambiguity).getParMatrix().Print();
+				  Neutrinos.at(Ambiguity).getCovMatrix().Print();
+				}
 			}
-			Logger(Logger::Debug) << "Tau par and covariance: " << std::endl;
-			if(Logger::Instance()->Level() == Logger::Debug){
-			  Taus.at(Ambiguity).getParMatrix().Print();
-			  Taus.at(Ambiguity).getCovMatrix().Print();
-			}
-			Logger(Logger::Debug) << "Neutrino par and covariance: " << std::endl;
-			if(Logger::Instance()->Level() == Logger::Debug){
-			  Neutrinos.at(Ambiguity).getParMatrix().Print();
-			  Neutrinos.at(Ambiguity).getCovMatrix().Print();
+			else{
+				Taus.push_back(LorentzVectorParticle());
+				Neutrinos.push_back(LorentzVectorParticle());
 			}
 		}
-		else{
-			Taus.push_back(LorentzVectorParticle());
-			Neutrinos.push_back(LorentzVectorParticle());
-		}
+		bool isambiguous(IsAmbiguous(recostatus));
+		TPTRObjects_.emplace_back(TPTRObject(A1s_.at(i), Taus, Neutrinos, isambiguous, RotationSignificance, true));
 	}
-
-	bool isambiguous(IsAmbiguous(recostatus));
-
-	TPTRObject Results = TPTRObject(A1_, Taus, Neutrinos, isambiguous, RotationSignificance, true);
 	isConfigured_ = true;
-	return Results;
 }
 
 // Translates the vector of ambiguity into a single boolean
@@ -108,11 +153,12 @@ bool GlobalEventFit::IsAmbiguous(std::vector<bool> recostatus){
 // Performs the fit for every possible tau if ambiguous. Picks solution with lowest chi2 > 0.
 GEFObject GlobalEventFit::Fit(){
 	if(!isConfigured_) {
-		Logger(Logger::Error) << "GlobalEventFit not configured." << std::endl;
+		Logger(Logger::Error) << "GlobalEventFit is not configured." << std::endl;
 		return GEFObject();
 	}
-	std::vector<bool> recostatus = TPTRObject_.CreateVectorFromAmbiguity();
-	std::vector<LorentzVectorParticle> Taus = TPTRObject_.getTaus();
+	std::vector< std::vector<bool> > recostatus;
+	std::vector< std::vector<LorentzVectorParticle> > Taus;
+
 	std::vector< std::vector<LorentzVectorParticle> > InitDaughters, RefitDaughters;
 	std::vector<LorentzVectorParticle> InitResonance, FitResonance;
 	std::vector<PTObject> METMinusNeutrino;
@@ -120,100 +166,202 @@ GEFObject GlobalEventFit::Fit(){
 	std::vector<double> Chi2s, Csums, Niterats;
 	std::vector<bool> fitstatus;
 	std::vector<bool> fitvalid;
-	DiTauConstrainedFitter* ptr2DTCF = NULL;
 
-	for(unsigned Ambiguity = 0; Ambiguity<recostatus.size(); Ambiguity ++){
-		if(!recostatus.at(Ambiguity)){
-			fitstatus.push_back(false);
-			std::vector<LorentzVectorParticle> tmp;
-			for(unsigned i=0; i<2; i++) tmp.push_back(LorentzVectorParticle());
-			InitDaughters.push_back(tmp);
-			RefitDaughters.push_back(tmp);
-			InitResonance.push_back(LorentzVectorParticle());
-			FitResonance.push_back(LorentzVectorParticle());
-			METMinusNeutrino.push_back(PTObject());
-			Chi2Vecs.push_back(TVectorD());
-			Chi2s.push_back(-1);
-			Csums.push_back(-1);
-			Niterats.push_back(-1);
-			continue;
-		}
+	if(A1s_.size() == 1){
+		recostatus.push_back(TPTRObject_.CreateVectorFromAmbiguity());
+		Taus.push_back(TPTRObject_.getTaus());
 
-		if(useFullRecoil_){
-			PTObject ZPtEst(MET_);
-			AddA1(ZPtEst);
-			AddMuon(ZPtEst);
-			METMinusNeutrino.push_back(ZPtEst);
-			//METMinusNeutrino.push_back(SubtractNeutrinoFromMET(Ambiguity));
-			if(useDefaultMassConstraint_){
-				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
-				Logger(Logger::Debug) << "Case 1: With Recoil, Default MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
+		DiTauConstrainedFitter* ptr2Fitter = NULL;
+
+		for(unsigned Ambiguity = 0; Ambiguity<recostatus.at(0).size(); Ambiguity ++){
+			if(!recostatus.at(0).at(Ambiguity)){
+				fitstatus.push_back(false);
+				std::vector<LorentzVectorParticle> tmp;
+				for(unsigned i=0; i<2; i++) tmp.push_back(LorentzVectorParticle());
+				InitDaughters.push_back(tmp);
+				RefitDaughters.push_back(tmp);
+				InitResonance.push_back(LorentzVectorParticle());
+				FitResonance.push_back(LorentzVectorParticle());
+				METMinusNeutrino.push_back(PTObject());
+				Chi2Vecs.push_back(TVectorD());
+				Chi2s.push_back(-1);
+				Csums.push_back(-1);
+				Niterats.push_back(-1);
+				continue;
+			}
+
+			if(useFullRecoil_){
+				PTObject ZPtEst(MET_);
+				AddA1(ZPtEst);
+				AddMuon(ZPtEst);
+				METMinusNeutrino.push_back(ZPtEst);
+				//METMinusNeutrino.push_back(SubtractNeutrinoFromMET(Ambiguity));
+				if(useDefaultMassConstraint_){
+					ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
+					Logger(Logger::Debug) << "Case 1: With Recoil, Default MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+				}
+				else{
+				  ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
+					Logger(Logger::Debug) << "Case 2: With Recoil, User MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+				}
 			}
 			else{
-			  ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
-				Logger(Logger::Debug) << "Case 2: With Recoil, User MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
+				METMinusNeutrino.push_back(PTObject());
+				if(useDefaultMassConstraint_){
+					ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, 91.5);
+					Logger(Logger::Debug) << "Case 3: No Recoil, Default MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+				}
+				else{
+					ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
+					Logger(Logger::Debug) << "Case 4: No Recoil, User MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+				}
 			}
-		}
-		else{
-			METMinusNeutrino.push_back(PTObject());
-			if(useDefaultMassConstraint_){
-				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, 91.5);
-				Logger(Logger::Debug) << "Case 3: No Recoil, Default MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
+			if(useCollinearityTauMu_){
+				ptr2Fitter->SetUseCollinearityTauMu(true);
+			}
+
+			InitDaughters.push_back(ptr2Fitter->GetInitialDaughters());
+			InitResonance.push_back(ptr2Fitter->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
+
+			fitvalid.push_back(ptr2Fitter->Fit());
+			isValid_ = isValid_ || fitvalid.back();
+			// fitstatus.push_back(fitvalid.back() && ptr2Fitter->isConverged());
+			fitstatus.push_back(fitvalid.back());
+			if(fitvalid.back()){
+				FitResonance.push_back(ptr2Fitter->GetMother());
+				RefitDaughters.push_back(ptr2Fitter->GetReFitDaughters());
+				Chi2Vecs.push_back(ptr2Fitter->ChiSquareVector());
+				Chi2s.push_back(ptr2Fitter->ChiSquare());
+				Niterats.push_back(ptr2Fitter->NIter());
+				Csums.push_back(ptr2Fitter->CSum());
+				FitPar_.ResizeTo(ptr2Fitter->GetExppar()); FitPar_ = ptr2Fitter->GetExppar();
+				FitCov_.ResizeTo(ptr2Fitter->GetExpcov()); FitCov_ = ptr2Fitter->GetExpcov();
 			}
 			else{
-				ptr2DTCF = new DiTauConstrainedFitter(Taus.at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
-				Logger(Logger::Debug) << "Case 4: No Recoil, User MassConstraint: " << ptr2DTCF->GetMassConstraint() << std::endl;
+				std::vector<LorentzVectorParticle> tmp;
+				for(unsigned i=0; i<2; i++) tmp.push_back(LorentzVectorParticle());
+				RefitDaughters.push_back(tmp);
+				// InitResonance.push_back(LorentzVectorParticle());
+				FitResonance.push_back(LorentzVectorParticle());
+				Chi2Vecs.push_back(TVectorD());
+				Chi2s.push_back(-1);
+				Csums.push_back(-1);
+				Niterats.push_back(-1);
 			}
+			delete ptr2Fitter;
 		}
-		if(useCollinearityTauMu_){
-			ptr2DTCF->SetUseCollinearityTauMu(true);
-		}
-
-		InitDaughters.push_back(ptr2DTCF->GetInitialDaughters());
-		InitResonance.push_back(ptr2DTCF->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
-
-		fitvalid.push_back(ptr2DTCF->Fit());
-		isValid_ = isValid_ || fitvalid.back();
-		// fitstatus.push_back(fitvalid.back() && ptr2DTCF->isConverged());
-		fitstatus.push_back(fitvalid.back());
-		if(fitvalid.back()){
-			FitResonance.push_back(ptr2DTCF->GetMother());
-			RefitDaughters.push_back(ptr2DTCF->GetReFitDaughters());
-			Chi2Vecs.push_back(ptr2DTCF->ChiSquareVector());
-			Chi2s.push_back(ptr2DTCF->ChiSquare());
-			Niterats.push_back(ptr2DTCF->NIter());
-			Csums.push_back(ptr2DTCF->CSum());
-			FitPar_.ResizeTo(ptr2DTCF->GetExppar()); FitPar_ = ptr2DTCF->GetExppar();
-			FitCov_.ResizeTo(ptr2DTCF->GetExpcov()); FitCov_ = ptr2DTCF->GetExpcov();
-		}
-		else{
-			std::vector<LorentzVectorParticle> tmp;
-			for(unsigned i=0; i<2; i++) tmp.push_back(LorentzVectorParticle());
-			RefitDaughters.push_back(tmp);
-			// InitResonance.push_back(LorentzVectorParticle());
-			FitResonance.push_back(LorentzVectorParticle());
-			Chi2Vecs.push_back(TVectorD());
-			Chi2s.push_back(-1);
-			Csums.push_back(-1);
-			Niterats.push_back(-1);
-		}
-		delete ptr2DTCF;
 	}
-	fitstatuses_ = fitstatus;
-	int IndexToReturn(0);
-	// bool foundSolution = AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn);
-	bool foundSolution = AmbiguitySolverByChi2Minuit(recostatus, fitstatus, Chi2s, IndexToReturn);
+	else if(A1s_.size() == 2){
+		for (size_t i = 0; i < A1s_.size(); i++) {
+			recostatus.push_back(TPTRObjects_.at(i).CreateVectorFromAmbiguity());
+			Taus.push_back(TPTRObjects_.at(i).getTaus());
+		}
+		// TODO finish the  recostatus and Taus stuff
 
+		ThreeProngThreeProngFitter* ptr2Fitter = NULL;
+
+		for(unsigned AmbiguityTau1 = 0; AmbiguityTau1 < recostatus.at(0).size(); AmbiguityTau1++){
+			for(unsigned AmbiguityTau2 = 0; AmbiguityTau2 < recostatus.at(1).size(); AmbiguityTau2++){
+				if(!recostatus.at(0).at(AmbiguityTau1) || !recostatus.at(1).at(AmbiguityTau2)){
+					fitstatus.push_back(false);
+					std::vector<LorentzVectorParticle> tmp;
+					for(unsigned i=0; i<2; i++) tmp.push_back(LorentzVectorParticle());
+					InitDaughters.push_back(tmp);
+					RefitDaughters.push_back(tmp);
+					InitResonance.push_back(LorentzVectorParticle());
+					FitResonance.push_back(LorentzVectorParticle());
+					METMinusNeutrino.push_back(PTObject());
+					Chi2Vecs.push_back(TVectorD());
+					Chi2s.push_back(-1);
+					Csums.push_back(-1);
+					Niterats.push_back(-1);
+					continue;
+				}
+
+				std::vector<LorentzVectorParticle> TauThreeProngs {Taus.at(0).at(AmbiguityTau1), Taus.at(1).at(AmbiguityTau2)};
+				if(useFullRecoil_){
+					PTObject ResPtEst(MET_);
+					AddA1s(ResPtEst);
+					METMinusNeutrino.push_back(ResPtEst);
+					//METMinusNeutrino.push_back(SubtractNeutrinoFromMET(AmbiguityTau1));
+					if(useDefaultMassConstraint_){
+						ptr2Fitter = new ThreeProngThreeProngFitter(TauThreeProngs, A1s_, ResPtEst, PV_, PVCov_);
+						Logger(Logger::Debug) << "Case 1: With Recoil, Default MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+					}
+					else{
+					  ptr2Fitter = new ThreeProngThreeProngFitter(TauThreeProngs, A1s_, ResPtEst, PV_, PVCov_);
+						ptr2Fitter->SetMassConstraint(MassConstraint_);
+						Logger(Logger::Debug) << "Case 2: With Recoil, User MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+					}
+				}
+				else{
+					METMinusNeutrino.push_back(PTObject());
+					if(useDefaultMassConstraint_){
+						ptr2Fitter = new ThreeProngThreeProngFitter(TauThreeProngs, A1s_, PV_, PVCov_);
+						Logger(Logger::Debug) << "Case 3: No Recoil, Default MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+					}
+					else{
+						ptr2Fitter = new ThreeProngThreeProngFitter(TauThreeProngs, A1s_, PV_, PVCov_);
+						ptr2Fitter->SetMassConstraint(MassConstraint_);
+						Logger(Logger::Debug) << "Case 4: No Recoil, User MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+					}
+				}
+				if(useCollinearityTauMu_){
+					ptr2Fitter->SetUseCollinearityTauMu(true);
+				}
+
+				Logger(Logger::Info) << "A1s_.size() " << A1s_.size() << std::endl;
+				Logger(Logger::Info) << "TauThreeProngs.size() " << TauThreeProngs.size() << std::endl;
+				// A1s_.at(0).Print(); A1s_.at(1).Print();
+				Logger(Logger::Info) << "ptr2Fitter->NConstraints(): " << ptr2Fitter->NConstraints() << std::endl;
+				InitDaughters.push_back(ptr2Fitter->GetInitialDaughters());
+				Logger(Logger::Info) << "ptr2Fitter->GetInitialDaughters().size() " << ptr2Fitter->GetInitialDaughters().size() << std::endl;
+				InitResonance.push_back(ptr2Fitter->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
+
+				fitvalid.push_back(ptr2Fitter->Fit());
+				isValid_ = isValid_ || fitvalid.back();
+				// fitstatus.push_back(fitvalid.back() && ptr2Fitter->isConverged());
+				fitstatus.push_back(fitvalid.back());
+				if(fitvalid.back()){
+					FitResonance.push_back(ptr2Fitter->GetMother());
+					RefitDaughters.push_back(ptr2Fitter->GetReFitDaughters());
+					Chi2Vecs.push_back(ptr2Fitter->ChiSquareVector());
+					Chi2s.push_back(ptr2Fitter->ChiSquare());
+					Niterats.push_back(ptr2Fitter->NIter());
+					Csums.push_back(ptr2Fitter->CSum());
+					FitPar_.ResizeTo(ptr2Fitter->GetExppar()); FitPar_ = ptr2Fitter->GetExppar();
+					FitCov_.ResizeTo(ptr2Fitter->GetExpcov()); FitCov_ = ptr2Fitter->GetExpcov();
+				}
+				else{
+					std::vector<LorentzVectorParticle> tmp;
+					for(unsigned i=0; i<2; i++) tmp.emplace_back(LorentzVectorParticle());
+					RefitDaughters.push_back(tmp);
+					// InitResonance.push_back(LorentzVectorParticle());
+					FitResonance.emplace_back(LorentzVectorParticle());
+					Chi2Vecs.emplace_back(TVectorD());
+					Chi2s.push_back(-1);
+					Csums.push_back(-1);
+					Niterats.push_back(-1);
+				}
+				delete ptr2Fitter;
+			}
+		}
+	}
+
+	fitstatuses_ = fitstatus;
+	int IndexToReturn(-1);
+	// bool foundSolution = AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn);
+	bool foundSolution = AmbiguitySolverByChi2Minuit(fitstatus, Chi2s, IndexToReturn);
 	if(foundSolution){
-		std::vector<LorentzVectorParticle> CorrFitDaughters = FitDaughtersCorr(RefitDaughters.at(IndexToReturn));
-		RefitDaughters.at(IndexToReturn).at(0) = CorrFitDaughters.at(0);
-		RefitDaughters.at(IndexToReturn).at(1) = CorrFitDaughters.at(1);
+		// std::vector<LorentzVectorParticle> CorrFitDaughters = FitDaughtersCorr(RefitDaughters.at(IndexToReturn.at(0)));
+		// RefitDaughters.at(IndexToReturn.at(0)).at(0) = CorrFitDaughters.at(0);
+		// RefitDaughters.at(IndexToReturn.at(0)).at(1) = CorrFitDaughters.at(1);
 		isFit_ = true;
 	}
 	else{
 		Logger(Logger::Verbose) << "AmbiguitySolver failed: Fit did not converge." << std::endl;
 	}
-
+	Logger(Logger::Info) << "IndexToReturn: " << IndexToReturn << std::endl;
 	return GEFObject(InitDaughters,
 		InitResonance,
 		RefitDaughters,
@@ -222,26 +370,27 @@ GEFObject GlobalEventFit::Fit(){
 }
 
 // Solves ambiguity by chi2
-bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<TVectorD> Chi2Vecs, int &IndexToReturn){
+bool GlobalEventFit::AmbiguitySolverByChi2(std::vector< std::vector<bool> > A1Fit, std::vector<bool> EventFit, std::vector<TVectorD> Chi2Vecs, int &IndexToReturn){
+	if(A1s_.size() == 1){
+		if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false && Chi2Vecs.at(0).GetNoElements() == 3){IndexToReturn =0; return true;}
+		if(EventFit.at(1) == true && EventFit.at(2) == false && Chi2Vecs.at(1).GetNoElements() == 3){ IndexToReturn = 1;return true;}
+		if(EventFit.at(1) == false && EventFit.at(2) == true && Chi2Vecs.at(2).GetNoElements() == 3){ IndexToReturn = 2;return true;}
 
-	if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false && Chi2Vecs.at(0).GetNoElements() == 3){IndexToReturn =0; return true;}
-	if(EventFit.at(1) == true && EventFit.at(2) == false && Chi2Vecs.at(1).GetNoElements() == 3){ IndexToReturn = 1;return true;}
-	if(EventFit.at(1) == false && EventFit.at(2) == true && Chi2Vecs.at(2).GetNoElements() == 3){ IndexToReturn = 2;return true;}
+		if((A1Fit.at(0).at(1) == true && A1Fit.at(0).at(2) == true) && (EventFit.at(1) == true && EventFit.at(2) == true)){
 
-	if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == true && EventFit.at(2) == true)){
-
-	  /*
-	  if(Chi2s.at(1) >= 0 && Chi2s.at(2) < 0){ IndexToReturn = 1;return true;}
-	  else if(Chi2s.at(1) < 0 && Chi2s.at(2) >= 0){ IndexToReturn = 2;return true;}
-	  else if(Chi2s.at(1) >= 0 && Chi2s.at(2) >= 0){
-	    if(Chi2s.at(1) < Chi2s.at(2)){ IndexToReturn = 1;return true;}
-	    if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
-	  }
-	  */
-	    if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return true;}
-	    if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return true;}
+		  /*
+		  if(Chi2s.at(1) >= 0 && Chi2s.at(2) < 0){ IndexToReturn = 1;return true;}
+		  else if(Chi2s.at(1) < 0 && Chi2s.at(2) >= 0){ IndexToReturn = 2;return true;}
+		  else if(Chi2s.at(1) >= 0 && Chi2s.at(2) >= 0){
+		    if(Chi2s.at(1) < Chi2s.at(2)){ IndexToReturn = 1;return true;}
+		    if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
+		  }
+		  */
+		    if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return true;}
+		    if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return true;}
+		}
 	}
-	// if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == false && EventFit.at(2) == false)){
+	// if((A1Fit.at(0).at(1) == true && A1Fit.at(0).at(2) == true) && (EventFit.at(1) == false && EventFit.at(2) == false)){
 	//     if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return false;}
 	//     if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return false;}
 	// }
@@ -249,7 +398,7 @@ bool GlobalEventFit::AmbiguitySolverByChi2(std::vector<bool> A1Fit, std::vector<
 }
 
 // Solves ambiguity by chi2 for Minuit based minimization
-bool GlobalEventFit::AmbiguitySolverByChi2Minuit(std::vector<bool> A1Fit, std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn){
+bool GlobalEventFit::AmbiguitySolverByChi2Minuit(std::vector<bool> EventFit, std::vector<double> Chi2s, int &IndexToReturn){
 	// Logger(Logger::Info) << "A1Fit.at(0): " << A1Fit.at(0) << std::endl;
 	// Logger(Logger::Info) << "A1Fit.at(1): " << A1Fit.at(1) << std::endl;
 	// Logger(Logger::Info) << "A1Fit.at(2): " << A1Fit.at(2) << std::endl;
@@ -257,36 +406,39 @@ bool GlobalEventFit::AmbiguitySolverByChi2Minuit(std::vector<bool> A1Fit, std::v
 	// Logger(Logger::Info) << "EventFit.at(0): " << EventFit.at(0) << std::endl;
 	// Logger(Logger::Info) << "EventFit.at(1): " << EventFit.at(1) << std::endl;
 	// Logger(Logger::Info) << "EventFit.at(2): " << EventFit.at(2) << std::endl;
-	if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false){
-		IndexToReturn = 0;
-		return true;
+	if(A1s_.size() == 1){
+		if(EventFit.at(0) == true && EventFit.at(1) == false && EventFit.at(2) == false){
+			IndexToReturn = 0;
+			return true;
+		}
+		else if(EventFit.at(1) == true && EventFit.at(2) == false){
+			IndexToReturn = 1;
+			return true;
+		}
+		else if(EventFit.at(1) == false && EventFit.at(2) == true){
+			IndexToReturn = 2;
+			return true;
+		}
+		else if(EventFit.at(1) == true && EventFit.at(2) == true){
+			// Logger(Logger::Info) << "Chi2s.at(1): " << Chi2s.at(1) << std::endl;
+			// Logger(Logger::Info) << "Chi2s.at(2): " << Chi2s.at(2) << std::endl;
+			if(Chi2s.at(1) < Chi2s.at(2)){ IndexToReturn = 1;return true;}
+			if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
+		}
 	}
-	else if(EventFit.at(1) == true && EventFit.at(2) == false){
-		IndexToReturn = 1;
-		return true;
+	else if(A1s_.size() == 2){
+		bool found_solution(false);
+		double Chi2Min(9999);
+		for(size_t i = 0; i < EventFit.size(); i++) {
+			Logger(Logger::Info) << "EventFit.at(" << i << "): " << EventFit.at(i) << std::endl;
+			if(EventFit.at(i) && (Chi2s.at(i) < Chi2Min)){
+				Chi2Min = Chi2s.at(i);
+				IndexToReturn = i;
+				found_solution = true;
+			}
+		}
+		return found_solution;
 	}
-	else if(EventFit.at(1) == false && EventFit.at(2) == true){
-		IndexToReturn = 2;
-		return true;
-	}
-	else if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == true && EventFit.at(2) == true)){
-	  /*
-	  if(Chi2s.at(1) >= 0 && Chi2s.at(2) < 0){ IndexToReturn = 1;return true;}
-	  else if(Chi2s.at(1) < 0 && Chi2s.at(2) >= 0){ IndexToReturn = 2;return true;}
-	  else if(Chi2s.at(1) >= 0 && Chi2s.at(2) >= 0){
-	    if(Chi2s.at(1) < Chi2s.at(2)){ IndexToReturn = 1;return true;}
-	    if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
-	  }
-	  */
-		// Logger(Logger::Info) << "Chi2s.at(1): " << Chi2s.at(1) << std::endl;
-		// Logger(Logger::Info) << "Chi2s.at(2): " << Chi2s.at(2) << std::endl;
-		if(Chi2s.at(1) < Chi2s.at(2)){ IndexToReturn = 1;return true;}
-		if(Chi2s.at(1) > Chi2s.at(2)){ IndexToReturn = 2;return true;}
-	}
-	// if((A1Fit.at(1) == true && A1Fit.at(2) == true) && (EventFit.at(1) == false && EventFit.at(2) == false)){
-	//     if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return false;}
-	//     if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return false;}
-	// }
 	return false;
 }
 
@@ -465,6 +617,40 @@ PTObject GlobalEventFit::AddA1(PTObject MET){
 
   return METPlusA1;
 }
+
+PTObject GlobalEventFit::AddA1s(PTObject MET){
+  TMatrixT<double> METPlusA1Par; METPlusA1Par.ResizeTo(2,1);
+  TMatrixTSym<double> METPlusA1Cov; METPlusA1Cov.ResizeTo(2,2);
+
+  for (size_t i_a1 = 0; i_a1 < A1s_.size(); i_a1++) {
+    for(int i=0; i<METPlusA1Cov.GetNrows(); i++){
+      METPlusA1Par(i,0) = MET.Par()(i,0) + TPTRObjects_.at(i_a1).getA1().getParMatrix()(i,0);
+      Logger(Logger::Debug) << "METMinusNeutrinoPar(" << i << ",0) " << METPlusA1Par(i,0) << std::endl;
+      for(int j=0; j<METPlusA1Cov.GetNcols(); j++){
+        METPlusA1Cov(i,j) = MET.Cov()(i,j) + TPTRObjects_.at(i_a1).getA1().getCovMatrix()(i+3,j+3);
+        Logger(Logger::Debug) << "METMinusNeutrinoCov(" << i << "," << j << ") " << METPlusA1Cov(i,j) << std::endl;
+      }
+    }
+  }
+
+  Logger(Logger::Debug) << "MET covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	MET.Cov().Print();
+  }
+  Logger(Logger::Debug) << "A1 covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	TPTRObjects_.at(0).getA1().getCovMatrix().Print();
+	TPTRObjects_.at(1).getA1().getCovMatrix().Print();
+  }
+  Logger(Logger::Debug) << "METPlusA1Cov covariance: " << std::endl;
+  if(Logger::Instance()->Level() == Logger::Debug){
+	METPlusA1Cov.Print();
+  }
+  PTObject METPlusA1(METPlusA1Par, METPlusA1Cov);
+
+  return METPlusA1;
+}
+
 PTObject GlobalEventFit::AddMuon(PTObject MET){
   TMatrixT<double> METPlusMuonPar; METPlusMuonPar.ResizeTo(2,1);
   TMatrixTSym<double> METPlusMuonCov; METPlusMuonCov.ResizeTo(2,2);
