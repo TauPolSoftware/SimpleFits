@@ -330,8 +330,10 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   //----  fill final matrix blocks 
 
   TMatrixTSym<double> V_a_inv= V_a;
-  if( fabs(V_a_inv.Determinant())  < 1e-25){
-       std::cout << "Fit failed: unable to invert, matrix is singular " << " \n" << std::endl;
+  double detVa = V_a_inv.Determinant();
+  if( fabs(detVa)  < 1e-25){
+       std::cout << "Fit failed: unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
+       V_a.Print();
        return false;
   } V_a_inv.Invert();
 
@@ -340,9 +342,10 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   TMatrixTSym<double> V_f_inv= V_f;
 
-  double detVf = V_f_inv.Determinant(); 
+  double detVf = V_f_inv.Determinant();
   if( fabs(detVf)  < 1e-25){
-       std::cout << "Fit failed: unable to invert, matrix is singular " << detVf << " \n" << std::endl;
+       std::cout << "Fit failed: unable to invert, V_f matrix is singular Determinant: " << detVf << " \n" << std::endl;
+       V_f.Print();
        return false;
   } V_f_inv.Invert();
   V_f_inv_.ResizeTo(V_f_inv);
@@ -694,14 +697,13 @@ double LagrangeMultipliersFitter::ChiSquare(TMatrixT<double> delta_alpha,TMatrix
 }
 TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
   // if(cova_0.GetNrows()!=V_alpha0_inv.GetNrows()){
-  TMatrixTSym<double> V_alpha0=cova_0;
-  TMatrixTSym<double> V_alpha0_inv=cova_0;
-  V_alpha0_inv.ResizeTo(cova_0.GetNrows(),cova_0.GetNrows());
+  TMatrixTSym<double> V_alpha0(cova_0);
+  TMatrixTSym<double> V_alpha0_inv(cova_0);
   TDecompBK Inverter(V_alpha0);
   if(!Inverter.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
-    std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
-    for(int j=0;j<par.GetNrows();j++){
-      for(int i=0;i<par.GetNrows();i++){
+    Logger(Logger::Error) << "non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
+    for(int j=0;j<cova_0.GetNrows();j++){
+      for(int i=0;i<cova_0.GetNcols();i++){
         if(i==j) V_alpha0_inv(i,j)=1.0/V_alpha0(i,j);
         else V_alpha0_inv(i,j)=0.0;
       }

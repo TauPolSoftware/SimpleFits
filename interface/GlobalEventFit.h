@@ -14,6 +14,7 @@
 #include "TauPolSoftware/SimpleFits/interface/Logger.h"
 #include "TauPolSoftware/SimpleFits/interface/TrackParticle.h"
 #include "TauPolSoftware/SimpleFits/interface/PTObject.h"
+#include "TauPolSoftware/SimpleFits/interface/LagrangeMultipliersFitter.h"
 
 class GlobalEventFit{
   public:
@@ -51,6 +52,7 @@ class GlobalEventFit{
 	}
 	void SetCorrectPt(bool correct){correctPt_ = correct;}  //default is set to true. Can be set to false inside your analysis to prevent the corrections of the reconstructed pt of both taus to preserve the hard constraints imposed on the fit resonance
 	void setUseCollinearityTauMu(bool useCollinearityTauMu){useCollinearityTauMu_ = useCollinearityTauMu;}
+  void setMinimizer(int Minimizer){minimizer_ = Minimizer;};
 
   protected:
 	void Configure(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov);
@@ -63,6 +65,7 @@ class GlobalEventFit{
 	PTObject AddMuon(PTObject MET);
 
   private:
+	int minimizer_;
 	bool isConfigured_;
 	bool isFit_;
 	bool isValid_;

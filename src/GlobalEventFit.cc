@@ -241,7 +241,6 @@ GEFObject GlobalEventFit::Fit(){
 				std::vector<LorentzVectorParticle> tmp;
 				for(unsigned i=0; i<2; i++) tmp.push_back(LorentzVectorParticle());
 				RefitDaughters.push_back(tmp);
-				// InitResonance.push_back(LorentzVectorParticle());
 				FitResonance.push_back(LorentzVectorParticle());
 				Chi2Vecs.push_back(TVectorD());
 				Chi2s.push_back(-1);
@@ -310,13 +309,10 @@ GEFObject GlobalEventFit::Fit(){
 					ptr2Fitter->SetUseCollinearityTauMu(true);
 				}
 
-				Logger(Logger::Info) << "A1s_.size() " << A1s_.size() << std::endl;
-				Logger(Logger::Info) << "TauThreeProngs.size() " << TauThreeProngs.size() << std::endl;
-				// A1s_.at(0).Print(); A1s_.at(1).Print();
-				Logger(Logger::Info) << "ptr2Fitter->NConstraints(): " << ptr2Fitter->NConstraints() << std::endl;
+				ptr2Fitter->SetFittingMode(minimizer_);
+
 				InitDaughters.push_back(ptr2Fitter->GetInitialDaughters());
-				Logger(Logger::Info) << "ptr2Fitter->GetInitialDaughters().size() " << ptr2Fitter->GetInitialDaughters().size() << std::endl;
-				InitResonance.push_back(ptr2Fitter->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
+				InitResonance.push_back(ptr2Fitter->GetInitMother());
 
 				fitvalid.push_back(ptr2Fitter->Fit());
 				isValid_ = isValid_ || fitvalid.back();
@@ -350,8 +346,13 @@ GEFObject GlobalEventFit::Fit(){
 
 	fitstatuses_ = fitstatus;
 	int IndexToReturn(-1);
-	// bool foundSolution = AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn);
-	bool foundSolution = AmbiguitySolverByChi2Minuit(fitstatus, Chi2s, IndexToReturn);
+	bool foundSolution(false);
+
+	if(minimizer_ == LagrangeMultipliersFitter::FittingProc::Standard)
+		foundSolution = AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn);
+	else if(minimizer_ == LagrangeMultipliersFitter::FittingProc::Minuit)
+		foundSolution = AmbiguitySolverByChi2Minuit(fitstatus, Chi2s, IndexToReturn);
+
 	if(foundSolution){
 		// std::vector<LorentzVectorParticle> CorrFitDaughters = FitDaughtersCorr(RefitDaughters.at(IndexToReturn.at(0)));
 		// RefitDaughters.at(IndexToReturn.at(0)).at(0) = CorrFitDaughters.at(0);
@@ -361,7 +362,7 @@ GEFObject GlobalEventFit::Fit(){
 	else{
 		Logger(Logger::Verbose) << "AmbiguitySolver failed: Fit did not converge." << std::endl;
 	}
-	Logger(Logger::Info) << "IndexToReturn: " << IndexToReturn << std::endl;
+	// Logger(Logger::Info) << "IndexToReturn: " << IndexToReturn << std::endl;
 	return GEFObject(InitDaughters,
 		InitResonance,
 		RefitDaughters,
@@ -389,6 +390,19 @@ bool GlobalEventFit::AmbiguitySolverByChi2(std::vector< std::vector<bool> > A1Fi
 		    if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return true;}
 		    if(Chi2Vecs.at(1).Sum() > Chi2Vecs.at(2).Sum()){ IndexToReturn = 2;return true;}
 		}
+	}
+	else if(A1s_.size() == 2){
+		bool found_solution(false);
+		double Chi2Min(9999);
+		for(size_t i = 0; i < EventFit.size(); i++) {
+			// Logger(Logger::Info) << "EventFit.at(" << i << "): " << EventFit.at(i) << std::endl;
+			if(EventFit.at(i) && (Chi2Vecs.at(i).Sum() < Chi2Min)){
+				Chi2Min = Chi2Vecs.at(i).Sum();
+				IndexToReturn = i;
+				found_solution = true;
+			}
+		}
+		return found_solution;
 	}
 	// if((A1Fit.at(0).at(1) == true && A1Fit.at(0).at(2) == true) && (EventFit.at(1) == false && EventFit.at(2) == false)){
 	//     if(Chi2Vecs.at(1).Sum() < Chi2Vecs.at(2).Sum()){ IndexToReturn = 1;return false;}
@@ -430,7 +444,7 @@ bool GlobalEventFit::AmbiguitySolverByChi2Minuit(std::vector<bool> EventFit, std
 		bool found_solution(false);
 		double Chi2Min(9999);
 		for(size_t i = 0; i < EventFit.size(); i++) {
-			Logger(Logger::Info) << "EventFit.at(" << i << "): " << EventFit.at(i) << std::endl;
+			// Logger(Logger::Info) << "EventFit.at(" << i << "): " << EventFit.at(i) << std::endl;
 			if(EventFit.at(i) && (Chi2s.at(i) < Chi2Min)){
 				Chi2Min = Chi2s.at(i);
 				IndexToReturn = i;
@@ -660,6 +674,10 @@ PTObject GlobalEventFit::AddMuon(PTObject MET){
   double phi0 = Muon_.Parameter(TrackParticle::phi);
   METPlusMuonPar(0,0) = MET.Par()(0,0) + fabs(alpha/kappa)*cos(phi0);
   METPlusMuonPar(1,0) = MET.Par()(1,0) + fabs(alpha/kappa)*sin(phi0);
+
+  // Logger(Logger::Info) << "fabs(alpha/kappa): " << fabs(alpha/kappa) << "\n";
+  // Logger(Logger::Info) << "fabs(alpha/kappa)*cos(phi0): " << fabs(alpha/kappa)*cos(phi0) << "\n";
+  // Logger(Logger::Info) << "fabs(alpha/kappa)*sin(phi0): " << fabs(alpha/kappa)*sin(phi0) << "\n";
 
   TMatrixDSym MuonKappaPhiCov(2);
   MuonKappaPhiCov(0,0) = Muon_.Covariance(TrackParticle::kappa,TrackParticle::kappa);

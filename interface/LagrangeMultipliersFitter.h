@@ -25,6 +25,7 @@ class LagrangeMultipliersFitter{
   virtual void   SetMaxDelta(double MaxDelta){MaxDelta_=MaxDelta;}
   virtual void   SetNIterMax(int Nitermax){nitermax_=Nitermax;}
   virtual void   SetEpsilon(double epsilon){epsilon_=epsilon;}
+  void   SetFittingMode(int mode){fittingMode_=mode;}
 
   virtual bool Fit();
   virtual bool isConverged();

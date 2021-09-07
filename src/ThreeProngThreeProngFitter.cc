@@ -336,8 +336,6 @@ bool ThreeProngThreeProngFitter::Fit(){
       }
       // Logger(Logger::Info) << "\t" << name << std::endl;
     }
-    // set limits for tau mu pz
-    // MnPar.SetLimits(5, -5.0*MuTrack_.P(), 5.0*MuTrack_.P());
 
     unsigned int max=10;
     // int numberofcalls=200+nPar*100+nPar*nPar*5;
@@ -349,13 +347,21 @@ bool ThreeProngThreeProngFitter::Fit(){
     // MnLogger.SetLevel(0);
     // Logger(Logger::Info) << "Begin minimization" << std::endl;
     ROOT::Minuit2::MnMinimize minimize(updator, MnPar, MnCov);
-    minimize.Fix(5);
-    // ROOT::Minuit2::FunctionMinimum min= minimize(numberofcalls,tolerance);
-    ROOT::Minuit2::FunctionMinimum min0 = minimize(numberofcalls,tolerance);
-    minimize.Release(5);
-    ROOT::Minuit2::FunctionMinimum min1 = minimize(numberofcalls,tolerance);
-    minimize.RemoveLimits(5);
+    ROOT::Minuit2::MnScan scan(updator, MnPar, MnCov);
+    std::vector< ROOT::Minuit2::FunctionMinimum > mins;
+    for(int i=0;i<npar;i++){
+      minimize.Fix(i);
+      ROOT::Minuit2::FunctionMinimum min_i = minimize(numberofcalls,tolerance);
+      mins.push_back(min_i);
+      minimize.Release(i);
+    }
+    // How to set limits, fix parameters, release and remove limits
+    // MnPar.SetLimits(5, -5.0*MuTrack_.P(), 5.0*MuTrack_.P());
+    // minimize.Fix(5);
+    // minimize.Release(5);
+    // minimize.RemoveLimits(5);
     ROOT::Minuit2::FunctionMinimum min = minimize(numberofcalls,tolerance);
+    ROOT::Minuit2::FunctionMinimum scan_min = scan(numberofcalls,tolerance);
     // for(unsigned int i=0;i<=max && min.Edm()>edmMin;i++){
     //   if(i==max) return false;
     //   min = minimize(i*numberofcalls,tolerance);
@@ -371,15 +377,12 @@ bool ThreeProngThreeProngFitter::Fit(){
       return false;
     }
     chi2=min.Fval();
-    // Logger(Logger::Error) << "minimum with fixed tau mu pz: " << min0 << std::endl;
-    // Logger(Logger::Error) << "minimum with limited tau mu pz: " << " 5.0*MuTrack_.P(): " << 5.0*MuTrack_.P() << min1 << std::endl;
-    // Logger(Logger::Error) << "minimum with all free parameters: " << min << std::endl;
-    // // Get output parameters
-    // for(int i=0;i<par.GetNrows();i++){ par(i,0)=min.UserParameters().Value(i);}
-    // // Get output covariance
-    // for(int i=0;i<par.GetNrows();i++){
-    //   for(int j=0;j<par.GetNrows();j++){parcov(i,j)=min.UserCovariance()(i,j);}
-    // }
+    for(int i=0;i<npar;i++){
+      Logger(Logger::Error) << "minimum with all fixed parameter " << ParName(i) << " : " << mins.at(i) << std::endl;
+    }
+    Logger(Logger::Error) << "minimum with all free parameters: " << min << std::endl;
+    Logger(Logger::Error) << "minimum with scan: " << scan_min << std::endl;
+
     // Logger(Logger::Info) << "Saving parameters a" << std::endl;
     for(int i=0;i<para_0.GetNrows();i++){
       para(i) = min.UserParameters().Value(i);
@@ -739,14 +742,13 @@ bool ThreeProngThreeProngFitter::ApplyLagrangianConstraints(){
 }
 
 TVectorD ThreeProngThreeProngFitter::ChiSquareUsingInitalPoint(TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
-  TMatrixTSym<double> V_alpha0 = cova_0;
-  TMatrixTSym<double> V_alpha0_inv = cova_0;
-  V_alpha0_inv.ResizeTo(cova_0.GetNrows(),cova_0.GetNrows());
+  TMatrixTSym<double> V_alpha0(cova_0);
+  TMatrixTSym<double> V_alpha0_inv(cova_0);
   TDecompBK InverterA(V_alpha0);
   if(!InverterA.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
-    std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
-    for(int j = 0; j<par.GetNrows(); j++){
-      for(int i = 0; i<par.GetNrows(); i++){
+    Logger(Logger::Error) << "non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
+    for(int j = 0; j<cova_0.GetNrows(); j++){
+      for(int i = 0; i<cova_0.GetNcols(); i++){
         if(i==j)
           V_alpha0_inv(i,j) = 1.0/V_alpha0(i,j);
         else
@@ -758,14 +760,13 @@ TVectorD ThreeProngThreeProngFitter::ChiSquareUsingInitalPoint(TMatrixT<double> 
     V_alpha0_inv=InverterA.Invert();
   }
 
-  TMatrixTSym<double> V_beta0 = covb_0;
-  TMatrixTSym<double> V_beta0_inv = covb_0;
-  V_beta0_inv.ResizeTo(covb_0.GetNrows(),covb_0.GetNrows());
+  TMatrixTSym<double> V_beta0(covb_0);
+  TMatrixTSym<double> V_beta0_inv(covb_0);
   TDecompBK InverterB(V_beta0);
   if(!InverterB.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
-    std::cout << "LagrangeMultipliersFitter::ChiSquareUsingInitalPoint: Error non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
-    for(int j=0; j<par.GetNrows(); j++){
-      for(int i=0; i<par.GetNrows(); i++){
+    Logger(Logger::Error) << "non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
+    for(int j=0; j<covb_0.GetNrows(); j++){
+      for(int i=0; i<covb_0.GetNcols(); i++){
         if(i==j)
           V_beta0_inv(i,j) = 1.0/V_beta0(i,j);
         else
