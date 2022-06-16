@@ -337,14 +337,14 @@ bool ThreeProngThreeProngFitter::Fit(){
       // Logger(Logger::Info) << "\t" << name << std::endl;
     }
 
-    unsigned int max=10;
+    // unsigned int max=10;
     // int numberofcalls=200+nPar*100+nPar*nPar*5;
     int numberofcalls=100000;
     double tolerance(1.0);
-    double edmMin(0.001*updator.Up()*tolerance);
+    // double edmMin(0.001*updator.Up()*tolerance);
 
     // ROOT::Minuit2::MnPrint MnLogger;
-    // MnLogger.SetLevel(0);
+    // ROOT::Minuit2::MnPrint::SetGlobalLevel(0);
     // Logger(Logger::Info) << "Begin minimization" << std::endl;
     ROOT::Minuit2::MnMinimize minimize(updator, MnPar, MnCov);
     ROOT::Minuit2::MnScan scan(updator, MnPar, MnCov);
@@ -361,7 +361,7 @@ bool ThreeProngThreeProngFitter::Fit(){
     // minimize.Release(5);
     // minimize.RemoveLimits(5);
     ROOT::Minuit2::FunctionMinimum min = minimize(numberofcalls,tolerance);
-    ROOT::Minuit2::FunctionMinimum scan_min = scan(numberofcalls,tolerance);
+    // ROOT::Minuit2::FunctionMinimum scan_min = scan(numberofcalls,tolerance);
     // for(unsigned int i=0;i<=max && min.Edm()>edmMin;i++){
     //   if(i==max) return false;
     //   min = minimize(i*numberofcalls,tolerance);
@@ -381,7 +381,7 @@ bool ThreeProngThreeProngFitter::Fit(){
       Logger(Logger::Error) << "minimum with all fixed parameter " << ParName(i) << " : " << mins.at(i) << std::endl;
     }
     Logger(Logger::Error) << "minimum with all free parameters: " << min << std::endl;
-    Logger(Logger::Error) << "minimum with scan: " << scan_min << std::endl;
+    // Logger(Logger::Error) << "minimum with scan: " << scan_min << std::endl;
 
     // Logger(Logger::Info) << "Saving parameters a" << std::endl;
     for(int i=0;i<para_0.GetNrows();i++){
@@ -523,7 +523,7 @@ LorentzVectorParticle ThreeProngThreeProngFitter::GetMother(){
   return LorentzVectorParticle(m,mcov,PDGInfo::Z0,c,b);
 }
 
-TVectorD ThreeProngThreeProngFitter::HardValue(TVectorD &va,TVectorD &vb){
+TVectorD ThreeProngThreeProngFitter::HardValue(TVectorD &va,TVectorD &vb,bool debug){
   TLorentzVector Tau1,Tau2;
   CovertParToObjects(va,vb,Tau1,Tau2);
 
@@ -535,15 +535,17 @@ TVectorD ThreeProngThreeProngFitter::HardValue(TVectorD &va,TVectorD &vb){
   return d;
 }
 
-TVectorD ThreeProngThreeProngFitter::SoftValue(TVectorD &va,TVectorD &vb){
+TVectorD ThreeProngThreeProngFitter::SoftValue(TVectorD &va,TVectorD &vb,bool debug){
   TVectorD d(NSoftConstraints());
   if(useFullRecoil_){
     TLorentzVector Tau1,Tau2;
     CovertParToObjects(va,vb,Tau1,Tau2);
     d(0) = Tau1.Px() + Tau2.Px() - RecoilX_;
     d(1) = Tau1.Py() + Tau2.Py() - RecoilY_;
-    Logger(Logger::Debug) << "SCVec: " << d(0) << ", " << d(1) << std::endl;
-    // Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
+    if(debug){
+      Logger(Logger::Debug) << "SCVec: " << d(0) << ", " << d(1) << std::endl;
+      // Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
+    }
   }
   return d;
 }

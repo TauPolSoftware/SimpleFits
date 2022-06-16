@@ -21,13 +21,13 @@
 double ThreeProngOneProngFitter::MassConstraint_ = 125.2;
 bool ThreeProngOneProngFitter::useCollinearityTauOneProng_ = false;
 
-ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov):
+ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov):
   LagrangeMultipliersFitter()
 {
-  ThreeProngOneProngFitter(TauThreeProng, ThreeProng, OneProng, OneProngTrack, ResPtEstimate, PVertex, VertexCov, ThreeProngOneProngFitter::MassConstraint_);
+  ThreeProngOneProngFitter(TauThreeProng, ThreeProng, OneProngTrack, ResPtEstimate, PVertex, VertexCov, ThreeProngOneProngFitter::MassConstraint_);
 }
 
-ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
+ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint):
   LagrangeMultipliersFitter()
 {
   debug = false;
@@ -40,10 +40,10 @@ ThreeProngOneProngFitter::ThreeProngOneProngFitter(LorentzVectorParticle TauThre
   useFullRecoil_ = true;
   MassConstraint_ = MassConstraint;
 
-  Configure(TauThreeProng, ThreeProng, OneProng, OneProngTrack, PVertex, VertexCov);
+  Configure(TauThreeProng, ThreeProng, OneProngTrack, PVertex, VertexCov);
 }
 
-void ThreeProngOneProngFitter::Configure(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov){
+void ThreeProngOneProngFitter::Configure(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov){
   debug = false;
   AnalyticalCovariance_ =false;
   OneProngTrack_ = OneProngTrack;
@@ -53,9 +53,9 @@ void ThreeProngOneProngFitter::Configure(LorentzVectorParticle TauThreeProng, Lo
   LorentzVectorParticle  TauOneProngGuess;
   LorentzVectorParticle  DiTau;
   if(!useFullRecoil_)
-    TauOneProngGuess = TauOneProngStartingPoint( OneProngTrack,TauThreeProng,PVertex, VertexCov, TauThreeProng.Vertex(),TauThreeProng.VertexCov());
+    TauOneProngGuess = TauOneProngStartingPoint(OneProngTrack, TauThreeProng, PVertex, VertexCov, TauThreeProng.Vertex(), TauThreeProng.VertexCov());
   else
-    TauOneProngGuess = TauOneProngStartingPointwithFullRecoil(OneProngTrack,TauThreeProng, ResPtEstimate_, PVertex, VertexCov, TauThreeProng.Vertex(),TauThreeProng.VertexCov());
+    TauOneProngGuess = TauOneProngStartingPointwithFullRecoil(OneProngTrack, TauThreeProng, ResPtEstimate_, PVertex, VertexCov, TauThreeProng.Vertex(), TauThreeProng.VertexCov());
 
   Logger(Logger::Debug) << "TauThreeProng covariance: " << std::endl;
   if(Logger::Instance()->Level() == Logger::Debug){
@@ -349,23 +349,27 @@ bool ThreeProngOneProngFitter::Fit(){
     // set limits for tau mu pz
     MnPar.SetLimits(5, -5.0*OneProngTrack_.P(), 5.0*OneProngTrack_.P());
 
-    unsigned int max=10;
+    // unsigned int max=10;
     // int numberofcalls=200+nPar*100+nPar*nPar*5;
-    int numberofcalls=100000;
-    double tolerance(1.0);
-    double edmMin(0.001*updator.Up()*tolerance);
+    int numberofcalls=10000;
+    double tolerance(10);
+    // double edmMin(0.001*updator.Up()*tolerance);
 
-    // ROOT::Minuit2::MnPrint MnLogger;
-    // MnLogger.SetLevel(0);
+    // int printLevel = ROOT::Minuit2::MnPrint::Level();
+    ROOT::Minuit2::MnPrint MnLogger;
+    MnLogger.SetLevel(-1);
+    // Logger(Logger::Info) << "printLevel: " << ROOT::Minuit2::MnPrint::Level() << std::endl;
     // Logger(Logger::Info) << "Begin minimization" << std::endl;
     ROOT::Minuit2::MnMinimize minimize(updator, MnPar, MnCov);
-    minimize.Fix(5);
-    // ROOT::Minuit2::FunctionMinimum min= minimize(numberofcalls,tolerance);
-    ROOT::Minuit2::FunctionMinimum min0 = minimize(numberofcalls,tolerance);
-    minimize.Release(5);
-    ROOT::Minuit2::FunctionMinimum min1 = minimize(numberofcalls,tolerance);
-    minimize.RemoveLimits(5);
-    ROOT::Minuit2::FunctionMinimum min = minimize(numberofcalls,tolerance);
+    // minimize.SetPrintLevel(0);
+    ROOT::Minuit2::FunctionMinimum min= minimize(numberofcalls,tolerance);
+    // ROOT::Minuit2::FunctionMinimum min= minimize();
+    // minimize.Fix(5);
+    // ROOT::Minuit2::FunctionMinimum min0 = minimize(numberofcalls,tolerance);
+    // minimize.Release(5);
+    // ROOT::Minuit2::FunctionMinimum min1 = minimize(numberofcalls,tolerance);
+    // minimize.RemoveLimits(5);
+    // ROOT::Minuit2::FunctionMinimum min = minimize(numberofcalls,tolerance);
     // for(unsigned int i=0;i<=max && min.Edm()>edmMin;i++){
     //   if(i==max) return false;
     //   min = minimize(i*numberofcalls,tolerance);
@@ -532,7 +536,7 @@ LorentzVectorParticle ThreeProngOneProngFitter::GetMother(){
   return LorentzVectorParticle(Mother,MotherCov,PDGInfo::Z0,c,b);
 }
 
-TVectorD ThreeProngOneProngFitter::HardValue(TVectorD &va,TVectorD &vb){
+TVectorD ThreeProngOneProngFitter::HardValue(TVectorD &va,TVectorD &vb,bool debug){
   TLorentzVector TauThreeProng,TauOneProng;
   CovertParToObjects(va,vb,TauThreeProng,TauOneProng);
 
@@ -546,7 +550,7 @@ TVectorD ThreeProngOneProngFitter::HardValue(TVectorD &va,TVectorD &vb){
   return d;
 }
 
-TVectorD ThreeProngOneProngFitter::SoftValue(TVectorD &va,TVectorD &vb){
+TVectorD ThreeProngOneProngFitter::SoftValue(TVectorD &va,TVectorD &vb,bool debug){
   TLorentzVector TauThreeProng,TauOneProng;
   CovertParToObjects(va,vb,TauThreeProng,TauOneProng);
   TVectorD d(NSoftConstraints());
@@ -555,14 +559,18 @@ TVectorD ThreeProngOneProngFitter::SoftValue(TVectorD &va,TVectorD &vb){
     d(0) = TauThreeProng.Px() + TauOneProng.Px();
     d(1) = TauThreeProng.Py() + TauOneProng.Py();
     d(2) = ( (TauThreeProng.Py() + TauOneProng.Py())/(TauThreeProng.Px() + TauOneProng.Px())) -  tan(phiz_);
-    Logger(Logger::Debug) << "SCVec: " << d(0) << ", " << d(1) << ", " << d(2) << std::endl;
-    Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
+    if(debug){
+      Logger(Logger::Debug) << "SCVec: " << d(0) << ", " << d(1) << ", " << d(2) << std::endl;
+      Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
+    }
   }
   else{
     d(0) = TauThreeProng.Px() + TauOneProng.Px() - RecoilX_;
     d(1) = TauThreeProng.Py() + TauOneProng.Py() - RecoilY_;
-    Logger(Logger::Debug) << "SCVec: " << d(0) << ", " << d(1) << std::endl;
-    Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
+    if(debug){
+      Logger(Logger::Debug) << "SCVec: " << d(0) << ", " << d(1) << std::endl;
+      Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
+    }
   }
   return d;
 }

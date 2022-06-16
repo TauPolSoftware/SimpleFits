@@ -12,6 +12,7 @@
 #include "TauPolSoftware/SimpleFits/interface/GlobalEventFit.h"
 #include "TauPolSoftware/SimpleFits/interface/TauA1NuConstrainedFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/DiTauConstrainedFitter.h"
+#include "TauPolSoftware/SimpleFits/interface/ThreeProngOneProngFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/ThreeProngThreeProngFitter.h"
 
 GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov){
@@ -32,6 +33,13 @@ GlobalEventFit::GlobalEventFit(std::vector<LorentzVectorParticle> A1s, PTObject 
 	useFullRecoil_ = true;
 }
 
+GlobalEventFit::GlobalEventFit(TrackParticle ChargedPion, LorentzVectorParticle NeutralPion, LorentzVectorParticle A1, PTObject MET, TVector3 PV, TMatrixTSym<double> PVCov){
+	Configure(ChargedPion, NeutralPion, A1, PV, PVCov);
+	MET_ = MET;
+	useFullRecoil_ = true;
+}
+
+
 GlobalEventFit::~GlobalEventFit(){
 
 }
@@ -40,6 +48,7 @@ void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVe
 	isConfigured_ = false;
 	isFit_ = false;
 	isValid_ = false;
+	pionDecay_ = false;
 	Muon_ = Muon;
 	A1_= A1;
 	A1s_.push_back(A1);
@@ -66,6 +75,7 @@ void GlobalEventFit::Configure(std::vector<LorentzVectorParticle> A1s, TVector3 
 	isConfigured_ = false;
 	isFit_ = false;
 	isValid_ = false;
+	pionDecay_ = false;
 	A1_= A1s.at(0); // for backwards compatibility
 	A1s_= A1s;
 	PV_ = PV;
@@ -83,6 +93,38 @@ void GlobalEventFit::Configure(std::vector<LorentzVectorParticle> A1s, TVector3 
 	}
 	// Logger::Instance()->SetLevel(Logger::level::Debug);
 
+	ThreeProngTauReconstruction();
+	if (isConfigured_) TPTRObject_ = TPTRObjects_.at(0);
+
+	useDefaultMassConstraint_ = true;
+	correctPt_ = false;
+	useCollinearityTauMu_ = false;
+}
+
+void GlobalEventFit::Configure(TrackParticle ChargedPion, LorentzVectorParticle NeutralPion, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov){
+
+	// Logger::Instance()->SetLevel(Logger::level::Debug);
+	Logger(Logger::Debug) << "Configuring GlobalEventFit" << std::endl;
+
+	isConfigured_ = false;
+	isFit_ = false;
+	isValid_ = false;
+	pionDecay_ = true;
+	Muon_ = ChargedPion;
+	NeutralPion_ = NeutralPion;
+	A1_= A1;
+	A1s_.push_back(A1);
+	PV_ = PV;
+	PVCov_.ResizeTo(PVCov);
+	PVCov_= PVCov;
+	SV_ = A1.Vertex();
+	SVCov_.ResizeTo(A1.VertexCov());
+	SVCov_ = A1.VertexCov();
+	SVs_.push_back(A1.Vertex());
+	SVCovs_.push_back(A1.VertexCov());
+
+
+	// Logger(Logger::Debug) << "Starting ThreeProngTauReconstruction" << std::endl;
 	ThreeProngTauReconstruction();
 	if (isConfigured_) TPTRObject_ = TPTRObjects_.at(0);
 
@@ -171,7 +213,8 @@ GEFObject GlobalEventFit::Fit(){
 		recostatus.push_back(TPTRObject_.CreateVectorFromAmbiguity());
 		Taus.push_back(TPTRObject_.getTaus());
 
-		DiTauConstrainedFitter* ptr2Fitter = NULL;
+		// DiTauConstrainedFitter* ptr2Fitter = NULL;
+		ThreeProngOneProngFitter* ptr2Fitter = NULL;
 
 		for(unsigned Ambiguity = 0; Ambiguity<recostatus.at(0).size(); Ambiguity ++){
 			if(!recostatus.at(0).at(Ambiguity)){
@@ -194,31 +237,39 @@ GEFObject GlobalEventFit::Fit(){
 				PTObject ZPtEst(MET_);
 				AddA1(ZPtEst);
 				AddMuon(ZPtEst);
+				if(pionDecay_) AddNeutralPion(ZPtEst);
 				METMinusNeutrino.push_back(ZPtEst);
 				//METMinusNeutrino.push_back(SubtractNeutrinoFromMET(Ambiguity));
 				if(useDefaultMassConstraint_){
-					ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
+					// ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
+					ptr2Fitter = new ThreeProngOneProngFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, 91.5);
 					Logger(Logger::Debug) << "Case 1: With Recoil, Default MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
 				}
 				else{
-				  ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
+				  // ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
+				  ptr2Fitter = new ThreeProngOneProngFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, METMinusNeutrino.at(Ambiguity), PV_, PVCov_, MassConstraint_);
 					Logger(Logger::Debug) << "Case 2: With Recoil, User MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
 				}
 			}
-			else{
-				METMinusNeutrino.push_back(PTObject());
-				if(useDefaultMassConstraint_){
-					ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, 91.5);
-					Logger(Logger::Debug) << "Case 3: No Recoil, Default MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
-				}
-				else{
-					ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
-					Logger(Logger::Debug) << "Case 4: No Recoil, User MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
-				}
-			}
+			// else{
+			// 	METMinusNeutrino.push_back(PTObject());
+			// 	if(useDefaultMassConstraint_){
+			// 		// ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, 91.5);
+			// 		ptr2Fitter = new ThreeProngOneProngFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, 91.5);
+			// 		Logger(Logger::Debug) << "Case 3: No Recoil, Default MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+			// 	}
+			// 	else{
+			// 		// ptr2Fitter = new DiTauConstrainedFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
+			// 		ptr2Fitter = new ThreeProngOneProngFitter(Taus.at(0).at(Ambiguity), A1_, Muon_, Phi_Res_, PV_, PVCov_, MassConstraint_);
+			// 		Logger(Logger::Debug) << "Case 4: No Recoil, User MassConstraint: " << ptr2Fitter->GetMassConstraint() << std::endl;
+			// 	}
+			// }
 			if(useCollinearityTauMu_){
-				ptr2Fitter->SetUseCollinearityTauMu(true);
+				// ptr2Fitter->SetUseCollinearityTauMu(true);
+				ptr2Fitter->SetUseCollinearityTauOneProng(true);
 			}
+
+			ptr2Fitter->SetFittingMode(minimizer_);
 
 			InitDaughters.push_back(ptr2Fitter->GetInitialDaughters());
 			InitResonance.push_back(ptr2Fitter->GetInitMother()); //TODO: implementation and calculation of initial resonance inside DiTauConstrainedFitter
@@ -715,4 +766,26 @@ PTObject GlobalEventFit::AddMuon(PTObject MET){
   PTObject METPlusMuon(METPlusMuonPar, METPlusMuonCov);
 
   return METPlusMuon;
+}
+
+PTObject GlobalEventFit::AddNeutralPion(PTObject MET){
+	TMatrixT<double> METPlusNeutralPionPar; METPlusNeutralPionPar.ResizeTo(2,1);
+	METPlusNeutralPionPar(0,0) = MET.Par()(0,0) + NeutralPion_.LV().X();
+	METPlusNeutralPionPar(1,0) = MET.Par()(1,0) + NeutralPion_.LV().Y();
+	PTObject METPlusNeutralPion(METPlusNeutralPionPar, MET.Cov());
+
+  return METPlusNeutralPion;
+}
+
+void GlobalEventFit::setMinimizer(std::string mode){
+  if(mode == "Standard" || mode == "Default"){
+    minimizer_ = LagrangeMultipliersFitter::FittingProc::Standard;
+  }
+  else if(mode == "Minuit" || mode == "Minuit2"){
+    minimizer_ = LagrangeMultipliersFitter::FittingProc::Minuit;
+  }
+  else{
+    Logger(Logger::Warning) << "Fitting mode " << mode << " not recognized. Using \"Standard\" instead." << std::endl;
+    minimizer_ = LagrangeMultipliersFitter::FittingProc::Standard;
+  }
 }

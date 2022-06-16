@@ -13,11 +13,11 @@
 
 class ThreeProngOneProngFitter : public LagrangeMultipliersFitter{
  public:
-  ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov);
-  ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
+  ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov);
+  ThreeProngOneProngFitter(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, PTObject ResPtEstimate, TVector3 PVertex, TMatrixTSym<double> VertexCov, double MassConstraint);
   virtual ~ThreeProngOneProngFitter(){};
 
-  void Configure(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, LorentzVectorParticle OneProng, TrackParticle OneProngTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov);
+  void Configure(LorentzVectorParticle TauThreeProng, LorentzVectorParticle ThreeProng, TrackParticle OneProngTrack, TVector3 PVertex, TMatrixTSym<double> VertexCov);
 
   enum Pars{tau3prong_px=0,tau3prong_py,tau3prong_pz,tau1prong_px,tau1prong_py,tau1prong_pz,npar};
   enum ExpandedPars{z_vx=npar,z_vy,z_vz,nexpandedpar};
@@ -62,8 +62,8 @@ class ThreeProngOneProngFitter : public LagrangeMultipliersFitter{
   bool Fit() override;
 
  protected:
-  virtual TVectorD HardValue(TVectorD &va,TVectorD &vb);
-  virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb);
+  virtual TVectorD HardValue(TVectorD &va,TVectorD &vb,bool debug=false);
+  virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb,bool debug=false);
 
  private:
 

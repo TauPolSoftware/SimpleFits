@@ -21,6 +21,7 @@ class GlobalEventFit{
 	GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov);
 	GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double> PVCov);
   GlobalEventFit(std::vector<LorentzVectorParticle> A1s, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double> PVCov);
+  GlobalEventFit(TrackParticle ChargedPion, LorentzVectorParticle NeutralPion, LorentzVectorParticle A1, PTObject MET, TVector3 PV, TMatrixTSym<double> PVCov);
 	virtual ~GlobalEventFit();
 
 	GEFObject Fit();
@@ -52,27 +53,32 @@ class GlobalEventFit{
 	}
 	void SetCorrectPt(bool correct){correctPt_ = correct;}  //default is set to true. Can be set to false inside your analysis to prevent the corrections of the reconstructed pt of both taus to preserve the hard constraints imposed on the fit resonance
 	void setUseCollinearityTauMu(bool useCollinearityTauMu){useCollinearityTauMu_ = useCollinearityTauMu;}
+  void setMinimizer(std::string mode);
   void setMinimizer(int Minimizer){minimizer_ = Minimizer;};
 
   protected:
 	void Configure(TrackParticle Muon, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov);
   void Configure(std::vector<LorentzVectorParticle> A1s, TVector3 PV, TMatrixTSym<double> PVCov);
+  void Configure(TrackParticle ChargedPion, LorentzVectorParticle NeutralPion, LorentzVectorParticle A1, TVector3 PV, TMatrixTSym<double> PVCov);
 	void ThreeProngTauReconstruction();
 	bool IsAmbiguous(std::vector<bool> recostatus);
 	PTObject SubtractNeutrinoFromMET(unsigned Ambiguity);
 	PTObject AddA1(PTObject MET);
   PTObject AddA1s(PTObject MET);
 	PTObject AddMuon(PTObject MET);
+  PTObject AddNeutralPion(PTObject MET);
 
   private:
 	int minimizer_;
 	bool isConfigured_;
 	bool isFit_;
 	bool isValid_;
+  bool pionDecay_;
 	TPTRObject TPTRObject_;
   std::vector<TPTRObject> TPTRObjects_;
 	GEFObject GEFObject_;
 	TrackParticle Muon_;
+  LorentzVectorParticle NeutralPion_;
 	LorentzVectorParticle A1_;
   std::vector<LorentzVectorParticle> A1s_;
 	TVector3 PV_, SV_;

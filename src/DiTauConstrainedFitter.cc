@@ -547,9 +547,9 @@ DiTauConstrainedFitter::GetMother(){
   return LorentzVectorParticle(m,mcov,PDGInfo::Z0,c,b);
 }
 
-TVectorD 
-DiTauConstrainedFitter::HardValue(TVectorD &va,TVectorD &vb){
-  TLorentzVector Taua1,Taumu; 
+TVectorD
+DiTauConstrainedFitter::HardValue(TVectorD &va,TVectorD &vb,bool debug){
+  TLorentzVector Taua1,Taumu;
   double ZMass;
   CovertParToObjects(va,vb,Taua1,Taumu,ZMass);
 
@@ -563,9 +563,9 @@ DiTauConstrainedFitter::HardValue(TVectorD &va,TVectorD &vb){
   return d;
 }
 
-TVectorD 
-DiTauConstrainedFitter::SoftValue(TVectorD &va,TVectorD &vb){
-  TLorentzVector Taua1,Taumu; 
+TVectorD
+DiTauConstrainedFitter::SoftValue(TVectorD &va,TVectorD &vb,bool debug){
+  TLorentzVector Taua1,Taumu;
   double ZMass;
   CovertParToObjects(va,vb,Taua1,Taumu,ZMass);
   TVectorD d(NSoftConstraints());

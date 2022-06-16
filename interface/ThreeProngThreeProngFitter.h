@@ -54,8 +54,8 @@ class ThreeProngThreeProngFitter : public LagrangeMultipliersFitter{
  protected:
   bool ApplyLagrangianConstraints() override;
   TVectorD ChiSquareUsingInitalPoint(TMatrixT<double> a, TMatrixT<double> b, TMatrixT<double> lambda, TMatrixTSym<double> V_f_inv) override;
-  TVectorD HardValue(TVectorD &va,TVectorD &vb);
-  TVectorD SoftValue(TVectorD &va,TVectorD &vb);
+  TVectorD HardValue(TVectorD &va,TVectorD &vb,bool debug=false);
+  TVectorD SoftValue(TVectorD &va,TVectorD &vb,bool debug=false);
 
  private:
   static TMatrixT<double> ComputeInitalExpPar(TMatrixT<double> &inpar);
