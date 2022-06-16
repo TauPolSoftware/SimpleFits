@@ -411,13 +411,13 @@ TMatrixT<double> ThreeProngThreeProngFitter::ComputeExpParToPar(TMatrixT<double>
 }
 TMatrixT<double> ThreeProngThreeProngFitter::ComputeExpParToPara(TMatrixT<double> &inpar){
   TMatrixT<double> outpar(npartr,1);
-  for(int i=0;i<npartr;i++){outpar(i,0)=inpar(i,0);}  
+  for(int i=0;i<npartr;i++){outpar(i,0)=inpar(i,0);}
   return outpar;
 }
 
 TMatrixT<double> ThreeProngThreeProngFitter::ComputeExpParToParb(TMatrixT<double> &inpar){
   TMatrixT<double> outpar(npartr,1);
-  int offset = 3; 
+  int offset = 3;
   for(int i=0;i<npartr;i++){outpar(i,0)=inpar(i+offset,0);}
   return outpar;
 }
@@ -428,7 +428,7 @@ TMatrixT<double> ThreeProngThreeProngFitter::ComputeTau2LorentzVectorPar(TMatrix
   outpar(LorentzVectorParticle::vx,0)=0;
   outpar(LorentzVectorParticle::vy,0)=0;
   outpar(LorentzVectorParticle::vz,0)=0;
-  
+
   outpar(LorentzVectorParticle::px,0)=inpar(3,0);
   outpar(LorentzVectorParticle::py,0)=inpar(4,0);
   outpar(LorentzVectorParticle::pz,0)=inpar(5,0);

@@ -78,7 +78,7 @@ class ThreeProngOneProngFitter : public LagrangeMultipliersFitter{
   void UpdateExpandedPar();
   void CovertParToObjects(TVectorD &va,TVectorD &vb,TLorentzVector &TauThreeProng,TLorentzVector &Taumu);
 
-  LorentzVectorParticle  TauOneProngStartingPoint(TrackParticle OneProngTrack,LorentzVectorParticle TauThreeProng, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov);
+  LorentzVectorParticle  TauOneProngStartingPoint(TrackParticle OneProngTrack, LorentzVectorParticle TauThreeProng, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov);
   static TMatrixT<double> EstimateTauDirectionAdvanced(TMatrixT<double> &inpar);
   static TMatrixT<double> EstimateTauKinematic(TMatrixT<double> &inpar);
   TMatrixT<double> ConfigureParameters(TrackParticle OneProngTrack, std::pair<double, double> phiAngle);
@@ -90,7 +90,7 @@ class ThreeProngOneProngFitter : public LagrangeMultipliersFitter{
   TMatrixT<double> ComputeAngleCovarianceAnalytically(TrackParticle OneProngTrack, std::pair<double, double> phiAngle,  TVector3 PV, TVector3 SV, LorentzVectorParticle  TauThreeProng);
   std::pair<double, double> EstimatePhiAngle( TVector3 dir, TVector3 dirE);
 
-  LorentzVectorParticle TauOneProngStartingPointwithFullRecoil(TrackParticle OneProngTrack,LorentzVectorParticle TauThreeProng, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov);
+  LorentzVectorParticle TauOneProngStartingPointwithFullRecoil(TrackParticle OneProngTrack, LorentzVectorParticle TauThreeProng, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov);
   TMatrixT<double> ConfigureKinematicParametersFullRecoil(TrackParticle OneProngTrack, TVector3 PV, LorentzVectorParticle TauThreeProng, PTObject METminusNeutrino);
   TMatrixTSym<double> ConfigureKinematicParameterErrorsFullRecoil(TrackParticle OneProngTrack, TMatrixTSym<double> PVCov, LorentzVectorParticle TauThreeProng, PTObject METminusNeutrino);
   static TMatrixT<double> EstimateTauKinematicFullRecoil(TMatrixT<double> &inpar);

@@ -91,11 +91,11 @@ void DiTauConstrainedFitter::Configure(LorentzVectorParticle TauA1, LorentzVecto
 
   isconfigured=false;
 
-  int size=particles_.size()*3;  
-  int sizeTrunc = 3; 
+  int size=particles_.size()*3;
+  int sizeTrunc = 3;
   TMatrixT<double>    inpar(size,1);
   TMatrixTSym<double> incov(size);
- 
+
   // Get primary vertex information
   if(VertexCov.GetNrows()!=LorentzVectorParticle::NVertex)return;
 
@@ -432,13 +432,13 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeExpParToPar(TMatrixT<double> &in
 }
 TMatrixT<double> DiTauConstrainedFitter::ComputeExpParToPara(TMatrixT<double> &inpar){
   TMatrixT<double> outpar(npartr,1);
-  for(int i=0;i<npartr;i++){outpar(i,0)=inpar(i,0);}  
+  for(int i=0;i<npartr;i++){outpar(i,0)=inpar(i,0);}
   return outpar;
 }
 
 TMatrixT<double> DiTauConstrainedFitter::ComputeExpParToParb(TMatrixT<double> &inpar){
   TMatrixT<double> outpar(npartr,1);
-  int offset = 3; 
+  int offset = 3;
   for(int i=0;i<npartr;i++){outpar(i,0)=inpar(i+offset,0);}
   return outpar;
 }
@@ -449,7 +449,7 @@ TMatrixT<double> DiTauConstrainedFitter::ComputeTauMuLorentzVectorPar(TMatrixT<d
   outpar(LorentzVectorParticle::vx,0)=0;
   outpar(LorentzVectorParticle::vy,0)=0;
   outpar(LorentzVectorParticle::vz,0)=0;
-  
+
   outpar(LorentzVectorParticle::px,0)=inpar(3,0);
   outpar(LorentzVectorParticle::py,0)=inpar(4,0);
   outpar(LorentzVectorParticle::pz,0)=inpar(5,0);
@@ -510,7 +510,7 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
   for(unsigned int i=0;i<particles_.size();i++){c+=particles_.at(i).Charge();b=particles_.at(i).BField();}
   TMatrixT<double> a1=ComputeTauA1LorentzVectorPar(exppar);
   TMatrixTSym<double> a1cov=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeTauA1LorentzVectorPar,exppar,expcov);
-     
+
    for(int i=0; i<LorentzVectorParticle::NVertex; i++){
      for(int j=0; j<LorentzVectorParticle::NVertex; j++){
        a1cov(i,j)=particles_.at(0).VertexCov()(i,j);
@@ -523,20 +523,20 @@ std::vector<LorentzVectorParticle> DiTauConstrainedFitter::GetReFitDaughters(){
     mu(0,0)= particles_.at(1).Parameter(LorentzVectorParticle::vx);
     mu(1,0)= particles_.at(1).Parameter(LorentzVectorParticle::vy);
     mu(2,0)= particles_.at(1).Parameter(LorentzVectorParticle::vz);
-  
+
     TMatrixTSym<double> mucov=ErrorMatrixPropagator::PropagateError(&DiTauConstrainedFitter::ComputeTauMuLorentzVectorPar,exppar,expcov);
     for(int i=0; i<LorentzVectorParticle::NVertex; i++){
       for(int j=0; j<LorentzVectorParticle::NVertex; j++){
 	mucov(i,j)=particles_.at(1).VertexCov()(i,j);
       }
     }
-    
+
     refitParticles.push_back(LorentzVectorParticle(mu,mucov,PDGInfo::tau_minus,0.0,b));
-   
-  return refitParticles; 
+
+  return refitParticles;
 }
 
-LorentzVectorParticle 
+LorentzVectorParticle
 DiTauConstrainedFitter::GetMother(){
   UpdateExpandedPar();
   double c(0),b(0);
@@ -553,7 +553,7 @@ DiTauConstrainedFitter::HardValue(TVectorD &va,TVectorD &vb){
   double ZMass;
   CovertParToObjects(va,vb,Taua1,Taumu,ZMass);
 
-  TLorentzVector z=Taua1+Taumu; 
+  TLorentzVector z=Taua1+Taumu;
   TVectorD d(NConstraints());
 
 	//d(0) = pow(Taua1.E() + Taumu.E(), 2.) - (Taua1.Vect() + Taumu.Vect()).Mag2()- pow(MassConstraint_,2.);
@@ -584,7 +584,7 @@ DiTauConstrainedFitter::SoftValue(TVectorD &va,TVectorD &vb){
 	Logger(Logger::Debug) << "RecoilX_: " << RecoilX_ << ", RecoilY_: " << RecoilY_ << std::endl;
   }
   return d;
-} 
+}
 
 void DiTauConstrainedFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLorentzVector &Taua1,TLorentzVector &Taumu, double &Zmass){
   // Taua1=particles_.at(0).LV();//TLorentzVector(v(taua1_px),v(taua1_py),v(taua1_pz),sqrt(1.777*1.777+v(taua1_px)*v(taua1_px)+v(taua1_py)*v(taua1_py)+v(taua1_pz)*v(taua1_pz)));
@@ -594,9 +594,9 @@ void DiTauConstrainedFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLoren
   Zmass = 91.5;
 }
 
-LorentzVectorParticle  
+LorentzVectorParticle
 DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorParticle TauA1, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov){
-  
+
   TVector3 TauDir =   PV - SV;
   TVector3 TauDirError(sqrt(SVCov(0,0) + PVCov(0,0)),
 		       sqrt(SVCov(1,1) + PVCov(1,1)),
@@ -616,18 +616,18 @@ DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorPa
   taumudirection.ResizeTo(2,1);
   TMatrixTSym<double>    taumudirectionError;
   taumudirectionError.ResizeTo(2,2);
- 
+
   TMatrixT<double>    kinematicparameters;
   kinematicparameters.ResizeTo(5,1);
   TMatrixTSym<double>    kinematicparametererrors;
   kinematicparametererrors.ResizeTo(5,5);
-  
+
   TMatrixT<double>    TauKin;
   TauKin.ResizeTo(3,1);
-  
+
   TMatrixT<double>    TauKinErrorAnalytical;
   TauKinErrorAnalytical.ResizeTo(3,3);
-  
+
   TMatrixT<double>    TauKinErrorNumerical;
   TauKinErrorNumerical.ResizeTo(3,3);
 
@@ -670,7 +670,7 @@ DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorPa
 
     std::cout<<"Analitically  calculated tau kinematic parameter errors 'TauKinErrorNumerical'  ====>  "<< std::endl;
     TauKinErrorAnalytical.Print();
-    
+
   }
 
   TMatrixT<double>    par(LorentzVectorParticle::NLorentzandVertexPar,1);
@@ -683,7 +683,7 @@ DiTauConstrainedFitter::TauMuStartingPoint(TrackParticle MuTrack,LorentzVectorPa
   par(LorentzVectorParticle::py,0)=TauKin(1,0);
   par(LorentzVectorParticle::pz,0)=TauKin(2,0);
   par(LorentzVectorParticle::m,0) =PDGInfo::tau_mass();
-  
+
    for(int i=0; i<LorentzVectorParticle::NVertex; i++){
      for(int j=0; j<LorentzVectorParticle::NVertex; j++){
        if(AnalyticalCovariance){Cov(i+3,j+3)=TauKinErrorAnalytical(i,j);}
@@ -754,7 +754,7 @@ DiTauConstrainedFitter::TauMuStartingPointwithFullRecoil(TrackParticle MuTrack,L
   return LorentzVectorParticle(par,Cov,PDGInfo::tau_minus,0,0);
 }
 
-TMatrixT<double> 
+TMatrixT<double>
 DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
   TMatrixT<double>    outpar(2,1);
 
@@ -765,7 +765,7 @@ DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
 
   TVector3 PV(inpar(4,0),inpar(5,0),inpar(6,0));
   TVector2 TauMuPt(-inpar(7,0), -inpar(8,0));
-  
+
   double tanphi_tau = TauMuPt.Y()/TauMuPt.X();
   double a = tanphi_tau;
   double b = PV.Y() - a*PV.X();
@@ -781,7 +781,7 @@ DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
 
   outpar(0,0) = TauMuDir.Theta();
   outpar(1,0) = atan2(TauMuPt.Y(),TauMuPt.X());
- 
+
   Logger(Logger::Debug) << "PV: " << inpar(4,0) << ", " << inpar(5,0) << ", " << inpar(6,0) << std::endl;
   Logger(Logger::Debug) << "dxy, phi0, lam, dz: " << dxy << ", " << phi0 << ", " << lam << ", " << dz << std::endl;
   Logger(Logger::Debug) << "PointGuess: " << xdoc << ", " << ydoc << ", " << zdoc << std::endl;
@@ -791,18 +791,18 @@ DiTauConstrainedFitter::EstimateTauDirectionAdvanced(TMatrixT<double> &inpar){
   Logger(Logger::Debug) << "TauMuDir.Phi(): " << TauMuDir.Phi() << " TauH phi: " << atan2(inpar(8,0), inpar(7,0)) << std::endl;
   Logger(Logger::Debug) << "dPhi: " << TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)) << "/pi= " << (TauMuDir.Phi() - atan2(inpar(8,0), inpar(7,0)))/TMath::Pi() << std::endl;
 
-  return outpar; 
+  return outpar;
 }
 
 
-TMatrixT<double> 
+TMatrixT<double>
 DiTauConstrainedFitter::EstimateTauKinematic(TMatrixT<double> &inpar){
   TMatrixT<double>    outpar(3,1);
   TLorentzVector TauA1p4(inpar(2,0),
 			 inpar(3,0),
 			 inpar(4,0),
 			 sqrt(pow(PDGInfo::tau_mass(),2) + pow(inpar(2,0),2) + pow(inpar(3,0),2) + pow(inpar(4,0),2)  ) );
-  
+
   TVector3 TauMuDir(cos(inpar(1,0))*sin(inpar(0,0)), sin(inpar(1,0))*sin(inpar(0,0)), cos(inpar(0,0)));
   TVector3 P_Tauh(inpar(2,0), inpar(3,0), inpar(4,0));
   TLorentzVector P4_Tauh; P4_Tauh.SetXYZM(P_Tauh.X(),P_Tauh.Y(),P_Tauh.Z(),PDGInfo::tau_mass());
@@ -824,11 +824,11 @@ DiTauConstrainedFitter::EstimateTauKinematic(TMatrixT<double> &inpar){
   Logger(Logger::Debug) << "TauMu p3: " << outpar(0,0) << ", " << outpar(1,0) << ", " << outpar(2,0) << std::endl;
 
 
-  return outpar; 
+  return outpar;
 }
 
 
-TMatrixT<double> 
+TMatrixT<double>
 DiTauConstrainedFitter::ConfigureParameters(TrackParticle MuTrack, std::pair<double, double> phiAngle){
    TMatrixT<double>    outpar(5,1);
    outpar(0,0) = MuTrack.Parameter(TrackParticle::dxy);
@@ -840,11 +840,11 @@ DiTauConstrainedFitter::ConfigureParameters(TrackParticle MuTrack, std::pair<dou
    return outpar;
  }
 
-TMatrixT<double> 
+TMatrixT<double>
 DiTauConstrainedFitter::ConfigureParameterErrors(TrackParticle MuTrack, std::pair<double, double> phiAngle){
     TMatrixT<double>  Cov;
     Cov.ResizeTo(5,5);
- 
+
     Cov(0,0) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dxy);
     Cov(0,1) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::phi);
     Cov(0,2) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dz);
@@ -879,7 +879,7 @@ DiTauConstrainedFitter::ConfigureParameterErrors(TrackParticle MuTrack, std::pai
 }
 
 
-TMatrixT<double> 
+TMatrixT<double>
 DiTauConstrainedFitter::ConfigureInitialAdvancedParameters(TrackParticle MuTrack,  TVector3 PV, LorentzVectorParticle TauA1){
   TMatrixT<double>    outpar;
   outpar.ResizeTo(9,1);
@@ -896,11 +896,11 @@ DiTauConstrainedFitter::ConfigureInitialAdvancedParameters(TrackParticle MuTrack
    return outpar;
  }
 
-TMatrixTSym<double> 
+TMatrixTSym<double>
 DiTauConstrainedFitter::ConfigureInitialAdvancedParameterErrors(TrackParticle MuTrack, TMatrixTSym<double> PVCov, TMatrixTSym<double> TauA1Cov){
   TMatrixTSym<double>  Cov;
     Cov.ResizeTo(9,9);
- 
+
     Cov(0,0) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dxy);
     Cov(0,1) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::phi);
     Cov(0,2) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dz);
@@ -936,7 +936,7 @@ DiTauConstrainedFitter::ConfigureInitialAdvancedParameterErrors(TrackParticle Mu
       for(int str =0; str < Cov.GetNrows(); str++){
 	for(int kol =0; kol < Cov.GetNcols(); kol++){
 	  std::cout<<"  "<< Cov(str,kol)<<"  ";
-	}    
+	}
 	std::cout<<std::endl;
       }
     }
@@ -944,7 +944,7 @@ DiTauConstrainedFitter::ConfigureInitialAdvancedParameterErrors(TrackParticle Mu
     return Cov;
  }
 
-TMatrixT<double> 
+TMatrixT<double>
 DiTauConstrainedFitter::ConfigureKinematicParameters(TMatrixT<double>  TauMuDir, LorentzVectorParticle TauA1){
   TMatrixT<double>    outpar;
   outpar.ResizeTo(5,1);
@@ -966,14 +966,14 @@ DiTauConstrainedFitter::ConfigureKinematicParameters(TMatrixT<double>  TauMuDir,
   return outpar;
  }
 
-TMatrixTSym<double> 
+TMatrixTSym<double>
 DiTauConstrainedFitter::ConfigureKinematicParameterErrors(TMatrixTSym<double>  TauMuDirError, LorentzVectorParticle TauA1){
   TMatrixTSym<double>    outpar;
   outpar.ResizeTo(5,5);
-  
+
   for(int i=0; i<5; i++){
     for(int j=0; j<5; j++){
-      
+
       if(i<2 && j < 2){
 	outpar(i,j)=TauMuDirError(i,j);
       }else{
@@ -981,11 +981,11 @@ DiTauConstrainedFitter::ConfigureKinematicParameterErrors(TMatrixTSym<double>  T
       }
     }
   }
- 
+
   return outpar;
 }
 
-std::pair<double, double> 
+std::pair<double, double>
 DiTauConstrainedFitter::EstimatePhiAngle( TVector3 dir, TVector3 dirE){
     std::pair<double, double> outpar;
   double phi = atan2(dir.Y(),dir.X());
@@ -997,7 +997,7 @@ DiTauConstrainedFitter::EstimatePhiAngle( TVector3 dir, TVector3 dirE){
 
 //////////////////////////////////////////////////////////////////////
 // Analytical calculation of TauMu Covariance; Has to be rewritten....
-TMatrixT<double> 
+TMatrixT<double>
 DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack, std::pair<double, double> phiAngle,  TVector3 PV, TVector3 SV, LorentzVectorParticle  TauA1){
    TMatrixT<double>    outpar;
    outpar.ResizeTo(3,3);
@@ -1008,7 +1008,7 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
    double dz    =MuTrack.Parameter(TrackParticle::dz);
    //double c     =MuTrack.Charge();
    TVector3 A1SV = -SV + PV;
-   
+
    double phiAnot  = atan2(A1SV.Y(), A1SV.X());
    double xpoca2Anot = dxy*sin(phi0) - PV.X();
    double ypoca2Anot = -dxy*cos(phi0) - PV.Y();
@@ -1047,7 +1047,7 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
 
    TMatrixT<double>  HelixCov;
    HelixCov.ResizeTo(5,5);
- 
+
    HelixCov(0,0) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dxy);
    HelixCov(0,1) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::phi);
    HelixCov(0,2) = MuTrack.Covariance(TrackParticle::dxy,TrackParticle::dz);
@@ -1065,7 +1065,7 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
    HelixCov(2,2) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::dz);
    HelixCov(2,3) = MuTrack.Covariance(TrackParticle::dz,TrackParticle::lambda);
    HelixCov(2,4) = 0;
-   
+
    HelixCov(3,0) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::dxy);
    HelixCov(3,1) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::phi);
    HelixCov(3,2) = MuTrack.Covariance(TrackParticle::lambda,TrackParticle::dz);
@@ -1109,7 +1109,7 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
    CovPPhiThetaFrame(0,0) = TauMudeltaP_2;
    CovPPhiThetaFrame(0,1) = 0;
    CovPPhiThetaFrame(0,2) = 0;
-   
+
    CovPPhiThetaFrame(1,0) = 0;
    CovPPhiThetaFrame(1,1) = CovAngleFrame(0,0);
    CovPPhiThetaFrame(1,2) = CovAngleFrame(0,1);
@@ -1144,7 +1144,7 @@ DiTauConstrainedFitter::ComputeAngleCovarianceAnalytically(TrackParticle MuTrack
  }
 
 
-LorentzVectorParticle 
+LorentzVectorParticle
 DiTauConstrainedFitter::GetTauMuEstimate(){
   return particles_.at(1);
 }

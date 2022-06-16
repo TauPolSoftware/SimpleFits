@@ -574,7 +574,7 @@ void ThreeProngOneProngFitter::CovertParToObjects(TVectorD &va,TVectorD &vb,TLor
   TauOneProng=TLorentzVector(vb(tau_px),vb(tau_py),vb(tau_pz),sqrt(PDGInfo::tau_mass()*PDGInfo::tau_mass()+vb(tau_px)*vb(tau_px)+vb(tau_py)*vb(tau_py)+vb(tau_pz)*vb(tau_pz)));
 }
 
-LorentzVectorParticle ThreeProngOneProngFitter::TauOneProngStartingPoint(TrackParticle OneProngTrack,LorentzVectorParticle TauThreeProng, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov){
+LorentzVectorParticle ThreeProngOneProngFitter::TauOneProngStartingPoint(TrackParticle OneProngTrack, LorentzVectorParticle TauThreeProng, TVector3 PV,TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov){
 
   TVector3 TauDir =   PV - SV;
   TVector3 TauDirError(sqrt(SVCov(0,0) + PVCov(0,0)),
@@ -676,7 +676,7 @@ LorentzVectorParticle ThreeProngOneProngFitter::TauOneProngStartingPoint(TrackPa
   return LorentzVectorParticle(par,Cov,PDGInfo::tau_minus,0,0);
 }
 
-LorentzVectorParticle ThreeProngOneProngFitter::TauOneProngStartingPointwithFullRecoil(TrackParticle OneProngTrack,LorentzVectorParticle TauThreeProng, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov){
+LorentzVectorParticle ThreeProngOneProngFitter::TauOneProngStartingPointwithFullRecoil(TrackParticle OneProngTrack, LorentzVectorParticle TauThreeProng, PTObject METminusNeutrino, TVector3 PV, TMatrixTSym<double>  PVCov, TVector3 SV, TMatrixTSym<double>  SVCov){
 
   TMatrixT<double> kinematicparameters;
   kinematicparameters.ResizeTo(12,1);
@@ -696,7 +696,7 @@ LorentzVectorParticle ThreeProngOneProngFitter::TauOneProngStartingPointwithFull
   kinematicparameters = ConfigureKinematicParametersFullRecoil(OneProngTrack, PV, TauThreeProng, METminusNeutrino);
   kinematicparametererrors =  ConfigureKinematicParameterErrorsFullRecoil(OneProngTrack, PVCov, TauThreeProng, METminusNeutrino);
 
-  TauKin=EstimateTauKinematicFullRecoil(kinematicparameters);
+  TauKin = EstimateTauKinematicFullRecoil(kinematicparameters);
   TauKinErrorNumerical = ErrorMatrixPropagator::PropagateError(&ThreeProngOneProngFitter::EstimateTauKinematicFullRecoil,kinematicparameters,kinematicparametererrors);
   TLorentzVector TauOneProng(TauKin(3,0),TauKin(4,0),TauKin(5,0),PDGInfo::tau_mass());
 
@@ -1180,9 +1180,9 @@ TMatrixT<double> ThreeProngOneProngFitter::EstimateTauKinematicFullRecoil(TMatri
   double lam   =inpar(2,0);
   double dz    =inpar(3,0);
 
-  TVector3 PV(inpar(4,0),inpar(5,0),inpar(6,0));
+  TVector3 PV(inpar(4,0), inpar(5,0), inpar(6,0));
   TVector3 P_Tauh(inpar(7,0), inpar(8,0), inpar(9,0));
-  TLorentzVector P4_Tauh; P4_Tauh.SetXYZM(P_Tauh.X(),P_Tauh.Y(),P_Tauh.Z(),PDGInfo::tau_mass());
+  TLorentzVector P4_Tauh; P4_Tauh.SetXYZM(P_Tauh.X(), P_Tauh.Y(), P_Tauh.Z(), PDGInfo::tau_mass());
   TVector2 TauOneProngPt(inpar(10,0) - P_Tauh.X(), inpar(11,0) - P_Tauh.Y());
   TVector3 P_TauOneProng(inpar(10,0) - P_Tauh.X(), inpar(11,0) - P_Tauh.Y(), 0);
 

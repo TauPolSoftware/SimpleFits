@@ -19,7 +19,7 @@ class LagrangeMultipliersFitter{
   enum FittingProc{Standard=0,Minuit};
 
   LagrangeMultipliersFitter();
-  virtual ~LagrangeMultipliersFitter(){};
+  virtual ~LagrangeMultipliersFitter(){}
 
   virtual void   SetWeight(double weight){weight_=weight;}
   virtual void   SetMaxDelta(double MaxDelta){MaxDelta_=MaxDelta;}
@@ -32,15 +32,15 @@ class LagrangeMultipliersFitter{
   virtual bool isConfigured(){return isconfigured;}
   virtual double ChiSquare(){return chi2;}
   virtual TVectorD ChiSquareVector(){return chi2_vec;}
-  virtual double CSum(){return delta;};
-  virtual double NIter(){return niter;};
+  virtual double CSum(){return delta;}
+  virtual double NIter(){return niter;}
   virtual double NConstraints()=0;
   virtual double NSoftConstraints()=0;
   virtual double NDF()=0;
   virtual int    NDaughters()=0;
   virtual TString ParName(int par)=0;
-  virtual int NPara(){return para_0.GetNrows();};
-  virtual int NParb(){return parb_0.GetNrows();};
+  virtual int NPara(){return para_0.GetNrows();}
+  virtual int NParb(){return parb_0.GetNrows();}
 
   virtual std::vector<LorentzVectorParticle> GetReFitDaughters()=0;
   virtual LorentzVectorParticle GetMother()=0;
