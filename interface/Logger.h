@@ -8,7 +8,7 @@
 
 class Logger {
  public:
-   enum level{Fatal=0,Error=1,Warning=2,Info=3,Verbose=4,Debug=5};
+  enum level{Fatal=0,Error=1,Warning=2,Info=3,Verbose=4,Debug=5};
   static Logger* Instance(){if(instance==NULL) instance=new Logger(); return instance;}
 
   // set output stream
@@ -22,13 +22,13 @@ class Logger {
   std::ostream& Stream(){return (*s);}
 
   static int levelColor(level l){
-	  if (l == Fatal)	return 41; // red background
-	  if (l == Error)	return 43; // yellow background
-	  if (l == Warning)	return 31; // red font
-	  if (l == Info)	return 34; // blue font
-	  if (l == Verbose)	return 0; // nothing
-	  if (l == Debug)	return 0; // nothing
-	  return 30;
+    if (l == Fatal)	return 41; // red background
+    if (l == Error)	return 43; // yellow background
+    if (l == Warning)	return 31; // red font
+    if (l == Info)	return 34; // blue font
+    if (l == Verbose)	return 0; // nothing
+    if (l == Debug)	return 0; // nothing
+    return 30;
   }
 
  private:

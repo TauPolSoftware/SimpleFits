@@ -53,8 +53,8 @@ class DiTauConstrainedFitter : public LagrangeMultipliersFitter{
   bool Fit() override;
 
  protected:
-  virtual TVectorD HardValue(TVectorD &va,TVectorD &vb);
-  virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb);
+  virtual TVectorD HardValue(TVectorD &va,TVectorD &vb,bool debug=false);
+  virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb,bool debug=false);
 
  private:
 

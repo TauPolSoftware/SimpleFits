@@ -59,8 +59,8 @@ class LagrangeMultipliersFitter{
   double UpdateChisquare(TVectorD a, TVectorD b);
 
  protected:
-  virtual TVectorD HardValue(TVectorD &va,TVectorD &vb)=0;
-  virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb)=0;
+  virtual TVectorD HardValue(TVectorD &va,TVectorD &vb,bool debug=false)=0;
+  virtual TVectorD SoftValue(TVectorD &va,TVectorD &vb,bool debug=false)=0;
   virtual bool  ApplyLagrangianConstraints();
   virtual TVectorD ChiSquareUsingInitalPoint(TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv);
 

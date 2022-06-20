@@ -8,7 +8,7 @@
 // Store B in units of 1/GeV
 
 class Particle {
-public:
+ public:
   Particle(TMatrixT<double> par_, TMatrixTSym<double> cov_, int pdgid_, double charge_, double b_);
   virtual ~Particle(){};
 
@@ -41,7 +41,7 @@ public:
 	  return par;
   }
 
-private:
+ private:
   TMatrixT<double> par;
   TMatrixTSym<double> cov;
   int pdgid;
