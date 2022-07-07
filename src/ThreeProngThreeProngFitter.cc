@@ -647,27 +647,53 @@ bool ThreeProngThreeProngFitter::ApplyLagrangianConstraints(){
 
   //----  fill final matrix blocks
   TMatrixTSym<double> V_a_inv = V_a;
-  if( fabs(V_a_inv.Determinant())  < 1e-25){
-       std::cout << "Fit failed: unable to invert, matrix is singular " << " \n" << std::endl;
-       return false;
+  double detVa = V_a_inv.Determinant();
+  if(fabs(detVa) < 1e-25){
+    Logger(Logger::Error) << "Unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
+    V_a.Print();
+    return false;
   }
-  V_a_inv.Invert();
+  try{
+    V_a_inv.Invert();
+  }
+  catch(...)
+  {
+    Logger(Logger::Error) << "Unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
+    return false;
+  }
 
   TMatrixTSym<double> V_b_inv = V_b;
-  if( fabs(V_b_inv.Determinant())  < 1e-25){
-       std::cout << "Fit failed: unable to invert, matrix is singular " << " \n" << std::endl;
-       return false;
+  double detVb = V_b_inv.Determinant();
+  if(fabs(detVb) < 1e-25){
+    Logger(Logger::Error) << "Unable to invert, V_b matrix is singular. Determinant: " << detVb << "\n" << std::endl;
+    V_b.Print();
+    return false;
   }
-  V_b_inv.Invert();
+  try{
+    V_b_inv.Invert();
+  }
+  catch(...)
+  {
+    Logger(Logger::Error) << "Unable to invert, V_b matrix is singular. Determinant: " << detVa << "\n" << std::endl;
+    return false;
+  }
 
   TMatrixTSym<double> V_f_inv = V_f;
-
   double detVf = V_f_inv.Determinant();
-  if( fabs(detVf)  < 1e-25){
-       std::cout << "Fit failed: unable to invert, matrix is singular " << detVf << " \n" << std::endl;
-       return false;
+  if(fabs(detVf) < 1e-25){
+    Logger(Logger::Error) << "Unable to invert, V_f matrix is singular. Determinant: " << detVf << "\n" << std::endl;
+    V_f.Print();
+    return false;
   }
-  V_f_inv.Invert();
+  try{
+    V_f_inv.Invert();
+  }
+  catch(...)
+  {
+    Logger(Logger::Error) << "Unable to invert, V_f matrix is singular. Determinant: " << detVf << "\n" << std::endl;
+    return false;
+  }
+
   V_f_inv_.ResizeTo(V_f_inv);
   V_f_inv_ = V_f_inv;
 
@@ -687,12 +713,20 @@ bool ThreeProngThreeProngFitter::ApplyLagrangianConstraints(){
   // std::cout<<" EigenVectors "<<std::endl;(MEig.GetEigenVectors()).Print();
 
   double detM = M.Determinant();
-
-  if(fabs(detM)>1e40 or fabs(detM)  < 1e-25){
-       Logger(Logger::Error) << "Fit failed: unable to invert SYM  matrix LARGE Determinant or Singular Matrix" << detM << " \n" << std::endl;
-       return false;
+  if(fabs(detM) > 1e40 or fabs(detM) < 1e-25){
+    Logger(Logger::Error) << "Unable to invert, M matrix is singular. Determinant: " << detM << "\n" << std::endl;
+    return false;
   }
-  TMatrixT<double> M_inv = M; M_inv.Invert();
+  TMatrixT<double> M_inv = M;
+  try{
+    M_inv.Invert();
+  }
+  catch(...)
+  {
+    Logger(Logger::Error) << "Unable to invert, M matrix is singular. Determinant: " << detM << "\n" << std::endl;
+    return false;
+  }
+
   // solve equations
   TMatrixT<double> res = M_inv*V;
 
@@ -746,26 +780,31 @@ bool ThreeProngThreeProngFitter::ApplyLagrangianConstraints(){
 TVectorD ThreeProngThreeProngFitter::ChiSquareUsingInitalPoint(TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
   TMatrixTSym<double> V_alpha0(cova_0);
   TMatrixTSym<double> V_alpha0_inv(cova_0);
-  TDecompBK InverterA(V_alpha0);
-  if(!InverterA.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
+  TDecompBK Inverter(V_alpha0);
+  try{
+    Inverter.Decompose();
+    V_alpha0_inv=Inverter.Invert();
+  }
+  catch(...){ // handle rare case where inversion is not possible (ie assume diagonal)
     Logger(Logger::Error) << "non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
-    for(int j = 0; j<cova_0.GetNrows(); j++){
-      for(int i = 0; i<cova_0.GetNcols(); i++){
+    for(int j=0;j<cova_0.GetNrows();j++){
+      for(int i=0;i<cova_0.GetNcols();i++){
         if(i==j)
-          V_alpha0_inv(i,j) = 1.0/V_alpha0(i,j);
+          V_alpha0_inv(i,j)=1.0/V_alpha0(i,j);
         else
-          V_alpha0_inv(i,j) = 0.0;
+          V_alpha0_inv(i,j)=0.0;
       }
     }
-  }
-  else{
-    V_alpha0_inv=InverterA.Invert();
   }
 
   TMatrixTSym<double> V_beta0(covb_0);
   TMatrixTSym<double> V_beta0_inv(covb_0);
   TDecompBK InverterB(V_beta0);
-  if(!InverterB.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
+  try{
+    InverterB.Decompose();
+    V_beta0_inv=InverterB.Invert();
+  }
+  catch(...){ // handle rare case where inversion is not possible (ie assume diagonal)
     Logger(Logger::Error) << "non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
     for(int j=0; j<covb_0.GetNrows(); j++){
       for(int i=0; i<covb_0.GetNcols(); i++){
@@ -775,9 +814,6 @@ TVectorD ThreeProngThreeProngFitter::ChiSquareUsingInitalPoint(TMatrixT<double> 
           V_beta0_inv(i,j) = 0.0;
       }
     }
-  }
-  else{
-    V_beta0_inv=InverterB.Invert();
   }
 
   TMatrixT<double> lambdaT = lambda; lambdaT.T();

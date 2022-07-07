@@ -329,25 +329,38 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   //----  fill final matrix blocks
 
-  TMatrixTSym<double> V_a_inv= V_a;
+  TMatrixTSym<double> V_a_inv = V_a;
   double detVa = V_a_inv.Determinant();
   if( fabs(detVa)  < 1e-25){
-       std::cout << "Fit failed: unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
-       V_a.Print();
-       return false;
-  } V_a_inv.Invert();
+    Logger(Logger::Error) << "Unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
+    V_a.Print();
+    return false;
+  }
+  try{
+    V_a_inv.Invert();
+  }
+  catch(...)
+  {
+    Logger(Logger::Error) << "Unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
+    return false;
+  }
 
-
-
-
-  TMatrixTSym<double> V_f_inv= V_f;
-
+  TMatrixTSym<double> V_f_inv = V_f;
   double detVf = V_f_inv.Determinant();
-  if( fabs(detVf)  < 1e-25){
-       std::cout << "Fit failed: unable to invert, V_f matrix is singular Determinant: " << detVf << " \n" << std::endl;
-       V_f.Print();
-       return false;
-  } V_f_inv.Invert();
+  if( fabs(detVf) < 1e-25){
+    Logger(Logger::Error) << "Unable to invert, V_f matrix is singular. Determinant: " << detVf << "\n" << std::endl;
+    V_f.Print();
+    return false;
+  }
+  try{
+    V_f_inv.Invert();
+  }
+  catch(...)
+  {
+    Logger(Logger::Error) << "Unable to invert, V_f matrix is singular. Determinant: " << detVf << "\n" << std::endl;
+    return false;
+  }
+
   V_f_inv_.ResizeTo(V_f_inv);
   V_f_inv_ = V_f_inv;
 
@@ -368,16 +381,22 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   // std::cout<<" EigenVectors "<<std::endl;(MEig.GetEigenVectors()).Print();
 
 
-
   double detM = M.Determinant();
-
-  if(fabs(detM)>1e40 or fabs(detM)  < 1e-25){
-       Logger(Logger::Error) << "Fit failed: unable to invert SYM  matrix LARGE Determinant or Singular Matrix" << detM << " \n" << std::endl;
-
-       return false;
+  if(fabs(detM) > 1e40 or fabs(detM) < 1e-25){
+    Logger(Logger::Error) << "Unable to invert, M matrix is singular. Determinant: " << detM << "\n" << std::endl;
+    return false;
   }
-  TMatrixT<double> M_inv = M; M_inv.Invert();
- // solve equations
+  TMatrixT<double> M_inv = M;
+  try{
+    M_inv.Invert();
+  }
+  catch(...)
+  {
+    Logger(Logger::Error) << "Unable to invert, M matrix is singular. Determinant: " << detM << "\n" << std::endl;
+    return false;
+  }
+
+  // solve equations
   TMatrixT<double> res = M_inv*V;
 
 
@@ -680,13 +699,13 @@ LagrangeMultipliersFitter::solutionb(TMatrixT<double> M){
   return outpar;
 }
 
-TMatrixT<double>
-LagrangeMultipliersFitter::solutionlambda(TMatrixT<double> M){
+TMatrixT<double> LagrangeMultipliersFitter::solutionlambda(TMatrixT<double> M){
   int offsetrow = para_0.GetNrows()+parb_0.GetNrows(); //int offsetcol = para_0.GetNrows() + parb_0.GetNrows();
   TMatrixT<double> outpar(NConstraints(),1);
   for(int row =0; row < outpar.GetNrows(); row++){outpar(row,0)  = M(row + offsetrow,0);}
   return outpar;
 }
+
 double LagrangeMultipliersFitter::ChiSquare(TMatrixT<double> delta_alpha,TMatrixT<double> lambda,TMatrixT<double> D, TMatrixT<double> d){
   TMatrixT<double> lambdaT=lambda; lambdaT.T();
   TMatrixT<double> chisquare=lambdaT*(D*delta_alpha+d);
@@ -695,12 +714,17 @@ double LagrangeMultipliersFitter::ChiSquare(TMatrixT<double> delta_alpha,TMatrix
   double c2=chisquare(0,0);
   return c2;
 }
+
 TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> a,TMatrixT<double> b,TMatrixT<double> lambda,TMatrixTSym<double> V_f_inv){
   // if(cova_0.GetNrows()!=V_alpha0_inv.GetNrows()){
   TMatrixTSym<double> V_alpha0(cova_0);
   TMatrixTSym<double> V_alpha0_inv(cova_0);
   TDecompBK Inverter(V_alpha0);
-  if(!Inverter.Decompose()){ // handle rare case where inversion is not possible (ie assume diagonal)
+  try{
+    Inverter.Decompose();
+    V_alpha0_inv=Inverter.Invert();
+  }
+  catch(...){ // handle rare case where inversion is not possible (ie assume diagonal)
     Logger(Logger::Error) << "non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
     for(int j=0;j<cova_0.GetNrows();j++){
       for(int i=0;i<cova_0.GetNcols();i++){
@@ -708,9 +732,6 @@ TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> a
         else V_alpha0_inv(i,j)=0.0;
       }
     }
-  }
-  else{
-    V_alpha0_inv=Inverter.Invert();
   }
   // V_alpha0_inv=V_alpha0;V_alpha0_inv.Invert();
 
