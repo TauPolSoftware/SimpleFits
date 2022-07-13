@@ -47,7 +47,8 @@ class LagrangeMultipliersFitter{
 
   static TVectorT<double> convertToVector(TMatrixT<double> M);
   static TMatrixT<double> convertToMatrix(TVectorT<double> V);
-
+  static TMatrixTSym<double> ConvertToSymMatrix(TMatrixT<double> in);
+  static bool MatrixHasNan(TMatrixTSym<double> in);
 
   virtual TMatrixT<double> MakeFullMatrix(TMatrixT<double> M11,TMatrixT<double> M12,TMatrixT<double> M21,TMatrixT<double> M22,TMatrixT<double> A,TMatrixT<double> B);
   virtual TMatrixT<double> MakeFullVector(TMatrixT<double> V1,TMatrixT<double> V2,TMatrixT<double> V3);

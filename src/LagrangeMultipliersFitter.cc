@@ -275,14 +275,16 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   if(Fb.GetNrows()!=NSoftConstraints() || Fb.GetNcols()!=parb.GetNrows()) Fb.ResizeTo(NSoftConstraints(),parb.GetNrows());
 
 
-
   // Setup intial values
-	harddelta_vecprev.ResizeTo(NConstraints());
-	harddelta_vecprev=HardValue(para_0,parb_0);
-	softdelta_vecprev.ResizeTo(NSoftConstraints());
-	softdelta_vecprev=SoftValue(para_0,parb_0);
-	paraprev.ResizeTo(para_0); paraprev=para_0;
-	parbprev.ResizeTo(parb_0); parbprev=parb_0;
+  harddelta_vecprev.ResizeTo(NConstraints());
+  harddelta_vecprev=HardValue(para_0,parb_0);
+  softdelta_vecprev.ResizeTo(NSoftConstraints());
+  softdelta_vecprev=SoftValue(para_0,parb_0);
+  paraprev.ResizeTo(para_0); paraprev=para_0;
+  parbprev.ResizeTo(parb_0); parbprev=parb_0;
+  lambda_.ResizeTo(NConstraints(),1);
+  chi2_vec.ResizeTo(3);
+  chi2_vecprev.ResizeTo(chi2_vec);
 
   // TMatrixT<double> alpha_A=convertToMatrix(par);
   // TMatrixT<double> alpha_0=convertToMatrix(par_0);
@@ -306,62 +308,48 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
 
   TMatrixTSym<double> V_a=cova_0;
+  TMatrixTSym<double> V_a_inv(V_a);
   TMatrixTSym<double> V_b=covb_0;
-  //TMatrixTSym<double> V_f=V_a;//ComputeV_f(V_a,V_b,para_0, parb_0);
   TMatrixTSym<double> V_f; V_f.ResizeTo(NSoftConstraints(),NSoftConstraints());
+  TMatrixTSym<double> V_f_inv(V_f);
+  V_f_inv_.ResizeTo(V_f_inv);
 
   V_f=ComputeV_f(V_a,V_b,para_0, parb_0);
- 
-
-  if(Logger::Instance()->Level() == Logger::Debug){
-	Logger(Logger::Debug) << "Jacobi Matrices Fa and Fb " << std::endl;
-	Fa.Print();
-	Fb.Print();
-	Logger(Logger::Debug) << "Jacobi Matrices A and B " << std::endl;
-	A.Print();
-	B.Print();
-  }
-
-
   V_f.SetTol(1.e-50);
   if(!useFullRecoil_) V_f.Similarity(Fa);
+
+  if(MatrixHasNan(V_a) || MatrixHasNan(V_f)) return false;
+
+  // if(Logger::Instance()->Level() == Logger::Debug){
+	// Logger(Logger::Debug) << "Jacobi Matrices Fa and Fb " << std::endl;
+	// Fa.Print();
+	// Fb.Print();
+	// Logger(Logger::Debug) << "Jacobi Matrices A and B " << std::endl;
+	// A.Print();
+	// B.Print();
+  // }
 
 
   //----  fill final matrix blocks
 
-  TMatrixTSym<double> V_a_inv = V_a;
-  double detVa = V_a_inv.Determinant();
-  if( fabs(detVa)  < 1e-25){
-    Logger(Logger::Error) << "Unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
-    V_a.Print();
-    return false;
-  }
-  try{
-    V_a_inv.Invert();
-  }
-  catch(...)
-  {
-    Logger(Logger::Error) << "Unable to invert, V_a matrix is singular. Determinant: " << detVa << "\n" << std::endl;
+  TDecompBK InverterVa(V_a);
+  bool inversionOK_Va = InverterVa.Decompose();
+  if(inversionOK_Va) V_a_inv = InverterVa.Invert();
+  else{
+    Logger(Logger::Debug) << "Unable to invert, V_a matrix is singular." << std::endl;
+    if(Logger::Instance()->Level() == Logger::Debug) V_a.Print();
     return false;
   }
 
-  TMatrixTSym<double> V_f_inv = V_f;
-  double detVf = V_f_inv.Determinant();
-  if( fabs(detVf) < 1e-25){
-    Logger(Logger::Error) << "Unable to invert, V_f matrix is singular. Determinant: " << detVf << "\n" << std::endl;
-    V_f.Print();
-    return false;
-  }
-  try{
-    V_f_inv.Invert();
-  }
-  catch(...)
-  {
-    Logger(Logger::Error) << "Unable to invert, V_f matrix is singular. Determinant: " << detVf << "\n" << std::endl;
+  TDecompBK InverterVf(V_f);
+  bool inversionOK_Vf = InverterVf.Decompose();
+  if(inversionOK_Vf) V_f_inv = InverterVf.Invert();
+  else{
+    Logger(Logger::Debug) << "Unable to invert, V_f matrix is singular." << std::endl;
+    if(Logger::Instance()->Level() == Logger::Debug) V_f.Print();
     return false;
   }
 
-  V_f_inv_.ResizeTo(V_f_inv);
   V_f_inv_ = V_f_inv;
 
   TMatrixT<double> M11 = V_a_inv + FaT*V_f_inv*Fa;
@@ -375,24 +363,24 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixT<double> M = MakeFullMatrix(M11,M12,M21,M22,A,B);
   TMatrixT<double> V = MakeFullVector(V1,V2,V3);
 
-
-  TMatrixDEigen  MEig(V_f);
+  TMatrixTSym<double> MSym = ConvertToSymMatrix(M);
+  // TMatrixDEigen  MEig(V_f);
   // std::cout<<" EigenValues "<<std::endl;(MEig.GetEigenValues()).Print();
   // std::cout<<" EigenVectors "<<std::endl;(MEig.GetEigenVectors()).Print();
 
+  if(MatrixHasNan(MSym)) return false;
 
-  double detM = M.Determinant();
-  if(fabs(detM) > 1e40 or fabs(detM) < 1e-25){
-    Logger(Logger::Error) << "Unable to invert, M matrix is singular. Determinant: " << detM << "\n" << std::endl;
-    return false;
-  }
-  TMatrixT<double> M_inv = M;
-  try{
-    M_inv.Invert();
-  }
-  catch(...)
-  {
-    Logger(Logger::Error) << "Unable to invert, M matrix is singular. Determinant: " << detM << "\n" << std::endl;
+  // TMatrixT<double> M_inv(M);
+  TMatrixTSym<double> M_inv(MSym);
+  // TDecompLU InverterM(M);
+  TDecompBK InverterM(MSym);
+  bool inversionOK_M = InverterM.Decompose();
+  // double detM = M.Determinant();
+  if(inversionOK_M) M_inv = InverterM.Invert();
+  else{
+  // if(fabs(detM) > 1e40 or fabs(detM) < 1e-25){
+    Logger(Logger::Debug) << "Unable to invert, M matrix is singular." << std::endl;
+    if(Logger::Instance()->Level() == Logger::Debug) M.Print();
     return false;
   }
 
@@ -404,7 +392,6 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   TMatrixT<double> par_b = solutionb(res);
   TMatrixT<double> lambda=solutionlambda(res);
 
-  lambda_.ResizeTo(NConstraints(),1);
   lambda_=lambda;
 
 
@@ -415,7 +402,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
   // do while loop to see if the convergance criteria are satisfied
   //double s(1), stepscale(0.05);
   chi2prev=chi2;
-  chi2_vecprev.ResizeTo(chi2_vec); chi2_vecprev = chi2_vec;
+  chi2_vecprev = chi2_vec;
 
   TVectorD Currentchi2_vec = ChiSquareUsingInitalPoint(par_a,par_b,lambda,V_f_inv);
   double Curentchi2(Currentchi2_vec.Sum()), Currentdelta(ConstraintDelta(para,parb));
@@ -471,7 +458,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   // set chi2
   chi2=Curentchi2;
-  chi2_vec.ResizeTo(Currentchi2_vec); chi2_vec = Currentchi2_vec;
+  chi2_vec = Currentchi2_vec;
   //set delta
   delta=Currentdelta;
   para = convertToVector(a_s);
@@ -488,6 +475,7 @@ bool LagrangeMultipliersFitter::ApplyLagrangianConstraints(){
 
   return true;
 }
+
 TMatrixD LagrangeMultipliersFitter::DerivativeHCa(){ // always evaluated at current par
   TMatrixD Derivatives(NConstraints(),para_0.GetNrows());
   TVectorD para_plus(para_0.GetNrows());
@@ -720,12 +708,12 @@ TVectorD LagrangeMultipliersFitter::ChiSquareUsingInitalPoint(TMatrixT<double> a
   TMatrixTSym<double> V_alpha0(cova_0);
   TMatrixTSym<double> V_alpha0_inv(cova_0);
   TDecompBK Inverter(V_alpha0);
-  try{
-    Inverter.Decompose();
-    V_alpha0_inv=Inverter.Invert();
-  }
-  catch(...){ // handle rare case where inversion is not possible (ie assume diagonal)
-    Logger(Logger::Error) << "non-invertable Matrix... Calculating under assumption that correlations can be neglected!!!" << std::endl;
+  bool inversionOK = Inverter.Decompose();
+  if(inversionOK) V_alpha0_inv = Inverter.Invert();
+  else{
+    // handle rare case where inversion is not possible (ie assume diagonal)
+    Logger(Logger::Debug) << "non-invertable Matrix V_alpha Calculating under assumption that correlations can be neglected!" << std::endl;
+    if(Logger::Instance()->Level() == Logger::Debug) V_alpha0.Print();
     for(int j=0;j<cova_0.GetNrows();j++){
       for(int i=0;i<cova_0.GetNcols();i++){
         if(i==j) V_alpha0_inv(i,j)=1.0/V_alpha0(i,j);
@@ -982,4 +970,30 @@ TMatrixTSym<double>  LagrangeMultipliersFitter::ScaleMatrix(TMatrixTSym<double> 
 
   return out;
 
+}
+
+TMatrixTSym<double> LagrangeMultipliersFitter::ConvertToSymMatrix(TMatrixT<double> in){
+  if(in.GetNrows() != in.GetNcols()){
+    Logger(Logger::Error) << "Conversion to TMatrixTSym failed. Input matrix is not symmetric." << std::endl;
+    in.Print();
+    return TMatrixTSym<double>{};
+  }
+  else{
+    TMatrixTSym<double> out(in.GetNrows());
+    for(int i=0; i<in.GetNrows(); i++){
+      for(int j=0; j<in.GetNcols(); j++){
+        out(i,j)= in(i,j);
+      }
+    }
+    return out;
+  }
+}
+
+bool LagrangeMultipliersFitter::MatrixHasNan(TMatrixTSym<double> in){
+  for(int i=0; i<in.GetNrows(); i++){
+    for(int j=0; j<in.GetNcols(); j++){
+      if(isnan(in(i,j))) return true;
+    }
+  }
+  return false;
 }
