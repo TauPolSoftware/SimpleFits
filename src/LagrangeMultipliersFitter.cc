@@ -205,7 +205,7 @@ bool LagrangeMultipliersFitter::Fit(){
       // Logger(Logger::Info) << "\t" << name << std::endl;
     }
     // set limits for tau mu pz
-    MnPar.SetLimits(5, -500, 500);
+    // MnPar.SetLimits(5, -500, 500);
 
     unsigned int max=10;
     // int numberofcalls=200+nPar*100+nPar*nPar*5;
@@ -217,11 +217,11 @@ bool LagrangeMultipliersFitter::Fit(){
     // MnLogger.SetLevel(0);
     // Logger(Logger::Info) << "Begin minimization" << std::endl;
     ROOT::Minuit2::MnMinimize minimize(updator, MnPar, MnCov);
-    minimize.Fix(5);
-    // ROOT::Minuit2::FunctionMinimum min= minimize(numberofcalls,tolerance);
-    ROOT::Minuit2::FunctionMinimum min0 = minimize(numberofcalls,tolerance);
-    minimize.Release(5);
+    // minimize.Fix(5);
     ROOT::Minuit2::FunctionMinimum min = minimize(numberofcalls,tolerance);
+    // ROOT::Minuit2::FunctionMinimum min0 = minimize(numberofcalls,tolerance);
+    // minimize.Release(5);
+    // ROOT::Minuit2::FunctionMinimum min = minimize(numberofcalls,tolerance);
     // for(unsigned int i=0;i<=max && min.Edm()>edmMin;i++){
     //   if(i==max) return false;
     //   min = minimize(i*numberofcalls,tolerance);
