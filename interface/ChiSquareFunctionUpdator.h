@@ -8,6 +8,7 @@
 #include "TauPolSoftware/SimpleFits/interface/DiTauConstrainedFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/ThreeProngOneProngFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/ThreeProngThreeProngFitter.h"
+#include "TauPolSoftware/SimpleFits/interface/ZTT3MuOneProngFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/Logger.h"
 
 class ChiSquareFunctionUpdator  : public ROOT::Minuit2::FCNBase {
@@ -81,6 +82,25 @@ class ThreeProngOneProngFitterChiSquareFunctionUpdator  : public ROOT::Minuit2::
 
  private:
   ThreeProngOneProngFitter *TPOPF;
+
+};
+
+class ZTT3MuOneProngFitterChiSquareFunctionUpdator  : public ROOT::Minuit2::FCNBase {
+ public:
+  ZTT3MuOneProngFitterChiSquareFunctionUpdator(ZTT3MuOneProngFitter *ZTTOPF_){ZTTOPF_=ZTTOPF;}
+  virtual ~ZTT3MuOneProngFitterChiSquareFunctionUpdator(){};
+
+  virtual double operator() (const std::vector<double> & x)const{
+    int offset = ZTTOPF->NPara();
+    TVectorD a(ZTTOPF->NPara()),b(ZTTOPF->NParb());
+    for(int i=0; i<ZTTOPF->NPara(); i++) a(i)=x.at(i);
+    for(int i=0; i<ZTTOPF->NParb(); i++) b(i)=x.at(i+offset);
+    return ZTTOPF->UpdateChisquare(a,b);
+  }
+  virtual double Up()const{return 1.0;}// Error definiton for Chi^2
+
+ private:
+  ZTT3MuOneProngFitter *ZTTOPF;
 
 };
 
