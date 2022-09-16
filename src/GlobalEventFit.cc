@@ -14,6 +14,8 @@
 #include "TauPolSoftware/SimpleFits/interface/DiTauConstrainedFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/ThreeProngOneProngFitter.h"
 #include "TauPolSoftware/SimpleFits/interface/ThreeProngThreeProngFitter.h"
+#include "TauPolSoftware/SimpleFits/interface/ZTT3MuOneProngFitter.h"
+
 
 GlobalEventFit::GlobalEventFit(TrackParticle Muon, LorentzVectorParticle A1, double Phi_Res, TVector3 PV, TMatrixTSym<double> PVCov){
 	Configure(Muon, A1, PV, PVCov);
@@ -38,6 +40,15 @@ GlobalEventFit::GlobalEventFit(TrackParticle ChargedPion, LorentzVectorParticle 
 	MET_ = MET;
 	useFullRecoil_ = true;
 }
+
+GlobalEventFit::GlobalEventFit(TrackParticle OneProng, LorentzVectorParticle MuonsTriplet, PTObject MET, TVector3 PV, TMatrixTSym<double> PVCov, bool Tau3Muons ){
+     Configure(OneProng, MuonsTriplet, PV, PVCov, Tau3Muons);
+     MET_ = MET;
+     useFullRecoil_ = true;
+
+}
+
+
 
 
 GlobalEventFit::~GlobalEventFit(){
@@ -133,6 +144,26 @@ void GlobalEventFit::Configure(TrackParticle ChargedPion, LorentzVectorParticle 
 	useCollinearityTauMu_ = false;
 }
 
+void GlobalEventFit::Configure(TrackParticle OneProng, LorentzVectorParticle MuonsTriplet, TVector3 PV, TMatrixTSym<double> PVCov, bool Tau3Muons ){
+         Logger(Logger::Debug) << "Configuring GlobalEventFit" << std::endl;
+
+         isConfigured_ = false;
+         isFit_ = false;
+         isValid_ = false;
+         pionDecay_ = true;
+         Track_ = OneProng;
+         MuonsTriplet_= MuonsTriplet;
+         PVCov_.ResizeTo(PVCov);
+         PVCov_= PVCov;
+         SV_ = MuonsTriplet.Vertex();
+         SVCov_.ResizeTo(MuonsTriplet.VertexCov());
+         SVCov_ = MuonsTriplet.VertexCov();
+	 ZTT3Mu_ = Tau3Muons;
+         isConfigured_ = true;
+}
+
+
+
 
 // Is called in the constructor and determines whether the hadronic tau decay is ambiguous and calculates the possible four-momenta of the taus.
 void GlobalEventFit::ThreeProngTauReconstruction(){
@@ -208,6 +239,17 @@ GEFObject GlobalEventFit::Fit(){
 	std::vector<double> Chi2s, Csums, Niterats;
 	std::vector<bool> fitstatus;
 	std::vector<bool> fitvalid;
+
+
+
+	if(ZTT3Mu_)  //   here a part of Z -> tau(3mu) - tau(1 prong)  
+	  {
+	    ZTT3MuOneProngFitter *ptr2Fitter = NULL;
+	    ptr2Fitter = new ZTT3MuOneProngFitter(MuonsTriplet_, MuonsTriplet_, Track_, MET_, PV_, PVCov_, 91.5); 
+	    ptr2Fitter->SetFittingMode(minimizer_);
+	    std::cout<<" >>>>>>>>>>>>>>>>>>>>> ZTT Fit status   "<< ptr2Fitter->Fit() <<std::endl;
+
+	  }
 
 	if(A1s_.size() == 1){
 		recostatus.push_back(TPTRObject_.CreateVectorFromAmbiguity());

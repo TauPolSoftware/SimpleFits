@@ -220,8 +220,9 @@ bool ZTT3MuOneProngFitter::Fit(){
         TVectorD para_delta(para_delta_);
         TVectorD parb_delta(parb_delta_);
         TVectorD harddelta_vecprev_(harddelta_vecprev);
-        double chi2CutStep(chi2prev);
         TVectorD chi2CutStep_vec(chi2_vecprev);
+        double chi2CutStep(chi2prev);
+
         // double chi2CutStepprev(chi2prev);
         if(Logger::Instance()->Level() == Logger::Debug){
           Logger(Logger::Debug) << "para_delta: " << std::endl;
@@ -545,8 +546,8 @@ TVectorD ZTT3MuOneProngFitter::HardValue(TVectorD &va,TVectorD &vb,bool debug){
 
 	//d(0) = pow(TauThreeProng.E() + TauOneProng.E(), 2.) - (TauThreeProng.Vect() + TauOneProng.Vect()).Mag2()- pow(MassConstraint_,2.);
 	//d(1) = TauOneProng.Pz() - CosThetaTauOneProng(TauOneProng)*TauOneProng.P();
-	d(0) = z.M() - MassConstraint_;
-	d(1) = TauOneProng.Pz() - CosThetaTauOneProng(TauOneProng)*TauOneProng.P();
+  //	d(0) = z.M() - MassConstraint_;
+	d(0) = TauOneProng.Pz() - CosThetaTauOneProng(TauOneProng)*TauOneProng.P();
   return d;
 }
 

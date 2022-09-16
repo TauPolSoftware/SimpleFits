@@ -26,7 +26,7 @@ class ZTT3MuOneProngFitter : public LagrangeMultipliersFitter{
   enum ParsTrunc{tau_px=0,tau_py,tau_pz,npartr};
 
   // Number of Hard Constraints
-  virtual double NConstraints(){ return 2;}
+  virtual double NConstraints(){ return 1;}
 
   // Number of Soft Constraints
   virtual double NSoftConstraints(){if(!useFullRecoil_) return 3; return 2;}
