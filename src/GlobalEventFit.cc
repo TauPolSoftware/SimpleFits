@@ -247,7 +247,40 @@ GEFObject GlobalEventFit::Fit(){
 	    ZTT3MuOneProngFitter *ptr2Fitter = NULL;
 	    ptr2Fitter = new ZTT3MuOneProngFitter(MuonsTriplet_, MuonsTriplet_, Track_, MET_, PV_, PVCov_, 91.5); 
 	    ptr2Fitter->SetFittingMode(minimizer_);
+	    //	    std::cout<<"  A1s_.size()   "<< A1s_.size() << std::endl;
+	    for(int i=0; i<2;i++){
+	      InitDaughters.push_back(ptr2Fitter->GetInitialDaughters());
+	      InitResonance.push_back(ptr2Fitter->GetInitMother());
+
+	      fitvalid.push_back(ptr2Fitter->Fit());
+	      isValid_ = isValid_ || fitvalid.back();
+	      // fitstatus.push_back(fitvalid.back() && ptr2Fitter->isConverged());
+	      fitstatus.push_back(fitvalid.back());
+	      if(fitvalid.back()){
+		FitResonance.push_back(ptr2Fitter->GetMother());
+		RefitDaughters.push_back(ptr2Fitter->GetReFitDaughters());
+		Chi2Vecs.push_back(ptr2Fitter->ChiSquareVector());
+		Chi2s.push_back(ptr2Fitter->ChiSquare());
+		Niterats.push_back(ptr2Fitter->NIter());
+		Csums.push_back(ptr2Fitter->CSum());
+		FitPar_.ResizeTo(ptr2Fitter->GetExppar()); FitPar_ = ptr2Fitter->GetExppar();
+		FitCov_.ResizeTo(ptr2Fitter->GetExpcov()); FitCov_ = ptr2Fitter->GetExpcov();
+	      }
+	      else{
+		std::vector<LorentzVectorParticle> tmp;
+		for(unsigned i=0; i<2; i++) tmp.emplace_back(LorentzVectorParticle());
+		RefitDaughters.push_back(tmp);
+		InitResonance.push_back(LorentzVectorParticle());
+		FitResonance.emplace_back(LorentzVectorParticle());
+		Chi2Vecs.emplace_back(TVectorD());
+		Chi2s.push_back(-1);
+		Csums.push_back(-1);
+		Niterats.push_back(-1);
+	      }
+	    }
+
 	    std::cout<<" >>>>>>>>>>>>>>>>>>>>> ZTT Fit status   "<< ptr2Fitter->Fit() <<std::endl;
+
 
 	  }
 
@@ -440,27 +473,28 @@ GEFObject GlobalEventFit::Fit(){
 	fitstatuses_ = fitstatus;
 	int IndexToReturn(-1);
 	bool foundSolution(false);
-
-	if(minimizer_ == LagrangeMultipliersFitter::FittingProc::Standard)
-		foundSolution = AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn);
-	else if(minimizer_ == LagrangeMultipliersFitter::FittingProc::Minuit)
-		foundSolution = AmbiguitySolverByChi2Minuit(fitstatus, Chi2s, IndexToReturn);
-
-	if(foundSolution){
-		// std::vector<LorentzVectorParticle> CorrFitDaughters = FitDaughtersCorr(RefitDaughters.at(IndexToReturn.at(0)));
-		// RefitDaughters.at(IndexToReturn.at(0)).at(0) = CorrFitDaughters.at(0);
-		// RefitDaughters.at(IndexToReturn.at(0)).at(1) = CorrFitDaughters.at(1);
-		isFit_ = true;
+	if(!ZTT3Mu_){  //  if it is not  Tau->3mu case
+	  if(minimizer_ == LagrangeMultipliersFitter::FittingProc::Standard )
+	    foundSolution = AmbiguitySolverByChi2(recostatus, fitstatus, Chi2Vecs, IndexToReturn);
+	  else if(minimizer_ == LagrangeMultipliersFitter::FittingProc::Minuit)
+	    foundSolution = AmbiguitySolverByChi2Minuit(fitstatus, Chi2s, IndexToReturn);
+	  
+	  if(foundSolution){
+	    // std::vector<LorentzVectorParticle> CorrFitDaughters = FitDaughtersCorr(RefitDaughters.at(IndexToReturn.at(0)));
+	    // RefitDaughters.at(IndexToReturn.at(0)).at(0) = CorrFitDaughters.at(0);
+	    // RefitDaughters.at(IndexToReturn.at(0)).at(1) = CorrFitDaughters.at(1);
+	    isFit_ = true;
+	  }
+	  else{
+	    Logger(Logger::Verbose) << " >> AmbiguitySolver failed: Fit did not converge." << std::endl;
+	  }
 	}
-	else{
-		Logger(Logger::Verbose) << "AmbiguitySolver failed: Fit did not converge." << std::endl;
-	}
-	// Logger(Logger::Info) << "IndexToReturn: " << IndexToReturn << std::endl;
+	Logger(Logger::Info) << "IndexToReturn: " << IndexToReturn << std::endl;
 	return GEFObject(InitDaughters,
-		InitResonance,
-		RefitDaughters,
-		FitResonance,
-		isValid_, foundSolution, Chi2Vecs, Csums, Niterats, IndexToReturn);
+			 InitResonance,
+			 RefitDaughters,
+			 FitResonance,
+			 isValid_, foundSolution, Chi2Vecs, Csums, Niterats, IndexToReturn);
 }
 
 // Solves ambiguity by chi2
