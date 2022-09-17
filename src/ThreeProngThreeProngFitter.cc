@@ -561,8 +561,6 @@ bool ThreeProngThreeProngFitter::isConverged(){
   if(!useFullRecoil_){
 //	if(pardelta<MaxParDelta_ /*&& harddelta_vec.Norm1() < MaxHCDelta_ && chi2prev-chi2 < MaxChi2Delta_  && chi2prev>chi2*/){
 		if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& softdelta_vec.Norm1() < MaxSCDelta_ && chi2prev>chi2*/
-      && (pow(para(0), 2.0) + pow(para(1), 2.0)) > ThreeProngs_.at(0).LV().Perp2()
-      && (pow(parb(0), 2.0) + pow(parb(1), 2.0)) > ThreeProngs_.at(1).LV().Perp2()
     ){
     //	Logger(Logger::Verbose) << "converged " << delta << " chi2 " <<  chi2 << " chi2prev " << chi2prev <<"  Maxdelta  " <<MaxDelta_ <<std::endl;
 	  return true;
@@ -572,8 +570,6 @@ bool ThreeProngThreeProngFitter::isConverged(){
 	//if(pardelta<MaxParDelta_ && harddelta_vec.Norm1() < MaxHCDelta_ && softdelta_vec.Norm1() < MaxSCDelta_){
 	// if(/*pardelta<MaxParDelta_ &&*/ harddelta_vec.Norm1() < MaxHCDelta_ && fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& chi2prev>chi2*/){
 	if(/*pardelta<MaxParDelta_ && harddelta_vec.Norm1() < MaxHCDelta_ && */fabs(chi2prev-chi2) < MaxChi2Delta_ /*&& chi2prev>chi2*/
-      && (pow(para(0), 2.0) + pow(para(1), 2.0)) > ThreeProngs_.at(0).LV().Perp2()
-      && (pow(parb(0), 2.0) + pow(parb(1), 2.0)) > ThreeProngs_.at(1).LV().Perp2()
     ){
 	  return true;
 	}
