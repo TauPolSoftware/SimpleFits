@@ -60,6 +60,7 @@ void GlobalEventFit::Configure(TrackParticle Muon, LorentzVectorParticle A1, TVe
 	isFit_ = false;
 	isValid_ = false;
 	pionDecay_ = false;
+	ZTT3Mu_ = false;
 	Muon_ = Muon;
 	A1_= A1;
 	A1s_.push_back(A1);
@@ -87,6 +88,7 @@ void GlobalEventFit::Configure(std::vector<LorentzVectorParticle> A1s, TVector3 
 	isFit_ = false;
 	isValid_ = false;
 	pionDecay_ = false;
+	ZTT3Mu_ = false;
 	A1_= A1s.at(0); // for backwards compatibility
 	A1s_= A1s;
 	PV_ = PV;
@@ -121,6 +123,7 @@ void GlobalEventFit::Configure(TrackParticle ChargedPion, LorentzVectorParticle 
 	isFit_ = false;
 	isValid_ = false;
 	pionDecay_ = true;
+	ZTT3Mu_ = false;
 	Muon_ = ChargedPion;
 	NeutralPion_ = NeutralPion;
 	A1_= A1;
