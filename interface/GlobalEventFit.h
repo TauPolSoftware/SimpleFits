@@ -66,10 +66,10 @@ class GlobalEventFit{
   void ThreeProngTauReconstruction();
   bool IsAmbiguous(std::vector<bool> recostatus);
   PTObject SubtractNeutrinoFromMET(unsigned Ambiguity);
-  PTObject AddA1(PTObject MET);
-  PTObject AddA1s(PTObject MET);
-  PTObject AddMuon(PTObject MET);
-  PTObject AddNeutralPion(PTObject MET);
+  void AddA1(PTObject &MET);
+  void AddA1s(PTObject &MET);
+  void AddMuon(PTObject &MET);
+  void AddNeutralPion(PTObject &MET);
 
  private:
   int minimizer_;

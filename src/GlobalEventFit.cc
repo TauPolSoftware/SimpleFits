@@ -732,7 +732,7 @@ PTObject GlobalEventFit::SubtractNeutrinoFromMET(unsigned Ambiguity){
   return METminusNeutrino;
 }
 
-PTObject GlobalEventFit::AddA1(PTObject MET){
+void GlobalEventFit::AddA1(PTObject &MET){
   TMatrixT<double> METPlusA1Par; METPlusA1Par.ResizeTo(2,1);
   TMatrixTSym<double> METPlusA1Cov; METPlusA1Cov.ResizeTo(2,2);
 
@@ -757,12 +757,10 @@ PTObject GlobalEventFit::AddA1(PTObject MET){
   if(Logger::Instance()->Level() == Logger::Debug){
 	METPlusA1Cov.Print();
   }
-  PTObject METPlusA1(METPlusA1Par, METPlusA1Cov);
-
-  return METPlusA1;
+  MET = PTObject(METPlusA1Par, METPlusA1Cov);
 }
 
-PTObject GlobalEventFit::AddA1s(PTObject MET){
+void GlobalEventFit::AddA1s(PTObject &MET){
   TMatrixT<double> METPlusA1Par; METPlusA1Par.ResizeTo(2,1);
   TMatrixTSym<double> METPlusA1Cov; METPlusA1Cov.ResizeTo(2,2);
 
@@ -790,12 +788,10 @@ PTObject GlobalEventFit::AddA1s(PTObject MET){
   if(Logger::Instance()->Level() == Logger::Debug){
 	METPlusA1Cov.Print();
   }
-  PTObject METPlusA1(METPlusA1Par, METPlusA1Cov);
-
-  return METPlusA1;
+  MET = PTObject(METPlusA1Par, METPlusA1Cov);
 }
 
-PTObject GlobalEventFit::AddMuon(PTObject MET){
+void GlobalEventFit::AddMuon(PTObject &MET){
   TMatrixT<double> METPlusMuonPar; METPlusMuonPar.ResizeTo(2,1);
   TMatrixTSym<double> METPlusMuonCov; METPlusMuonCov.ResizeTo(2,2);
 
@@ -842,18 +838,14 @@ PTObject GlobalEventFit::AddMuon(PTObject MET){
   if(Logger::Instance()->Level() == Logger::Debug){
 	METPlusMuonCov.Print();
   }
-  PTObject METPlusMuon(METPlusMuonPar, METPlusMuonCov);
-
-  return METPlusMuon;
+  MET = PTObject(METPlusMuonPar, METPlusMuonCov);
 }
 
-PTObject GlobalEventFit::AddNeutralPion(PTObject MET){
+void GlobalEventFit::AddNeutralPion(PTObject &MET){
 	TMatrixT<double> METPlusNeutralPionPar; METPlusNeutralPionPar.ResizeTo(2,1);
 	METPlusNeutralPionPar(0,0) = MET.Par()(0,0) + NeutralPion_.LV().X();
 	METPlusNeutralPionPar(1,0) = MET.Par()(1,0) + NeutralPion_.LV().Y();
-	PTObject METPlusNeutralPion(METPlusNeutralPionPar, MET.Cov());
-
-  return METPlusNeutralPion;
+	MET = PTObject(METPlusNeutralPionPar, MET.Cov());
 }
 
 void GlobalEventFit::setMinimizer(std::string mode){
